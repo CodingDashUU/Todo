@@ -6,7 +6,7 @@
 
 <div class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">
     <RadzenCard Class="rz-my-12 rz-mx-auto rz-p-6 rz-shadow-6" Style="max-width: 400px; width: 100%; border-radius: 16px;">
-        <form action="@($"{CoreEndpointRoutes.External.CompleteRegistration}?ReturnUrl={ReturnUrl ?? "/"}")" method="post">
+        <form action="@($"{CoreEndpointRoutes.External.CompleteRegistration}?PersistCookie={PersistCookie}&&ReturnUrl={ReturnUrl ?? "/"}")" method="post">
             <AntiforgeryToken />
             <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" Gap="1.5rem">
 
@@ -26,10 +26,9 @@
                         <RadzenIcon Icon="@MaterialIcons.AccountCircle"/>
                     </Start>
                     <ChildContent>
-                        <RadzenTextBox Name="Username" MaxLength="Username.Rules.MaxUsernameLength"/>
+                        <RadzenTextBox Name="@nameof(Registration.Model.Username)" MaxLength="Username.Rules.MaxUsernameLength"/>
                     </ChildContent>
                 </RadzenFormField>
-                
                 <RadzenButton ButtonType="ButtonType.Submit"
                               ButtonStyle="ButtonStyle.Base"
                               Variant="Variant.Outlined"
@@ -40,7 +39,6 @@
                         </span>
                     </div>
                 </RadzenButton>
-
             </RadzenStack>
         </form>
     </RadzenCard>
@@ -49,5 +47,5 @@
 @code {
 
     [Parameter] public string? ReturnUrl { get; set; }
-
+    [SupplyParameterFromQuery] public bool PersistCookie { get; set; }
 }

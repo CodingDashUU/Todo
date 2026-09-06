@@ -31,12 +31,16 @@
                     </span>
                 </div>
             </RadzenButton>
-
+            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                <RadzenText>Remember Me</RadzenText>
+                <RadzenCheckBox TValue="bool" @bind-value="PersistCookie" />
+            </RadzenStack>
         </RadzenStack>
     </RadzenCard>
 </div>
 
 @code {
     [Parameter] public string? ReturnUrl { get; set; }
-    private void SignInWithGoogle() => NavManager.NavigateTo( $"{CoreEndpointRoutes.External.ChallengeGoogle}?ReturnUrl={ReturnUrl ?? "/"}", forceLoad: true);
+    public bool PersistCookie { get; set; }
+    private void SignInWithGoogle() => NavManager.NavigateTo( $"{CoreEndpointRoutes.External.ChallengeGoogle}?PersistCookie={PersistCookie}&&ReturnUrl={ReturnUrl ?? "/"}", forceLoad: true);
 }
