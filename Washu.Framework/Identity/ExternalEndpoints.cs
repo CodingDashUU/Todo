@@ -48,7 +48,7 @@ where TDbContext : ApplicationDbContext
         var result = await signInManager.ExternalLoginSignInAsync(
             info.LoginProvider, 
             info.ProviderKey, 
-            isPersistent: true);
+            isPersistent: false);
         return Results.Redirect(result.Succeeded ? returnUrl :
             $"{ApplicationRoutes.Register}?ReturnUrl={returnUrl}");
     }
