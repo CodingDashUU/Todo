@@ -21,7 +21,7 @@ where TDbContext : ApplicationDbContext
 {
     private readonly IdentityOptions _options = optionsAccessor.Value;
 
-    protected override TimeSpan RevalidationInterval => TimeSpan.FromSeconds(10);
+    protected override TimeSpan RevalidationInterval => TimeSpan.FromMinutes(10);
 
     protected override async Task<bool> ValidateAuthenticationStateAsync(
         AuthenticationState authenticationState, CancellationToken cancellationToken)
