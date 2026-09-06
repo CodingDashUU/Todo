@@ -4,7 +4,6 @@ using FluentValidation;
 using Framework.Notifications;
 using Identity;
 using Microsoft.EntityFrameworkCore;
-using Washu.Todo.Core;
 
 public static class CreateTask
 {

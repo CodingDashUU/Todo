@@ -4,7 +4,6 @@ using Framework.Identity;
 using Framework.Notifications;
 using Identity;
 using Microsoft.EntityFrameworkCore;
-using Washu.Todo.Core;
 
 public class ToggleTask
 {

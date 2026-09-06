@@ -1,7 +1,7 @@
-﻿namespace Washu.Todo.Core;
+﻿namespace Washu.Todo;
 
 /// <summary>
-/// The core model of the Todo app, contains all the properties and methods that will be stored in the database, or any type of data structure relating to a set of Tasks.
+/// The core model of the To-do app, contains all the properties and methods that will be stored in the database, or any type of data structure relating to a set of Tasks.
 /// All properties relating to time are stored in <b>universal time (UTC)</b>
 /// </summary>
 /// <param name="name">The name of the task entry you want to set it to</param>
