@@ -1,20 +1,10 @@
 ﻿@using Washu.Framework.Constants
 @attribute [Route(ApplicationRoutes.Settings)]
-@inject ThemeService ThemeService
+
 <PageTitle>Settings</PageTitle>
 <Bouncer ReturnUrl="@ApplicationRoutes.Settings">
     <RadzenStack class="rz-p-0 rz-p-md-6 rz-p-lg-12">
-        <RadzenCard Variant="Variant.Outlined">
-            <form action=@CoreEndpointRoutes.Theme method="post">
-                <AntiforgeryToken/>
-                <RadzenStack>
-                    <RadzenFormField Text="Theme">
-                        <RadzenDropDown TValue="string" Name="theme" Value="@ThemeService.Theme" Data="@Themes.Free" TextProperty=@nameof(Theme.Text) ValueProperty=@nameof(Theme.Value) />
-                    </RadzenFormField>
-                    <RadzenButton ButtonType="ButtonType.Submit">Change Theme</RadzenButton>
-                </RadzenStack>
-            </form>
-        </RadzenCard>
+        <ThemeForm />
     </RadzenStack>
 </Bouncer>
 
