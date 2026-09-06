@@ -1,0 +1,94 @@
+﻿@using Humanizer
+@using Humanizer.Localisation
+@using Washu.Framework.Constants
+@using Washu.Framework.Extensions
+@using Washu.Framework.Identity
+@using Washu.Todo.Core
+@inject UserTimeZoneProvider TimeZoneProvider
+<RadzenCard Style="
+    margin: 24px auto;
+    width: calc(100% - 48px);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(16px);
+    border-radius: 20px;
+">
+    <div style="
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+    ">
+        <div style="
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        ">
+            <RadzenIcon Icon="@MaterialIcons.Task"
+                        Style="font-size: 42px;"
+                        IconColor="@(Entry.IsCompleted ? "#00ff00" : "#ff0000")"/>
+
+            <div>
+                <RadzenText TextStyle="TextStyle.H5"
+                            Style="margin: 0;">
+                    @Entry.Name
+                </RadzenText>
+                <div style="height: 5px;"/>
+                <RadzenStack Orientation="Orientation.Horizontal">
+                    <RadzenBadge Text="@(Entry.IsCompleted ? "Complete" : "Incomplete")"
+                                 BadgeStyle="@(Entry.IsCompleted ? BadgeStyle.Success : BadgeStyle.Danger)"
+                                 IsPill="true"/>
+                    @if (Entry.DateCompleted > Entry.GoalDate)
+                    {
+                        <RadzenBadge Text="FAILED"
+                                     BadgeStyle="BadgeStyle.Danger"
+                                     IsPill="true"/>
+                    }
+                </RadzenStack>
+                <RadzenText TextStyle="TextStyle.Body2"
+                            Style="@($"margin: 4px 0 0; opacity: 0.7; color: {(Entry.IsCompleted ? "#00FF00" : "#FFF423")};")"
+                            Text="@(
+                                  Entry.IsCompleted 
+                                      ? $"Completed at {Entry.DateCompleted?.ToTimeZone(TimeZoneProvider.TimeZoneInfo).ToString("dd MMMM yyyy - HH:mm:ss") ?? "unknown time"}" 
+                                      : $"Due by {Entry.GoalDate.ToTimeZone(TimeZoneProvider.TimeZoneInfo):dd MMMM yyyy - HH:mm:ss}")"/>
+                @if (Entry.DateCompleted > Entry.GoalDate)
+                {
+                    <RadzenText TextStyle="TextStyle.Body2"
+                                Style="margin: 4px 0 0; opacity: 0.7; color: #FF0000;"
+                                Text="@($"Failed to complete task in time ({(Entry.DateCompleted - Entry.GoalDate).Value.Humanize(minUnit: TimeUnit.Minute)} late)")"/>
+                }
+            </div>
+        </div>
+        <div style="
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        ">
+            @if (IsEditing)
+            {
+                <RadzenButton class="big-icon-button"
+                              Variant="Variant.Text"
+                              Click="async () => await OnSettingsClicked()"
+                              Icon="@MaterialIcons.Settings"/>
+            }
+            else
+            {
+                <RadzenButton class="big-icon-button"
+                              ButtonStyle="@(Entry.IsCompleted ? ButtonStyle.Success : ButtonStyle.Danger)"
+                              Variant="Variant.Text"
+                              Click="async () => await OnTaskCompleted()"
+                              Icon="@(Entry.IsCompleted ? MaterialIcons.CheckCircle : MaterialIcons.Cancel)"/>
+            }
+            <div style="width: 10px"/>
+        </div>
+    </div>
+</RadzenCard>
+
+@code {
+
+    [Parameter] public TaskEntry Entry { get; set; } 
+    [Parameter] public required Func<Task> OnTaskCompleted { get; set; }
+    [Parameter] public required Func<Task> OnSettingsClicked { get; set; }
+    [Parameter] public bool IsEditing { get; set; }
+
+}

@@ -1,0 +1,46 @@
+﻿@using Microsoft.Extensions.Options
+@using Washu.Framework.Constants
+@inject ThemeService ThemeService
+@inject IOptions<CookieThemeServiceOptions> Options
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <base href="/"/>
+    <ResourcePreloader/>
+    <link rel="stylesheet" href="@Assets["app.css"]"/>
+    <link rel="stylesheet" href="@Assets["Washu.Todo.styles.css"]"/>
+    <ImportMap/>
+    <HeadOutlet @rendermode="InteractiveServer" />
+    <RadzenTheme Theme="standard-dark"/>
+</head>
+<body>
+<ReconnectModal/>
+<script>
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        document.cookie = `@CookieConstants.Names.ClientTimeZone=${tz}; path=/; max-age=@(CookieConstants.DurationInDays.ClientTimeZone * 24 * 60 * 60); samesite=lax`;
+    </script>
+<Routes @rendermode="InteractiveServer"/>
+<script src="@Assets["_framework/blazor.web.js"]"></script>
+
+<script src="_content/Radzen.Blazor/Radzen.Blazor.js?v=@(typeof(Radzen.Colors).Assembly.GetName().Version)"></script>
+</body>
+
+</html>
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        var theme = HttpContext.Request.Cookies[CookieConstants.Names.Theme];
+
+        if (!string.IsNullOrEmpty(theme)) ThemeService.SetTheme(theme);
+        else HttpContext.Response.Cookies.Append(CookieConstants.Names.Theme, "standard-dark" , new CookieOptions { Secure = Options.Value.IsSecure, Expires = DateTimeOffset.Now.Add(Options.Value.Duration) });    
+    }
+}

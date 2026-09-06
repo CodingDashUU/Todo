@@ -1,0 +1,56 @@
+﻿@using Washu.Framework.Extensions
+@using Washu.Framework.Identity
+@using Washu.Framework.Radzen
+@using Washu.Todo.Commands
+@inject DialogService DialogService
+@inject UserTimeZoneProvider TimeZoneProvider
+@inject RadzenNotificationService BaseNotificationService
+<RadzenTemplateForm TItem="CreateTask.Model" Data=@Model Submit=@HandleSubmit>
+    <RadzenStack Gap="1rem">
+        <RadzenFormField Text="Task Name">
+            <RadzenTextBox @bind-Value="Model.TaskName"/>
+        </RadzenFormField>
+        <RadzenFormField Text="Goal Date">
+            <RadzenDatePicker
+                TValue="DateTimeOffset"
+                @bind-Value="Model.GoalDate"
+                ShowTime
+                Min="DateTime.UtcNow.AddMinutes(5).ToTimeZone(TimeZoneProvider.TimeZoneInfo)"
+                Max="DateTime.UtcNow.AddYears(50).ToTimeZone(TimeZoneProvider.TimeZoneInfo)"/>
+        </RadzenFormField>
+        <RadzenButton Text="Create"
+                      ButtonType="ButtonType.Submit"/>
+    </RadzenStack>
+</RadzenTemplateForm>
+
+
+@code {
+    private CreateTask.Model Model { get; set; } = new();
+    [Parameter] public required Todo.TodoList List { get; set; }
+    private CreateTask.Validator Validator { get; set; }
+    private bool SubmitBusy { get; set; }
+
+    protected override void OnInitialized()
+    {
+        Model.GoalDate = DateTimeOffset.UtcNow.AddHours(1).ToTimeZone(TimeZoneProvider.TimeZoneInfo);
+        Validator = new CreateTask.Validator(List);
+    }
+
+    private async Task HandleSubmit(CreateTask.Model args)
+    {
+        SubmitBusy = true;
+        var result = await Validator.ValidateAsync(Model);
+        if (!result.IsValid)
+        {
+            BaseNotificationService.NotifyError(
+                summary: "Task Creation Error",
+                detail: result.Errors.First().ErrorMessage
+            );
+            await Task.Delay(2000);
+            SubmitBusy = false;
+            return;
+        }
+
+        DialogService.Close(Model);
+    }
+}

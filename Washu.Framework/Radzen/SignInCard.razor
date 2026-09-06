@@ -1,0 +1,42 @@
+﻿@using global::Radzen
+@using global::Radzen.Blazor
+@using Washu.Framework.Blazor
+@using Washu.Framework.Constants
+@inject NavigationManager NavManager
+
+<div class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+    <RadzenCard Class="rz-my-12 rz-mx-auto rz-p-6 rz-shadow-6" Style="max-width: 400px; width: 100%; border-radius: 16px;">
+        <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" Gap="1.5rem">
+            
+            <SymbolLogo Size="40%"/>
+
+            <!-- Title & Subtitle -->
+            <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" Gap="0.25rem" Class="rz-text-align-center">
+                <RadzenText TextStyle="TextStyle.H5" TagName="TagName.H2">
+                    Welcome
+                </RadzenText>
+                <RadzenText TextStyle="TextStyle.Body2">
+                    Sign in to access your todo list
+                </RadzenText>
+            </RadzenStack>
+            
+            <RadzenButton Click="@SignInWithGoogle" 
+                          ButtonStyle="ButtonStyle.Base" 
+                          Variant="Variant.Outlined" 
+                          Class="google-btn rz-w-100 rz-py-3">
+                <div class="d-flex align-items-center justify-content-center" style="gap: 12px; width: 100%;">
+                    <GoogleLogo Size="20"/>
+                    <span class="rz-font-weight-medium">
+                        Continue with Google
+                    </span>
+                </div>
+            </RadzenButton>
+
+        </RadzenStack>
+    </RadzenCard>
+</div>
+
+@code {
+    [Parameter] public string? ReturnUrl { get; set; }
+    private void SignInWithGoogle() => NavManager.NavigateTo( $"{CoreEndpointRoutes.External.ChallengeGoogle}?ReturnUrl={ReturnUrl ?? "/"}", forceLoad: true);
+}

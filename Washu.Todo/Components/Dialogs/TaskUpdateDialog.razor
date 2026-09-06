@@ -1,0 +1,58 @@
+﻿@using Washu.Framework.Extensions
+@using Washu.Framework.Identity
+@using Washu.Framework.Radzen
+@using Washu.Todo.Commands
+@using Washu.Todo.Core
+@inject UserTimeZoneProvider TimeZoneProvider
+@inject RadzenNotificationService NotificationService
+@inject DialogService DialogService
+
+<RadzenTemplateForm TItem="UpdateTask.Model" Data=@Model Submit=@HandleSubmit>
+    <RadzenStack Gap="1rem">
+    <RadzenFormField Text="New Task Name">
+        <RadzenTextBox @bind-Value="Model.NewTaskName"/>
+    </RadzenFormField>
+    <RadzenFormField Text="New Goal Date">
+        <RadzenDatePicker
+            TValue="DateTimeOffset"
+            @bind-Value="Model.NewGoalDate"
+            ShowTime
+            Min="DateTime.UtcNow.AddMinutes(5).ToTimeZone(TimeZoneProvider.TimeZoneInfo)"
+            Max="DateTime.UtcNow.AddYears(50).ToTimeZone(TimeZoneProvider.TimeZoneInfo)"/>
+    </RadzenFormField>
+    <RadzenButton Text="Create"
+                  ButtonType="ButtonType.Submit"/>
+    </RadzenStack>
+</RadzenTemplateForm>
+
+@code {
+    public UpdateTask.Model Model { get; set; } = new();
+    [Parameter] public required TaskEntry OldEntry { get; set; }
+    public UpdateTask.Validator Validator { get; set; }
+    public bool SubmitBusy { get; set; }
+
+    protected override void OnInitialized()
+    {
+        Model.NewGoalDate = OldEntry.GoalDate.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
+        Model.NewTaskName = OldEntry.Name;
+        Validator = new UpdateTask.Validator(OldEntry);
+    }
+
+    private async Task HandleSubmit(UpdateTask.Model args)
+    {
+        SubmitBusy = true;
+        var result = await Validator.ValidateAsync(Model);
+        if (!result.IsValid)
+        {
+            NotificationService.NotifyError(
+                summary: "Task Update Error",
+                detail: result.Errors.First().ErrorMessage
+            );
+            await Task.Delay(2000);
+            SubmitBusy = false;
+            return;
+        }
+
+        DialogService.Close(Model);
+    }
+}

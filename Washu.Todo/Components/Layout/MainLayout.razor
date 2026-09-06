@@ -1,0 +1,43 @@
+﻿@using Washu.Framework.Constants
+@inherits LayoutComponentBase
+@inject NavigationManager NavManager
+<RadzenLayout>
+    <RadzenHeader>
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0">
+            <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />
+            <RadzenLabel>Todo Application</RadzenLabel>
+            <div style="flex-grow: 1;"></div>
+            <AuthorizeView>
+                <Authorized>
+                    <div class="rz-display-flex rz-align-items-center rz-justify-content-center rz-background-color-primary rz-color-white" 
+                         style="width: 40px; height: 40px; border-radius: 50%; font-weight: bold; font-size: 20px;">
+                        @(char.ToUpper(context.User.Identity?.Name?.First() ?? 'U'))
+                    </div>
+                </Authorized>
+                <NotAuthorized>
+                    <RadzenButton Click="@(() => NavManager.NavigateTo(ApplicationRoutes.SignIn))">Sign in</RadzenButton>
+                </NotAuthorized>
+            </AuthorizeView>
+            <div style="width: 20px;"></div>
+        </RadzenStack>
+    </RadzenHeader>
+    <RadzenSidebar @bind-Expanded="@sidebarExpanded">
+        <RadzenPanelMenu>
+            <RadzenPanelMenuItem Text="Home" Icon="@MaterialIcons.Home" Click="@(() => NavManager.NavigateTo(ApplicationRoutes.Home))" />
+            <RadzenPanelMenuItem Text="Settings" Icon="@MaterialIcons.Settings" Click="@(() => NavManager.NavigateTo(ApplicationRoutes.Settings))"/>
+        </RadzenPanelMenu>
+    </RadzenSidebar>
+    <RadzenBody>
+        <div class="rz-p-4">
+            @Body
+        </div>
+    </RadzenBody>
+    <RadzenComponents @rendermode="InteractiveServer" />
+    <RadzenFooter>
+        Washu Software
+    </RadzenFooter>
+</RadzenLayout>
+
+@code {
+    bool sidebarExpanded = true;
+}

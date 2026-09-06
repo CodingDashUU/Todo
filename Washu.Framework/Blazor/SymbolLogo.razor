@@ -1,0 +1,40 @@
+﻿<!-- Symbol Logo for Washu Software -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 340" width="@Size" height="@Size">
+    <defs>
+        <!-- Gradient on the red part -->
+        <radialGradient id="redGradient" cx="40%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#ff4d4d" />
+            <stop offset="100%" stop-color="#b30000" />
+        </radialGradient>
+    </defs>
+
+    <!-- Main Red Circle with Gradient -->
+    <circle cx="170" cy="170" r="160" fill="url(#redGradient)" stroke="black" stroke-width="5"/>
+
+    <!-- The large 'W' White Outline (Original shape scaled up 1.25x and centered) -->
+    <polyline points="39,58 95,282 158,70 220,282 301,58" 
+              fill="none" stroke="white" stroke-width="70" 
+              stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- The large 'W' Main Color -->
+    <polyline points="39,58 95,282 158,70 220,282 301,58" 
+              fill="none" stroke="#150a0a" stroke-width="56" 
+              stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- Circular Eyes on the inside legs of the 'W' -->
+    <g>
+        <!-- Left Eye -->
+        <circle cx="141" cy="126" r="12.5" fill="white" />
+        <circle cx="141" cy="126" r="5.5" fill="black" />
+    
+        <!-- Right Eye -->
+        <circle cx="174" cy="126" r="12.5" fill="white" />
+        <circle cx="174" cy="126" r="5.5" fill="black" />
+    </g>
+
+</svg>
+@code {
+
+    [Parameter] public string Size { get; set; } = "100%";
+
+}

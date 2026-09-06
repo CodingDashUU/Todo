@@ -1,0 +1,53 @@
+﻿@using global::Radzen
+@using Microsoft.AspNetCore.Components.Forms
+@using Washu.Framework.Blazor
+@using Washu.Framework.Constants
+@using Washu.Framework.Identity
+
+<div class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+    <RadzenCard Class="rz-my-12 rz-mx-auto rz-p-6 rz-shadow-6" Style="max-width: 400px; width: 100%; border-radius: 16px;">
+        <form action="@($"{CoreEndpointRoutes.External.CompleteRegistration}?ReturnUrl={ReturnUrl ?? "/"}")" method="post">
+            <AntiforgeryToken />
+            <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" Gap="1.5rem">
+
+                <SymbolLogo Size="40%"/>
+
+                <!-- Title & Subtitle -->
+                <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" Gap="0.25rem" Class="rz-text-align-center">
+                    <RadzenText TextStyle="TextStyle.H5" TagName="TagName.H2">
+                        Welcome User!
+                    </RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body2">
+                        Fill in the details below to complete account creation
+                    </RadzenText>
+                </RadzenStack>
+                <RadzenFormField Text="Username" class="rz-w-100 rz-py-3">
+                    <Start>
+                        <RadzenIcon Icon="@MaterialIcons.AccountCircle"/>
+                    </Start>
+                    <ChildContent>
+                        <RadzenTextBox Name="Username" MaxLength="Username.Rules.MaxUsernameLength"/>
+                    </ChildContent>
+                </RadzenFormField>
+                
+                <RadzenButton ButtonType="ButtonType.Submit"
+                              ButtonStyle="ButtonStyle.Base"
+                              Variant="Variant.Outlined"
+                              Class="google-btn rz-w-100 rz-py-3">
+                    <div class="d-flex align-items-center justify-content-center" style="gap: 12px; width: 100%;">
+                        <span class="rz-font-weight-medium">
+                            Register
+                        </span>
+                    </div>
+                </RadzenButton>
+
+            </RadzenStack>
+        </form>
+    </RadzenCard>
+</div>
+
+@code {
+
+    [Parameter] public string? ReturnUrl { get; set; }
+
+}

@@ -1,0 +1,38 @@
+﻿@inject RadzenNotificationService NotificationService
+@inject DialogService DialogService
+@using Washu.Todo.Commands
+<RadzenTemplateForm TItem="CreateList.Model" Data=@model Submit=@HandleSubmit>
+    <RadzenStack Gap="1rem">
+        <RadzenFormField Text="List Name">
+            <RadzenTextBox Name="@nameof(CreateList.Model.ListName)" 
+                           @bind-Value="model.ListName"
+                           MaxLength="TodoRules.ListName.MaximumLength"/>
+        </RadzenFormField>
+        <RadzenButton Text="Create"
+                      ButtonType="ButtonType.Submit"
+                      IsBusy="SubmitBusy"/>
+    </RadzenStack>
+</RadzenTemplateForm>
+@code {
+    private CreateList.Model model = new();
+    private CreateList.Validator validator = new();
+    private bool SubmitBusy;
+    private async Task HandleSubmit(CreateList.Model args)
+    {
+        SubmitBusy = true;
+        var result = await validator.ValidateAsync(model);
+        if (!result.IsValid)
+        {
+                NotificationService.NotifyError(
+                    summary: "List Creation Error",
+                    detail: result.Errors.First().ErrorMessage
+                );
+                await Task.Delay(2000);
+            SubmitBusy = false;
+            return;
+        }
+
+        DialogService.Close(model);
+    }
+
+}

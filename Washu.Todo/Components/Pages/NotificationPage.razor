@@ -1,0 +1,21 @@
+﻿@using Washu.Framework.Notifications
+@using Washu.Framework.Radzen
+@inject MessageStore Store
+@inject RadzenNotificationService NotificationService
+@code {
+    [SupplyParameterFromQuery] public string ErrorId { get; set; } = "";
+
+    protected void ShowErrorMessage()
+    {
+        if (string.IsNullOrEmpty(ErrorId)) return;
+        foreach (var error in Store.Take(ErrorId))
+        {
+            NotificationService.NotifyMessage(
+                summary: error.Title,
+                detail: error.Details,
+                type: error.Type
+                );
+            Task.Delay(4000);
+        }
+    }
+}

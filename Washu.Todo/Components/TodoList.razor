@@ -1,0 +1,180 @@
+﻿@using Microsoft.EntityFrameworkCore
+@using Washu.Framework.Blazor
+@using Washu.Framework.Constants
+@using Washu.Framework.Identity
+@using Washu.Framework.Notifications
+@using Washu.Framework.Radzen
+@using Washu.Todo.Commands
+@using Washu.Todo.Identity
+@using Washu.Todo.Core
+@using Dialogs
+@inject RadzenNotificationService NotificationService
+@inject NavigationManager NavManager
+@inject DialogService DialogService
+@inject IDbContextFactory<TodoDbContext> DbContextFactory
+@inject CreateList.Command createListCommand
+@inject CreateTask.Command createTaskCommand
+@inject ToggleTask.Command toggleTaskCommand
+@inject UpdateTask.Command updateTaskCommand
+@inject MessageStore MessageStore
+@inject ApplicationUserManager<TodoDbContext> userManager
+<Bouncer ReturnUrl="/">
+    <RadzenDropDown TValue="Todo.TodoList" 
+                    Value="SelectedList" 
+                    Data="ListNames" 
+                    TextProperty="Name"
+                    PageSize="10" 
+                    ValueChanged="@(v => OnListSelected(v))" />
+    
+    <RadzenButton class="big-icon-button"
+                  ButtonStyle="@(IsEditing ? ButtonStyle.Success : ButtonStyle.Danger)"
+                  Variant="Variant.Text"
+                  Click="() => IsEditing = !IsEditing"
+                  Disabled="IsNoListSelected"
+                  Text="@($"Edit Mode: {(IsEditing ? "ON" : "OFF")}")" />
+                  
+    <RadzenButton Click="AddTaskAsync" Disabled="IsNoListSelected">Add Task</RadzenButton>
+    <RadzenButton Click="CreateListAsync">Add List</RadzenButton>
+
+    @if (IsNoListSelected)
+    {
+        <RadzenText>No list selected</RadzenText>
+    }
+    else
+    {
+        @foreach (var item in SelectedList.Tasks)
+        {
+            <TaskCard Entry="item" 
+                      OnTaskCompleted="() => OnToggleTask(item)" 
+                      IsEditing="IsEditing" 
+                      OnSettingsClicked="() => OnSettingsClicked(item)" />
+        }
+    }
+</Bouncer>
+
+<style>
+    .big-icon-button .rzi { font-size: 32px; }
+</style>
+
+@code {
+    private ApplicationUser _currentUser;
+
+    public bool IsEditing { get; set; }
+    [Parameter] public required AuthenticationState UserContext { get; set; }
+    
+    public Todo.TodoList SelectedList { get; set; } = Todo.TodoList.None;
+    public List<Todo.TodoList> ListNames { get; set; } = [];
+
+    private bool IsNoListSelected => SelectedList.Id == Todo.TodoList.None.Id;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (UserContext.User.Identity is not { Name: not null } userContext)
+        {
+            var id = MessageStore.Store(Message.Error("Identity Error", "Invalid session"));
+            NavManager.NavigateTo($"{ApplicationRoutes.SignIn}?errorId={id}");
+            return;
+        }
+        var user = await userManager.FindByUsernameAsync(userContext.Name);
+        if (user is null)
+        {
+            var id = MessageStore.Store(Message.Error("Identity Error", "User couldn't be found, or doesn't exist"));
+            NavManager.NavigateTo($"{ApplicationRoutes.SignIn}?errorId={id}");
+            return;
+        }
+        _currentUser = user;
+
+        await LoadListsAsync(selectDefault: true);
+    }
+    
+    private async Task LoadListsAsync(Guid? preferredSelectedId = null, bool selectDefault = false)
+    {
+        await using var dbContext = await DbContextFactory.CreateDbContextAsync();
+        
+        var fetchedLists = await dbContext.GetListsByUserIdAsync(_currentUser.Id);
+        
+        ListNames = [Todo.TodoList.None, ..fetchedLists];
+
+        if (preferredSelectedId.HasValue)
+        {
+            SelectedList = ListNames.FirstOrDefault(l => l.Id == preferredSelectedId.Value) ?? Todo.TodoList.None;
+        }
+        else if (selectDefault)
+        {
+            SelectedList = ListNames.Where(l => l.Id != Todo.TodoList.None.Id)
+                                    .OrderByDescending(l => l.LastModified)
+                                    .FirstOrDefault() ?? Todo.TodoList.None;
+        }
+        StateHasChanged();
+    }
+
+    private void OnListSelected(Todo.TodoList newList)
+    {
+        SelectedList = newList;
+        StateHasChanged();
+    }
+
+    private async Task CreateListAsync()
+    {
+        var result = await DialogService.OpenAsync<ListCreationDialog>("Create List");
+        if (result is not CreateList.Model model) return;
+
+        var message = await createListCommand.ExecuteAsync(_currentUser.Id, model);
+        HandleNotification(message);
+
+        await LoadListsAsync(selectDefault: true);
+    }
+
+    private async Task AddTaskAsync()
+    {
+        var parameters = new Dictionary<string, object?> { { nameof(TaskCreationDialog.List), SelectedList } };
+        var result = await DialogService.OpenAsync<TaskCreationDialog>("Create Task", parameters);
+        if (result is not CreateTask.Model model) return;
+
+        var (message, newList) = await createTaskCommand.ExecuteAsync(SelectedList, model);
+        HandleNotification(message, "Add Task Error");
+
+        await LoadListsAsync(preferredSelectedId: newList?.Id ?? SelectedList.Id);
+    }
+
+    private async Task OnToggleTask(TaskEntry entry)
+    {
+        var (message, newList) = await toggleTaskCommand.ExecuteAsync(SelectedList, entry, _currentUser);
+        HandleNotification(message, "Toggle Task Error");
+
+        await LoadListsAsync(preferredSelectedId: newList?.Id ?? SelectedList.Id);
+    }
+
+    private async Task OnSettingsClicked(TaskEntry entry)
+    {
+        var parameters = new Dictionary<string, object?> { { nameof(TaskUpdateDialog.OldEntry), entry } };
+        var result = await DialogService.OpenAsync<TaskUpdateDialog>("Update Task", parameters);
+        if (result is not UpdateTask.Model model) return;
+
+        var (message, newList) = await updateTaskCommand.ExecuteAsync(model, SelectedList, entry);
+        HandleNotification(message, "Task Edit Error");
+
+        await LoadListsAsync(preferredSelectedId: newList?.Id ?? SelectedList.Id);
+    }
+
+    private void HandleNotification(Message message, string errorTitle = "Error")
+    {
+        switch (message.Type)
+        {
+            case MessageType.Success:
+                NotificationService.NotifySuccess(summary: message.Title, detail: message.Details);
+                break;
+            case MessageType.Info:
+                NotificationService.NotifyInfo(summary: message.Title, detail: message.Details);
+                break;
+            case MessageType.Error:
+                NotificationService.NotifyError(summary: string.IsNullOrEmpty(message.Title) ? errorTitle : message.Title, detail: message.Details);
+                break;
+        }
+    }
+    private void RedirectToLogin(string errorMessage)
+    {
+        var id = MessageStore.Store([Message.Error("Identity Error", errorMessage)]);
+        NavManager.NavigateTo($"{ApplicationRoutes.SignIn}?errorId={id}");
+    }
+}
