@@ -66,7 +66,7 @@ public static class UpdateTask
                         details: "Successfully modified the task"),
                     list);
             }
-            catch (DbUpdateConcurrencyException)
+            catch (Exception)
             {
                 return (new Message(), null);
             }

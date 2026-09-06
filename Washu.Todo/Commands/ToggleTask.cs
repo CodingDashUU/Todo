@@ -38,7 +38,7 @@ public class ToggleTask
             {
                 await dbContext.SaveChangesAsync();
             }
-            catch (DbUpdateException)
+            catch (Exception)
             {
                 return (new Message(), null);
             }
