@@ -71,3 +71,6 @@ dotnet run --project Washu.Todo
 ## Authentication Model
 
 This application relies **exclusively on external Google OAuth**. There are no local user registration forms, password hashing routines, or JWT management pipelines. Ensure your Google Cloud Console project has `https://localhost:7062/signin-google` configured as an authorized redirect URI for local development.
+
+# ⚠️WARNING
+This project is still in beta and may contain issues. Use with caution
