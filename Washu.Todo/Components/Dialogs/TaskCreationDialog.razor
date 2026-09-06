@@ -5,7 +5,7 @@
 @using Washu.Todo.Commands
 @inject DialogService DialogService
 @inject UserTimeZoneProvider TimeZoneProvider
-@inject RadzenNotificationService BaseNotificationService
+@inject INotificationService BaseNotificationService
 <RadzenTemplateForm TItem="CreateTask.Model" Data=@Model Submit=@HandleSubmit>
     <RadzenStack Gap="1rem">
         <RadzenFormField Text="Task Name">
