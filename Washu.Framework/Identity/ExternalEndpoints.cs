@@ -1,6 +1,7 @@
 ﻿namespace Washu.Framework.Identity;
 
 using Constants;
+using Entities;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;

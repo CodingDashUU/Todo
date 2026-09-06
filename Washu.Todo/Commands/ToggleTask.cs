@@ -1,6 +1,7 @@
 ﻿namespace Washu.Todo.Commands;
 
 using Framework.Identity;
+using Framework.Identity.Entities;
 using Framework.Notifications;
 using Identity;
 using Microsoft.EntityFrameworkCore;

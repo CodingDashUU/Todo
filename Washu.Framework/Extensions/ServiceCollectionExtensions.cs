@@ -12,6 +12,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Notifications;
 using Blazor;
+using Identity.Entities;
 using Microsoft.AspNetCore.Components.Authorization;
 
 public static class ServiceCollectionExtensions

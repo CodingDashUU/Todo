@@ -2,6 +2,7 @@
 
 using Commands;
 using Framework.Identity;
+using Framework.Identity.Entities;
 using Identity;
 
 public class TodoList

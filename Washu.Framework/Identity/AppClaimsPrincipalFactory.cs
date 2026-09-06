@@ -1,5 +1,6 @@
 namespace Washu.Framework.Identity;
 
+using Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
