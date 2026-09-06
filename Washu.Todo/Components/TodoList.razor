@@ -1,9 +1,7 @@
 ﻿@using Microsoft.EntityFrameworkCore
-@using Washu.Framework.Blazor
 @using Washu.Framework.Constants
 @using Washu.Framework.Identity
 @using Washu.Framework.Notifications
-@using Washu.Framework.Radzen
 @using Washu.Todo.Commands
 @using Washu.Todo.Identity
 @using Dialogs
@@ -11,12 +9,12 @@
 @inject NavigationManager NavManager
 @inject DialogService DialogService
 @inject IDbContextFactory<TodoDbContext> DbContextFactory
-@inject CreateList.Command createListCommand
-@inject CreateTask.Command createTaskCommand
-@inject ToggleTask.Command toggleTaskCommand
-@inject UpdateTask.Command updateTaskCommand
+@inject CreateList.Command CreateListCommand
+@inject CreateTask.Command CreateTaskCommand
+@inject ToggleTask.Command ToggleTaskCommand
+@inject UpdateTask.Command UpdateTaskCommand
 @inject MessageStore MessageStore
-@inject ApplicationUserManager<TodoDbContext> userManager
+@inject ApplicationUserManager<TodoDbContext> UserManager
 <Bouncer ReturnUrl="/">
     <RadzenDropDown TValue="Todo.TodoList" 
                     Value="SelectedList" 
@@ -74,7 +72,7 @@
             NavManager.NavigateTo($"{ApplicationRoutes.SignIn}?messageId={id}");
             return;
         }
-        var user = await userManager.FindByUsernameAsync(userContext.Name);
+        var user = await UserManager.FindByUsernameAsync(userContext.Name);
         if (user is null)
         {
             var id = MessageStore.Store(Message.Error("Identity Error", "User couldn't be found, or doesn't exist"));
@@ -118,7 +116,7 @@
         var result = await DialogService.OpenAsync<ListCreationDialog>("Create List");
         if (result is not CreateList.Model model) return;
 
-        var message = await createListCommand.ExecuteAsync(_currentUser.Id, model);
+        var message = await CreateListCommand.ExecuteAsync(_currentUser.Id, model);
         NotificationService.Send(message);
 
         await LoadListsAsync(selectDefault: true);
@@ -130,7 +128,7 @@
         var result = await DialogService.OpenAsync<TaskCreationDialog>("Create Task", parameters);
         if (result is not CreateTask.Model model) return;
 
-        var (message, newList) = await createTaskCommand.ExecuteAsync(SelectedList, model);
+        var (message, newList) = await CreateTaskCommand.ExecuteAsync(SelectedList, model);
         NotificationService.Send(message);
 
         await LoadListsAsync(preferredSelectedId: newList?.Id ?? SelectedList.Id);
@@ -138,7 +136,7 @@
 
     private async Task OnToggleTask(TaskEntry entry)
     {
-        var (message, newList) = await toggleTaskCommand.ExecuteAsync(SelectedList, entry, _currentUser);
+        var (message, newList) = await ToggleTaskCommand.ExecuteAsync(SelectedList, entry, _currentUser);
         NotificationService.Send(message);
 
         await LoadListsAsync(preferredSelectedId: newList?.Id ?? SelectedList.Id);
@@ -150,7 +148,7 @@
         var result = await DialogService.OpenAsync<TaskUpdateDialog>("Update Task", parameters);
         if (result is not UpdateTask.Model model) return;
 
-        var (message, newList) = await updateTaskCommand.ExecuteAsync(model, SelectedList, entry);
+        var (message, newList) = await UpdateTaskCommand.ExecuteAsync(model, SelectedList, entry);
         NotificationService.Send(message);
 
         await LoadListsAsync(preferredSelectedId: newList?.Id ?? SelectedList.Id);
