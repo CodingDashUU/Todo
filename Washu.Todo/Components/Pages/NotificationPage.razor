@@ -1,22 +1,15 @@
 ﻿@using Washu.Framework.Notifications
-@using Washu.Framework.Radzen
 @inject MessageStore Store
 @inject RadzenNotificationService NotificationService
 @code {
-    [SupplyParameterFromQuery] public string ErrorId { get; set; } = "";
+    [SupplyParameterFromQuery] public string MessageId { get; set; } = "";
 
     protected void ShowErrorMessage()
     {
-        if (string.IsNullOrEmpty(ErrorId)) return;
-        foreach (var error in Store.Take(ErrorId))
+        if (string.IsNullOrEmpty(MessageId)) return;
+        foreach (var message in Store.Take(MessageId))
         {
-            NotificationService.Send(new Message
-            {
-                Title = error.Title,
-                Details = error.Details,
-                Type = error.Type,
-            }
-                );
+            NotificationService.Send(message);
             Task.Delay(4000);
         }
     }

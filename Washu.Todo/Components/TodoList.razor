@@ -71,14 +71,14 @@
         if (UserContext.User.Identity is not { Name: not null } userContext)
         {
             var id = MessageStore.Store(Message.Error("Identity Error", "Invalid session"));
-            NavManager.NavigateTo($"{ApplicationRoutes.SignIn}?errorId={id}");
+            NavManager.NavigateTo($"{ApplicationRoutes.SignIn}?messageId={id}");
             return;
         }
         var user = await userManager.FindByUsernameAsync(userContext.Name);
         if (user is null)
         {
             var id = MessageStore.Store(Message.Error("Identity Error", "User couldn't be found, or doesn't exist"));
-            NavManager.NavigateTo($"{ApplicationRoutes.SignIn}?errorId={id}");
+            NavManager.NavigateTo($"{ApplicationRoutes.SignIn}?messageId={id}");
             return;
         }
         _currentUser = user;
@@ -159,6 +159,6 @@
     private void RedirectToLogin(string errorMessage)
     {
         var id = MessageStore.Store([Message.Error("Identity Error", errorMessage)]);
-        NavManager.NavigateTo($"{ApplicationRoutes.SignIn}?errorId={id}");
+        NavManager.NavigateTo($"{ApplicationRoutes.SignIn}?messageId={id}");
     }
 }

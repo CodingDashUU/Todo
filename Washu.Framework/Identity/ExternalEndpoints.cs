@@ -64,7 +64,7 @@ where TDbContext : ApplicationDbContext
         if (!result.IsValid)
         {
             var id = store.Store([.. result.Errors.Select(e => Message.Error("Invalid Registration Details",$"{e.PropertyName}: {e.ErrorMessage}"))]);
-            return TypedResults.Redirect($"{ApplicationRoutes.Register}?errorId={id}&&ReturnUrl={returnUrl}");
+            return TypedResults.Redirect($"{ApplicationRoutes.Register}?messageId={id}&&ReturnUrl={returnUrl}");
         }
         var info = await signInManager.GetExternalLoginInfoAsync();
         if (info is null)
@@ -72,7 +72,7 @@ where TDbContext : ApplicationDbContext
             var id = store.Store(
                 Message.Error("Registration Error", Registration.Errors.NeedToContinueWithSignInProvider));
 
-            return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?errorId={id}&&ReturnUrl={returnUrl}");
+            return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}&&ReturnUrl={returnUrl}");
         }
 
         var email = info.Principal.FindFirstValue(ClaimTypes.Email);
@@ -80,7 +80,7 @@ where TDbContext : ApplicationDbContext
         {
             var id = store.Store(
                 Message.Error("Registration Error", "Email was not provided or not found"));
-            return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?errorId={id}&&ReturnUrl={returnUrl}");
+            return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}&&ReturnUrl={returnUrl}");
         }
         var user = new ApplicationUser(request.Username, email);
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
@@ -95,7 +95,7 @@ where TDbContext : ApplicationDbContext
             if (exists)
             {
                 var id = store.Store(Message.Error("Login Error", "User already exists") );
-                return TypedResults.Redirect($"{ApplicationRoutes.Register}?errorId={id}&&ReturnUrl={returnUrl}");
+                return TypedResults.Redirect($"{ApplicationRoutes.Register}?messageId={id}&&ReturnUrl={returnUrl}");
             }
             await dbContext.Users.AddAsync(user);
             
@@ -115,7 +115,7 @@ where TDbContext : ApplicationDbContext
             if (existsInDb)
             {
                 var id = store.Store(Message.Error("Login Error", "User already exists"));
-                return TypedResults.Redirect($"{ApplicationRoutes.Register}?errorId={id}&&ReturnUrl={returnUrl}");
+                return TypedResults.Redirect($"{ApplicationRoutes.Register}?messageId={id}&&ReturnUrl={returnUrl}");
             }
             await dbContext.UserLogins.AddAsync(userLogin);
             // Adding user to role
@@ -128,7 +128,7 @@ where TDbContext : ApplicationDbContext
             if (role is null) 
             {
                 var id = store.Store(Message.Error("Login Error", "There was an issue whle logging you in") );
-                return TypedResults.Redirect($"{ApplicationRoutes.Register}?errorId={id}&&ReturnUrl={returnUrl}");
+                return TypedResults.Redirect($"{ApplicationRoutes.Register}?messageId={id}&&ReturnUrl={returnUrl}");
             }
             // Check if the user is already in the role
             var inRole = await dbContext.UserRoles
