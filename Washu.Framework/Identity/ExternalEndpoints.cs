@@ -72,7 +72,7 @@ where TDbContext : ApplicationDbContext
         if (info is null)
         {
             var id = store.Store(
-                Message.Error("Registration Error", Registration.Errors.NeedToContinueWithSignInProvider));
+                Message.Error("Registration Error", "You need to continue with a sign-in provider to register"));
 
             return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}&&ReturnUrl={returnUrl}");
         }
