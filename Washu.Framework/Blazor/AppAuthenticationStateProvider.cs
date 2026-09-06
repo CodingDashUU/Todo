@@ -34,8 +34,7 @@ where TDbContext : ApplicationDbContext
         if (userId is null || !Guid.TryParse(userId, out var userIdGuid)) return false;
         var user = await userManager.FindByIdAsync(userIdGuid, cancellationToken);
         // Check if they exist or are not banned
-        if (user is null) return false;
-        if (user.IsBanned) return false;
+        if (user is not {IsBanned: false}) return false;
         // Check if the security stamp is the same
         var principalStamp = principal.FindFirstValue(_options.ClaimsIdentity.SecurityStampClaimType);
         if (!Guid.TryParse(principalStamp, out var principalStampGuid)) return false;
