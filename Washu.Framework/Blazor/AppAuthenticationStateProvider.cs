@@ -31,8 +31,7 @@ where TDbContext : ApplicationDbContext
         await using var scope = scopeFactory.CreateAsyncScope();
         var userManager = scope.ServiceProvider.GetRequiredService<ApplicationUserManager<TDbContext>>();
         var userId = principal.FindFirstValue(_options.ClaimsIdentity.UserIdClaimType);
-        if (userId is null) return false;
-        if (!Guid.TryParse(userId, out var userIdGuid)) return false;
+        if (userId is null || !Guid.TryParse(userId, out var userIdGuid)) return false;
         var user = await userManager.FindByIdAsync(userIdGuid, cancellationToken);
         // Check if they exist or are not banned
         if (user is null) return false;
