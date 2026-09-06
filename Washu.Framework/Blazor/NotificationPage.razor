@@ -1,0 +1,16 @@
+﻿@using Washu.Framework.Notifications
+@inject MessageStore Store
+@inject INotificationService NotificationService
+@code {
+    [SupplyParameterFromQuery] public string MessageId { get; set; } = "";
+
+    protected void ShowErrorMessage()
+    {
+        if (string.IsNullOrEmpty(MessageId)) return;
+        foreach (var message in Store.Take(MessageId))
+        {
+            NotificationService.Send(message);
+            Task.Delay(4000);
+        }
+    }
+}

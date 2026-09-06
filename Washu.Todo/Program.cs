@@ -10,6 +10,7 @@ using Washu.Todo;
 using Washu.Todo.Components;
 using Washu.Todo.Identity;
 using Washu.Framework.Extensions;
+using Washu.Framework.Notifications;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHttpContextAccessor();
@@ -47,7 +48,7 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddRadzenComponents();
 builder.Services.AddScoped<ApplicationUserManager<TodoDbContext>>();
-builder.Services.AddScoped<RadzenNotificationService>();
+builder.Services.AddScoped<INotificationService, RadzenNotificationService>();
 builder.Services.AddScoped<ExternalEndpoints<TodoDbContext>>();
 builder.Services.AddTodoCommands();
 builder.Services.AddExceptionHandler<AntiforgeryExceptionHandler>();
