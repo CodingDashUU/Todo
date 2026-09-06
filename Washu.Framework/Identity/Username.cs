@@ -11,20 +11,14 @@ public static class Username
     
         public const string ValidCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-";
     }
-    public static class Errors
-    {
-        public const string Required = "Name is required";
-        public static readonly string InvalidLength = $"Name must be between {Rules.MinUsernameLength} and {Rules.MaxUsernameLength} characters";
-        public const string InvalidCharacters = "Name may only contain lower-, uppercase, '_' and/or '-' characters";
-    }
     public class Validator : AbstractValidator<string>
     {
         public Validator() =>
             RuleFor(u => u)
                 .Cascade(CascadeMode.Stop)
-                .NotEmpty().WithMessage(Errors.Required)
-                .Length(Rules.MinUsernameLength, Rules.MaxUsernameLength).WithMessage(Errors.InvalidLength)
-                .Must(HasValidCharacters).WithMessage(Errors.InvalidCharacters);
+                .NotEmpty().WithMessage("Name is required")
+                .Length(Rules.MinUsernameLength, Rules.MaxUsernameLength).WithMessage($"Name must be between {Rules.MinUsernameLength} and {Rules.MaxUsernameLength} characters")
+                .Must(HasValidCharacters).WithMessage("Name may only contain lower-, uppercase, '_' and/or '-' characters");
         private static bool HasValidCharacters(string name) => name.All(Rules.ValidCharacters.Contains);
     }
 }
