@@ -119,7 +119,7 @@
         if (result is not CreateList.Model model) return;
 
         var message = await createListCommand.ExecuteAsync(_currentUser.Id, model);
-        NotificationService.NotifyMessage(message);
+        NotificationService.Send(message);
 
         await LoadListsAsync(selectDefault: true);
     }
@@ -131,7 +131,7 @@
         if (result is not CreateTask.Model model) return;
 
         var (message, newList) = await createTaskCommand.ExecuteAsync(SelectedList, model);
-        NotificationService.NotifyMessage(message);
+        NotificationService.Send(message);
 
         await LoadListsAsync(preferredSelectedId: newList?.Id ?? SelectedList.Id);
     }
@@ -139,7 +139,7 @@
     private async Task OnToggleTask(TaskEntry entry)
     {
         var (message, newList) = await toggleTaskCommand.ExecuteAsync(SelectedList, entry, _currentUser);
-        NotificationService.NotifyMessage(message);
+        NotificationService.Send(message);
 
         await LoadListsAsync(preferredSelectedId: newList?.Id ?? SelectedList.Id);
     }
@@ -151,7 +151,7 @@
         if (result is not UpdateTask.Model model) return;
 
         var (message, newList) = await updateTaskCommand.ExecuteAsync(model, SelectedList, entry);
-        NotificationService.NotifyMessage(message);
+        NotificationService.Send(message);
 
         await LoadListsAsync(preferredSelectedId: newList?.Id ?? SelectedList.Id);
     }

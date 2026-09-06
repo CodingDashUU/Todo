@@ -24,7 +24,7 @@
         var result = await validator.ValidateAsync(model);
         if (!result.IsValid)
         {
-                NotificationService.NotifyMessage(
+                NotificationService.Send(
                     Message.Error("List Creation Error", result.Errors.First().ErrorMessage)
                 );
                 await Task.Delay(2000);

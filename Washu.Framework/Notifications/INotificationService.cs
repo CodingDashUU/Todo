@@ -2,5 +2,5 @@
 
 public interface INotificationService
 {
-    public void NotifyMessage(Message message);
+    public void Send(Message message);
 }

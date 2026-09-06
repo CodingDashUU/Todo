@@ -5,7 +5,7 @@ using Washu.Framework.Notifications;
 
 public class RadzenNotificationService(NotificationService service) : INotificationService
 {
-    public void NotifyMessage(Message message)
+    public void Send(Message message)
     {
         var severity = message.Type switch
         {

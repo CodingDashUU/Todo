@@ -43,7 +43,7 @@
         var result = await Validator.ValidateAsync(Model);
         if (!result.IsValid)
         {
-            BaseNotificationService.NotifyMessage(
+            BaseNotificationService.Send(
                 Message.Error("Task Creation Error", result.Errors.First().ErrorMessage)
             );
             await Task.Delay(2000);

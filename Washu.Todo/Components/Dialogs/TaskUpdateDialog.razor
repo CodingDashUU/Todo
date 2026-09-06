@@ -44,7 +44,7 @@
         var result = await Validator.ValidateAsync(Model);
         if (!result.IsValid)
         {
-            NotificationService.NotifyMessage(
+            NotificationService.Send(
                 Message.Error("Task Update Error", result.Errors.First().ErrorMessage)
             );
             await Task.Delay(2000);

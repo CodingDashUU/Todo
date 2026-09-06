@@ -10,7 +10,7 @@
         if (string.IsNullOrEmpty(ErrorId)) return;
         foreach (var error in Store.Take(ErrorId))
         {
-            NotificationService.NotifyMessage(new Message
+            NotificationService.Send(new Message
             {
                 Title = error.Title,
                 Details = error.Details,
