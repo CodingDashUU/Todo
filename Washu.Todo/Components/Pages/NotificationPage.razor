@@ -10,10 +10,12 @@
         if (string.IsNullOrEmpty(ErrorId)) return;
         foreach (var error in Store.Take(ErrorId))
         {
-            NotificationService.NotifyMessage(
-                summary: error.Title,
-                detail: error.Details,
-                type: error.Type
+            NotificationService.NotifyMessage(new Message
+            {
+                Title = error.Title,
+                Details = error.Details,
+                Type = error.Type,
+            }
                 );
             Task.Delay(4000);
         }

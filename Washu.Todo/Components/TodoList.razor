@@ -119,7 +119,7 @@
         if (result is not CreateList.Model model) return;
 
         var message = await createListCommand.ExecuteAsync(_currentUser.Id, model);
-        HandleNotification(message);
+        NotificationService.NotifyMessage(message);
 
         await LoadListsAsync(selectDefault: true);
     }
@@ -131,7 +131,7 @@
         if (result is not CreateTask.Model model) return;
 
         var (message, newList) = await createTaskCommand.ExecuteAsync(SelectedList, model);
-        HandleNotification(message, "Add Task Error");
+        NotificationService.NotifyMessage(message);
 
         await LoadListsAsync(preferredSelectedId: newList?.Id ?? SelectedList.Id);
     }
@@ -139,7 +139,7 @@
     private async Task OnToggleTask(TaskEntry entry)
     {
         var (message, newList) = await toggleTaskCommand.ExecuteAsync(SelectedList, entry, _currentUser);
-        HandleNotification(message, "Toggle Task Error");
+        NotificationService.NotifyMessage(message);
 
         await LoadListsAsync(preferredSelectedId: newList?.Id ?? SelectedList.Id);
     }
@@ -151,26 +151,11 @@
         if (result is not UpdateTask.Model model) return;
 
         var (message, newList) = await updateTaskCommand.ExecuteAsync(model, SelectedList, entry);
-        HandleNotification(message, "Task Edit Error");
+        NotificationService.NotifyMessage(message);
 
         await LoadListsAsync(preferredSelectedId: newList?.Id ?? SelectedList.Id);
     }
-
-    private void HandleNotification(Message message, string errorTitle = "Error")
-    {
-        switch (message.Type)
-        {
-            case MessageType.Success:
-                NotificationService.NotifySuccess(summary: message.Title, detail: message.Details);
-                break;
-            case MessageType.Info:
-                NotificationService.NotifyInfo(summary: message.Title, detail: message.Details);
-                break;
-            case MessageType.Error:
-                NotificationService.NotifyError(summary: string.IsNullOrEmpty(message.Title) ? errorTitle : message.Title, detail: message.Details);
-                break;
-        }
-    }
+    
     private void RedirectToLogin(string errorMessage)
     {
         var id = MessageStore.Store([Message.Error("Identity Error", errorMessage)]);

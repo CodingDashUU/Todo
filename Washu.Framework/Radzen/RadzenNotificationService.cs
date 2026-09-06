@@ -5,9 +5,9 @@ using Washu.Framework.Notifications;
 
 public class RadzenNotificationService(NotificationService service) : INotificationService
 {
-    public void NotifyMessage(string summary, string detail, MessageType type)
+    public void NotifyMessage(Message message)
     {
-        var severity = type switch
+        var severity = message.Type switch
         {
             MessageType.Error => NotificationSeverity.Error,
             MessageType.Info => NotificationSeverity.Info,
@@ -16,19 +16,13 @@ public class RadzenNotificationService(NotificationService service) : INotificat
         };
         service.Notify(new NotificationMessage
         {
-            Summary = summary,
+            Summary = message.Title,
             Severity = severity,
             ShowProgress = true,
             Duration = 4000,
-            Detail = detail,
+            Detail = message.Details,
             CloseOnClick = true,
             Style = "position: fixed; top: auto; bottom: 20px; left: 40px; right: auto;",
         });
     }
-    public void NotifyError(string summary, string detail) =>
-        NotifyMessage(summary, detail, MessageType.Error);
-    public void NotifyInfo(string summary, string detail) =>
-        NotifyMessage(summary, detail, MessageType.Info);
-    public void NotifySuccess(string summary, string detail) =>
-        NotifyMessage(summary, detail, MessageType.Success);
 }

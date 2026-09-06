@@ -1,5 +1,6 @@
 ﻿@using Washu.Framework.Extensions
 @using Washu.Framework.Identity
+@using Washu.Framework.Notifications
 @using Washu.Framework.Radzen
 @using Washu.Todo.Commands
 @inject DialogService DialogService
@@ -42,9 +43,8 @@
         var result = await Validator.ValidateAsync(Model);
         if (!result.IsValid)
         {
-            BaseNotificationService.NotifyError(
-                summary: "Task Creation Error",
-                detail: result.Errors.First().ErrorMessage
+            BaseNotificationService.NotifyMessage(
+                Message.Error("Task Creation Error", result.Errors.First().ErrorMessage)
             );
             await Task.Delay(2000);
             SubmitBusy = false;

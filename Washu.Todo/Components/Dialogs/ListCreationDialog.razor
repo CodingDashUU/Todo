@@ -1,5 +1,6 @@
 ﻿@inject RadzenNotificationService NotificationService
 @inject DialogService DialogService
+@using Washu.Framework.Notifications
 @using Washu.Todo.Commands
 <RadzenTemplateForm TItem="CreateList.Model" Data=@model Submit=@HandleSubmit>
     <RadzenStack Gap="1rem">
@@ -23,9 +24,8 @@
         var result = await validator.ValidateAsync(model);
         if (!result.IsValid)
         {
-                NotificationService.NotifyError(
-                    summary: "List Creation Error",
-                    detail: result.Errors.First().ErrorMessage
+                NotificationService.NotifyMessage(
+                    Message.Error("List Creation Error", result.Errors.First().ErrorMessage)
                 );
                 await Task.Delay(2000);
             SubmitBusy = false;
