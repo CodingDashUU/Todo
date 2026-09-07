@@ -84,70 +84,56 @@ where TDbContext : ApplicationDbContext
                 Message.Error("Registration Error", "Email was not provided or not found"));
             return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}&&ReturnUrl={returnUrl}");
         }
-        var user = new ApplicationUser(request.Username, email);
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-                    // Ensure normalized fields are set for clean lookups
-                    user.NormalizedUsername = user.Username.ToUpperInvariant();
-                    user.NormalizedEmail = user.Email.ToUpperInvariant();
-
-            // Check for duplicate username or email directly
-            var exists = await dbContext.Users
-                .AnyAsync(u => u.NormalizedUsername == user.NormalizedUsername);
-
-            if (exists)
-            {
-                var id = store.Store(Message.Error("Login Error", "User already exists") );
-                return TypedResults.Redirect($"{ApplicationRoutes.Register}?messageId={id}&&ReturnUrl={returnUrl}");
-            }
-            await dbContext.Users.AddAsync(user);
+        var user = new ApplicationUser(request.Username, email);
+        if (await dbContext.Users
+                .AnyAsync(u => u.NormalizedUsername == user.NormalizedUsername))
+        {
+            var id = store.Store(Message.Error("Login Error", "User already exists") );
+            return TypedResults.Redirect($"{ApplicationRoutes.Register}?messageId={id}&&ReturnUrl={returnUrl}");
+        }
+        await dbContext.Users.AddAsync(user);
             
-            // Adding the user to login
-            var userLogin = new UserLogin
+        // Adding the user to login
+        var userLogin = new UserLogin
+        {
+            UserId = user.Id,
+            LoginProvider = info.LoginProvider,
+            ProviderKey = info.ProviderKey,
+        };
+        if (await dbContext.UserLogins
+                .AnyAsync(l => l.LoginProvider == userLogin.LoginProvider 
+                               && l.ProviderKey == userLogin.ProviderKey))
+        {
+            var id = store.Store(Message.Error("Login Error", "User already exists"));
+            return TypedResults.Redirect($"{ApplicationRoutes.Register}?messageId={id}&&ReturnUrl={returnUrl}");
+        }        
+        await dbContext.UserLogins.AddAsync(userLogin);
+        // Adding user to role
+        var normalizedRole = InitialUserRoles.User.ToUpperInvariant();
+        var role = await dbContext.Roles
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.NormalizedName == normalizedRole);
+
+        if (role is null) 
+        {
+            var id = store.Store(Message.Error("Login Error", "There was an issue whle logging you in") );
+            return TypedResults.Redirect($"{ApplicationRoutes.Register}?messageId={id}&&ReturnUrl={returnUrl}");
+        }
+        if (!await dbContext.UserRoles
+                .AnyAsync(ur => ur.UserId == user.Id && ur.RoleId == role.Id))
+        {
+            var userRole = new UserRole
             {
                 UserId = user.Id,
-                LoginProvider = info.LoginProvider,
-                ProviderKey = info.ProviderKey,
+                RoleId = role.Id
             };
-
-// Check if it's already in the DB on this transaction context
-            var existsInDb = await dbContext.UserLogins
-                .AnyAsync(l => l.LoginProvider == userLogin.LoginProvider 
-                               && l.ProviderKey == userLogin.ProviderKey);
-
-            if (existsInDb)
-            {
-                var id = store.Store(Message.Error("Login Error", "User already exists"));
-                return TypedResults.Redirect($"{ApplicationRoutes.Register}?messageId={id}&&ReturnUrl={returnUrl}");
-            }
-            await dbContext.UserLogins.AddAsync(userLogin);
-            // Adding user to role
-            var normalizedRole = InitialUserRoles.User.ToUpperInvariant();
-            // Look up the Role ID directly without loading the full Role graph
-            var role = await dbContext.Roles
-                .AsNoTracking()
-                .FirstOrDefaultAsync(r => r.NormalizedName == normalizedRole);
-
-            if (role is null) 
-            {
-                var id = store.Store(Message.Error("Login Error", "There was an issue whle logging you in") );
-                return TypedResults.Redirect($"{ApplicationRoutes.Register}?messageId={id}&&ReturnUrl={returnUrl}");
-            }
-            // Check if the user is already in the role
-            var inRole = await dbContext.UserRoles
-                .AnyAsync(ur => ur.UserId == user.Id && ur.RoleId == role.Id);
-            if (!inRole)
-            {
-                var userRole = new UserRole
-                {
-                    UserId = user.Id,
-                    RoleId = role.Id
-                };
-                await dbContext.UserRoles.AddAsync(userRole);
-            }
-            await dbContext.SaveChangesAsync();
-            await signInManager.SignInAsync(user, isPersistent: persistCookie);
+            await dbContext.UserRoles.AddAsync(userRole);
+        }
+        await dbContext.SaveChangesAsync();
+        await signInManager.SignInAsync(user, isPersistent: persistCookie);
             
-            return TypedResults.Redirect(returnUrl);
+        return TypedResults.Redirect(returnUrl);        
     }
     
 }
