@@ -14,13 +14,12 @@ public static class WebApplicationExtensions
 {
     extension(WebApplication app)
     {
-        public async Task SeedRolesAsync<TDbContext>(ImmutableArray<string> roles)
+        public async Task SeedRolesAsync<TDbContext>(string[] roles)
         where TDbContext : ApplicationDbContext
         {
             await using var serviceScope = app.Services.CreateAsyncScope();
             var roleManager = serviceScope.ServiceProvider.GetRequiredService<ApplicationRoleManager<TDbContext>>();
-            foreach (var role in roles)
-                    await roleManager.AddRoleAsync(role);
+            await roleManager.AddRolesAsync(roles);
         }
         public async Task SeedPermissionsAsync(ImmutableArray<string> roles, ImmutableDictionary<string, string[]> permissions)
         {

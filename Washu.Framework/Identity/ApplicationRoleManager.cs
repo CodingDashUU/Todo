@@ -7,14 +7,15 @@ using Notifications;
 public class ApplicationRoleManager<TContext>(IDbContextFactory<TContext> dbFactory) 
     where TContext : ApplicationDbContext
 {
-    public async Task AddRoleAsync(string roleName, CancellationToken ct = default)
+    public async Task AddRolesAsync(string[] roleNames, CancellationToken ct = default)
     {
         await using var db = await dbFactory.CreateDbContextAsync(ct);
-        var exists = await db.Roles.AnyAsync(r => r.Name == roleName, ct);
-        if (!exists)
+        foreach (var role in roleNames)
         {
-            db.Roles.Add(new ApplicationRole(roleName));
-            await db.SaveChangesAsync(ct);
+            var exists = await db.Roles.AnyAsync(r => r.Name == role, ct);
+            if (exists) continue;
+            db.Roles.Add(new ApplicationRole(role));
         }
+        await db.SaveChangesAsync(ct);
     }
 }
