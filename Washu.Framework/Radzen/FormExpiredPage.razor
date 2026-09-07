@@ -1,0 +1,11 @@
+﻿@attribute [Route(ApplicationRoutes.FormExpired)]
+@inject NavigationManager NavManager
+
+<PageTitle>Form Expired</PageTitle>
+<RadzenText TagName="TagName.H1">Form expired</RadzenText>
+<RadzenText TagName="TagName.P">
+    This form is no longer valid.
+    Please refresh the page and try again.
+</RadzenText>
+
+<RadzenButton Click="@(() => NavManager.NavigateTo(ApplicationRoutes.Home))">Go back</RadzenButton>
