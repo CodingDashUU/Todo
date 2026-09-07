@@ -2,10 +2,20 @@
 @inject NavigationManager NavManager
 
 <PageTitle>Form Expired</PageTitle>
-<RadzenText TagName="TagName.H1">Form expired</RadzenText>
-<RadzenText TagName="TagName.P">
-    This form is no longer valid.
-    Please refresh the page and try again.
-</RadzenText>
+<RadzenCard class="rz-my-12 rz-mx-auto rz-p-8" style="max-width: 450px;">
+    <RadzenStack AlignItems="AlignItems.Center" Gap="1.5rem" class="rz-text-align-center">
+        <RadzenIcon Icon="@MaterialIcons.ErrorOutline" Style="font-size: 3rem; color: var(--rz-danger);"/>
+        
+        <RadzenStack Gap="0.5rem">
+            <RadzenText TextStyle="TextStyle.DisplayH4">Form expired</RadzenText>
+            <RadzenText TextStyle="TextStyle.Body1">
+                This form is no longer valid. Please refresh the page and try again.
+            </RadzenText>
+        </RadzenStack>
 
-<RadzenButton Click="@(() => NavManager.NavigateTo(ApplicationRoutes.Home))">Go back</RadzenButton>
+        <RadzenButton Text="Go back"
+                      Icon="@MaterialIcons.ArrowBack" 
+                      ButtonStyle="ButtonStyle.Primary" 
+                      Click="@(() => NavManager.NavigateTo(ApplicationRoutes.Home))" />
+    </RadzenStack>
+</RadzenCard>
