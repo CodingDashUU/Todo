@@ -36,6 +36,7 @@ public static class UpdateTask
             if (list is null) return (Message.Error(
                 title: "Task Modification Error", 
                 details: "List does not exist"), null);
+            if (list.VersionId != selectedList.VersionId) return (new Message(), list);
             var item = list.Tasks.FirstOrDefault(t => t.Id == entry.Id);
             if (item is null) return (Message.Error(
                 title: "Task Modification Error", 
@@ -57,6 +58,7 @@ public static class UpdateTask
                     title: "Task Modification Info", 
                     details: "Task has not been modified"), 
                 null);
+            list.ChangeVersionId();
             dbContext.TodoLists.Update(list);
             try
             {
