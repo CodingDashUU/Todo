@@ -77,8 +77,17 @@ public static class ServiceCollectionExtensions
             {
                 var httpContext = sp.GetRequiredService<IHttpContextAccessor>().HttpContext;
                 var tzCookie = httpContext?.Request.Cookies[CookieConstants.Names.ClientTimeZone];
-
-                return new UserTimeZoneProvider { TimeZoneId = !string.IsNullOrEmpty(tzCookie) ? tzCookie : "UTC" };
+                try
+                {
+                    var instance = new UserTimeZoneProvider { TimeZoneId = !string.IsNullOrEmpty(tzCookie) ? tzCookie : "UTC" };
+                    // Check if it is valid
+                    _ = instance.TimeZoneInfo;
+                    return instance;
+                }
+                catch (TimeZoneNotFoundException)
+                {
+                    return new UserTimeZoneProvider();
+                }
             });
             return services;
         }
