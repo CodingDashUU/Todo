@@ -21,8 +21,8 @@ Washu Todo is a server-rendered task management application and foundational arc
    Google OAuth is required for sign-in. Set your database connection string and Google credentials via `dotnet user-secrets`:
 ```bash
 dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Database=washu_todo;Username=postgres;Password=your_password" --project Washu.Todo
-dotnet user-secrets set "Authentication:Google:ClientId" "your-google-client-id" --project Washu.Todo
-dotnet user-secrets set "Authentication:Google:ClientSecret" "your-google-client-secret" --project Washu.Todo
+dotnet user-secrets set "ExternalProviders:Google:ClientId" "your-google-client-id" --project Washu.Todo
+dotnet user-secrets set "ExternalProviders:Google:ClientSecret" "your-google-client-secret" --project Washu.Todo
 
 ```
 
