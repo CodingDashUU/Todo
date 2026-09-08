@@ -15,8 +15,6 @@ using System.Security.Claims;
 
 public class ExternalEndpoints<TDbContext> (
     ApplicationSignInManager<TDbContext> signInManager,
-    ApplicationRoleManager<TDbContext> roleManager,
-    ApplicationUserManager<TDbContext> userManager,
     IDbContextFactory<TDbContext> dbContextFactory)
 where TDbContext : ApplicationDbContext
 {
@@ -50,7 +48,7 @@ where TDbContext : ApplicationDbContext
             info.LoginProvider, 
             info.ProviderKey, 
             isPersistent: persistCookie);
-        return Results.Redirect(result.Succeeded ? returnUrl :
+        return Results.Redirect(result.Succeeded ? SafeReturnUrl(returnUrl) :
             $"{ApplicationRoutes.Register}?PersistCookie={persistCookie}&&ReturnUrl={returnUrl}");
     }
 
@@ -133,7 +131,13 @@ where TDbContext : ApplicationDbContext
         await dbContext.SaveChangesAsync();
         await signInManager.SignInAsync(user, isPersistent: persistCookie);
             
-        return TypedResults.Redirect(returnUrl);        
+        return TypedResults.Redirect(SafeReturnUrl(returnUrl));        
     }
+    private static string SafeReturnUrl(string? returnUrl) =>
+        !string.IsNullOrWhiteSpace(returnUrl) &&
+        returnUrl[0] == '/' &&
+        (returnUrl.Length == 1 || (returnUrl[1] != '/' && returnUrl[1] != '\\'))
+            ? returnUrl
+            : ApplicationRoutes.Home;
     
 }
