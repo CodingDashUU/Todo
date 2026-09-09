@@ -35,7 +35,7 @@ public static class CreateTask
                 return (
                     Message.Error("Task Creation Error", "List does not exist"), 
                     list);
-            if (list.VersionId != selectedList.VersionId) return (new Message(), list);
+            if (list.VersionId != selectedList.VersionId) return (Message.Error("Task Creation Error", "Your todo list was already modified, please try again"), null);
             list.Tasks.Add(new TaskEntry(model.TaskName, model.GoalDate, Guid.CreateVersion7()));
             list.LastModified = DateTimeOffset.UtcNow;
             list.ChangeVersionId();
@@ -46,7 +46,7 @@ public static class CreateTask
             }
             catch (Exception)
             {
-                return (new Message(), list);
+                return (Message.Error("Task Creation Error", "There was an unknown error while creating your task"), null);
             }
         }
     }

@@ -16,17 +16,11 @@ public class ToggleTask
             var list = await dbContext.TodoLists
                 .FirstOrDefaultAsync(l => l.Id == selectedList.Id && user.Id == l.UserId);
             if (list is null)
-                return (new Message
-                {
-                    Title = "Task Completion Error",
-                    Details = "Todo list does not exist"
-                }, null);
+                return (
+                    Message.Error("Toggle Task Error", "Todo list does not exist"), 
+                    null);
             if (list.VersionId != selectedList.VersionId)
-                return (new Message
-                {
-                    Title = "Task Completion Error",
-                    Details = "Your todo list was already modified, please try again"
-                }, null);
+                return (Message.Error("Toggle Task Error", "Your todo list was already modified, please try again"), null);
             var item = list.Tasks.FirstOrDefault(t => t.Id == entry.Id);
             if (item is null) return (Message.Error(title: "Toggle Task Error", details: "Task does not exist"), null);
             // 3. Toggle it
@@ -40,7 +34,7 @@ public class ToggleTask
             }
             catch (Exception)
             {
-                return (new Message(), null);
+                return (Message.Error("Toggle Task Error", "There was an unknown error while toggling your task"), null);
             }
 
             return (Message.Success(title: "Toggle Task", details: "Successfully toggled task"), list);

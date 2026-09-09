@@ -36,7 +36,8 @@ public static class UpdateTask
             if (list is null) return (Message.Error(
                 title: "Task Modification Error", 
                 details: "List does not exist"), null);
-            if (list.VersionId != selectedList.VersionId) return (new Message(), list);
+            if (list.VersionId != selectedList.VersionId) 
+                return (Message.Error("Task Update Error", "Your todo list was already modified, please try again"), null);
             var item = list.Tasks.FirstOrDefault(t => t.Id == entry.Id);
             if (item is null) return (Message.Error(
                 title: "Task Modification Error", 
@@ -70,7 +71,7 @@ public static class UpdateTask
             }
             catch (Exception)
             {
-                return (new Message(), null);
+                return (Message.Error("Task Update Error", "There was an unknown error while updating your task"), null);
             }
         }
     }

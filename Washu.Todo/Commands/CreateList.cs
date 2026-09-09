@@ -35,7 +35,7 @@ public static class CreateList
             }
             catch (Exception)
             {
-                return Message.Error("List Creation Error", "There was a server issue while creating your list, please try again");
+                return Message.Error("List Creation Error", "There was an unknown error while creating your list");
             }
             return new Message
             {
