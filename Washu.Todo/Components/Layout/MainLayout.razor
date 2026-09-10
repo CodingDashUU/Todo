@@ -14,9 +14,6 @@
                         @(char.ToUpper(context.User.Identity?.Name?.First() ?? 'U'))
                     </div>
                 </Authorized>
-                <NotAuthorized>
-                    <RadzenButton Click="@(() => NavManager.NavigateTo(ApplicationRoutes.SignIn))">Sign in</RadzenButton>
-                </NotAuthorized>
             </AuthorizeView>
             <div style="width: 20px;"></div>
         </RadzenStack>
