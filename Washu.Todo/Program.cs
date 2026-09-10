@@ -65,7 +65,6 @@ app.MapPost("/delete-account", async (MessageStore store, HttpContext context, A
 {
     var message = await manager.DeleteByUsernameAsync(username);
     var id = store.Store(message);
-    if (message.Type is MessageType.Error) return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}");
     await context.SignOutAsync(IdentityConstants.ApplicationScheme);
     return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}");
 });
