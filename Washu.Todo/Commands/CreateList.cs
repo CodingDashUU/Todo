@@ -4,7 +4,7 @@ using FluentValidation;
 using Framework.Notifications;
 using Identity;
 using Microsoft.EntityFrameworkCore;
-using TodoList = Todo.TodoList;
+using TodoList = TodoList;
 
 public static class CreateList
 {
@@ -28,7 +28,7 @@ public static class CreateList
             await using var dbContext = await dbContextFactory.CreateDbContextAsync();
             if (await dbContext.TodoLists.AnyAsync(l => l.Name == model.ListName))
                 return Message.Error("List Creation Error", "Todo List with the given name already exists");
-            dbContext.TodoLists.Add(TodoList.Create(userId, model));
+            dbContext.TodoLists.Add(new TodoList(userId, model));
             try
             {
                 await dbContext.SaveChangesAsync();
