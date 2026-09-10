@@ -3,8 +3,13 @@
 @inject INotificationService NotificationService
 @code {
     [SupplyParameterFromQuery] public string MessageId { get; set; } = "";
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+        ShowMessage();
+    }
 
-    protected void ShowErrorMessage()
+    private void ShowMessage()
     {
         if (string.IsNullOrEmpty(MessageId)) return;
         foreach (var message in Store.Take(MessageId))

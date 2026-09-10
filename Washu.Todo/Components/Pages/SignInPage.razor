@@ -7,11 +7,4 @@
 
 @code {
     [SupplyParameterFromQuery] public string ReturnUrl { get; set; }
-
-    protected override void OnAfterRender(bool firstRender)
-    {
-        base.OnAfterRender(firstRender);
-        ShowErrorMessage();
-    }
-
 }
