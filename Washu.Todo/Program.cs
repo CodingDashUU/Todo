@@ -1,5 +1,8 @@
 
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Radzen;
 using Washu.Framework.Blazor;
@@ -58,6 +61,14 @@ await using var scope = app.Services.CreateAsyncScope();
 var dbContext = scope.ServiceProvider.GetRequiredService<TodoDbContext>();
 await dbContext.Database.MigrateAsync();
 scope.ServiceProvider.GetRequiredService<ExternalEndpoints<TodoDbContext>>().Map(app);
+app.MapPost("/delete-account", async (MessageStore store, HttpContext context, ApplicationUserManager<TodoDbContext> manager, [FromForm] string username) =>
+{
+    var message = await manager.DeleteByUsernameAsync(username);
+    var id = store.Store(message);
+    if (message.Type is MessageType.Error) return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}");
+    await context.SignOutAsync(IdentityConstants.ApplicationScheme);
+    return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}");
+});
 app.UseExceptionHandler(ApplicationRoutes.Error, createScopeForErrors: true);
 app.UseForwardedHeaders();
 app.UseHsts();

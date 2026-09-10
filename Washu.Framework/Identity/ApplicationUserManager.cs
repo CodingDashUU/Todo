@@ -21,4 +21,14 @@ public class ApplicationUserManager<TDbContext>(IDbContextFactory<TDbContext> fa
         await using var dbContext = await factory.CreateDbContextAsync(ct);
         return await dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
     }
+
+    public async Task<Message> DeleteByUsernameAsync(string userName, CancellationToken ct = default)
+    {
+        await using var dbContext = await factory.CreateDbContextAsync(ct);
+        var user = await dbContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Username == userName, ct);
+        if (user is null) return Message.Error("Identity Error", "Account with the given user name not found");
+        dbContext.Users.Remove(user);
+        await dbContext.SaveChangesAsync(ct);
+        return Message.Success("Identity Success", "Successfully deleted account");
+    }
 }

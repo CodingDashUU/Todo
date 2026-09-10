@@ -1,10 +1,27 @@
 ﻿@using Washu.Framework.Constants
+@using Washu.Framework.Identity
+@using Washu.Todo.Identity
+@inject ApplicationUserManager<TodoDbContext> Manager;
 @attribute [Route(ApplicationRoutes.Settings)]
+@inherits NotificationPage
 
 <PageTitle>Settings</PageTitle>
 <Bouncer ReturnUrl="@ApplicationRoutes.Settings">
     <RadzenStack class="rz-p-0 rz-p-md-6 rz-p-lg-12">
         <ThemeForm />
+        <form action="/delete-account" method="post">
+            <AntiforgeryToken/>
+            <input type="hidden" name="username" value="@(context.User.Identity?.Name ?? "none")" />
+            <RadzenButton ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Danger">Delete Account</RadzenButton>
+        </form>
     </RadzenStack>
 </Bouncer>
 
+@code {
+
+    protected override void OnAfterRender(bool firstRender)
+    { 
+        ShowErrorMessage();
+    }
+
+}
