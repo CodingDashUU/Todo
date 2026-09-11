@@ -16,4 +16,12 @@ public class ApplicationUser(string userName, string email)
     public Guid SecurityStamp { get; set; } = Guid.CreateVersion7();
     
     public bool IsBanned { get; set; }
+    
+    public void ChangeUsername(string newName)
+    {
+        if (Username == newName) return;
+        Username = newName;
+        NormalizedUsername = newName.ToUpperInvariant();
+        SecurityStamp = Guid.CreateVersion7();
+    }
 }

@@ -14,5 +14,16 @@
             <input type="hidden" name="username" value="@(context.User.Identity?.Name ?? "none")" />
             <RadzenButton ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Danger">Delete Account</RadzenButton>
         </form>
+        <form action="/change-username" method="post">
+            <AntiforgeryToken/>
+            <input type="hidden" name="@nameof(ChangeUsernameModel.OldName)" value="@(context.User.Identity?.Name ?? "none")" />
+            <RadzenStack>
+                <RadzenFormField Text="New Username">
+                    <RadzenTextBox Name="@nameof(ChangeUsernameModel.NewName)" MaxLength="Username.Rules.MaxUsernameLength" />
+                </RadzenFormField>
+                <RadzenButton ButtonType="ButtonType.Submit">Change Username</RadzenButton>
+            </RadzenStack>
+        </form>
     </RadzenStack>
+    
 </Bouncer>
