@@ -1,8 +1,10 @@
 @using Microsoft.AspNetCore.Components.Authorization
 <form action="/delete-account" method="post">
     <AntiforgeryToken/>
-    <input type="hidden" name="username" value="@(Context.User.Identity?.Name ?? "none")" />
-    <RadzenButton ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Danger">Delete Account</RadzenButton>
+    <RadzenStack>
+        <input type="hidden" name="username" value="@(Context.User.Identity?.Name ?? "none")" />
+        <RadzenButton ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Danger">Delete Account</RadzenButton>
+    </RadzenStack>
 </form>
 
 @code {
