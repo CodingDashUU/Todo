@@ -43,9 +43,7 @@ where TDbContext : ApplicationDbContext
         var items = auth.Properties?.Items;
 
         if (auth.Principal is null || items is null || !items.TryGetValue(LoginProviderKey, out var provider)) return null;
-
-        if (expectedXsrf != null)
-            if (!items.TryGetValue(XsrfKey, out var userId) || userId != expectedXsrf) return null;
+        if (expectedXsrf is not null || !items.TryGetValue(XsrfKey, out var userId) || userId != expectedXsrf) return null;
 
         var providerKey = auth.Principal.FindFirstValue(ClaimTypes.NameIdentifier) 
                           ?? auth.Principal.FindFirstValue("sub");
