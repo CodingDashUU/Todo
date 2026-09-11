@@ -9,22 +9,8 @@
 <Bouncer ReturnUrl="@ApplicationRoutes.Settings">
     <RadzenStack class="rz-p-0 rz-p-md-6 rz-p-lg-12">
         <ThemeForm />
+        <ChangeUsernameForm Context="context"/>
         <DeleteAccountForm Context="context"/>
-        <form action="/change-username" method="post">
-            <AntiforgeryToken/>
-            <input type="hidden" name="@nameof(ChangeUsernameModel.OldName)" value="@(context.User.Identity?.Name ?? "none")" />
-            <RadzenStack>
-                <RadzenFormField Text="New Username">
-                    <Start>
-                        <RadzenIcon Icon="@MaterialIcons.AccountCircle"/>
-                    </Start>
-                    <ChildContent>
-                        <RadzenTextBox Name="@nameof(ChangeUsernameModel.NewName)" Value="@(context.User.Identity?.Name ?? "")" MaxLength="Username.Rules.MaxUsernameLength"/>
-                    </ChildContent>
-                </RadzenFormField>
-                <RadzenButton ButtonType="ButtonType.Submit">Change Username</RadzenButton>
-            </RadzenStack>
-        </form>
     </RadzenStack>
     
 </Bouncer>
