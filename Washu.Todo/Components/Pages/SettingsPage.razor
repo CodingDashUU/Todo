@@ -19,7 +19,12 @@
             <input type="hidden" name="@nameof(ChangeUsernameModel.OldName)" value="@(context.User.Identity?.Name ?? "none")" />
             <RadzenStack>
                 <RadzenFormField Text="New Username">
-                    <RadzenTextBox Name="@nameof(ChangeUsernameModel.NewName)" MaxLength="Username.Rules.MaxUsernameLength" />
+                    <Start>
+                        <RadzenIcon Icon="@MaterialIcons.AccountCircle"/>
+                    </Start>
+                    <ChildContent>
+                        <RadzenTextBox Name="@nameof(ChangeUsernameModel.NewName)" Value="@(context.User.Identity?.Name ?? "")" MaxLength="Username.Rules.MaxUsernameLength"/>
+                    </ChildContent>
                 </RadzenFormField>
                 <RadzenButton ButtonType="ButtonType.Submit">Change Username</RadzenButton>
             </RadzenStack>
