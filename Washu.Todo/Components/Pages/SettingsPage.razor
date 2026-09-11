@@ -9,11 +9,7 @@
 <Bouncer ReturnUrl="@ApplicationRoutes.Settings">
     <RadzenStack class="rz-p-0 rz-p-md-6 rz-p-lg-12">
         <ThemeForm />
-        <form action="/delete-account" method="post">
-            <AntiforgeryToken/>
-            <input type="hidden" name="username" value="@(context.User.Identity?.Name ?? "none")" />
-            <RadzenButton ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Danger">Delete Account</RadzenButton>
-        </form>
+        <DeleteAccountForm Context="context"/>
         <form action="/change-username" method="post">
             <AntiforgeryToken/>
             <input type="hidden" name="@nameof(ChangeUsernameModel.OldName)" value="@(context.User.Identity?.Name ?? "none")" />
