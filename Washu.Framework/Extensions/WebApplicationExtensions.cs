@@ -2,13 +2,13 @@
 
 using Constants;
 using Identity;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
-using System.Collections.Immutable;
-using System.Security.Claims;
+using Notifications;
 
 public static class WebApplicationExtensions
 {
@@ -38,5 +38,27 @@ public static class WebApplicationExtensions
                     return TypedResults.Redirect(ApplicationRoutes.Settings);
                 }).RequireRateLimiting(RateLimiterPolicy.AuthLimiter)
                 .RequireAuthorization();
+
+        public void MapIdentityEndpoints<TDbContext>()
+        where TDbContext : ApplicationDbContext
+        {
+            using var scope = app.Services.CreateScope();
+            scope.ServiceProvider.GetRequiredService<ExternalEndpoints<TDbContext>>().Map(app);
+            app.MapPost("/delete-account", async (MessageStore store, HttpContext context, ApplicationUserManager<TDbContext> manager, [FromForm] string username) =>
+            {
+                var message = await manager.DeleteByUsernameAsync(username);
+                var id = store.Store(message);
+                await context.SignOutAsync(IdentityConstants.ApplicationScheme);
+                return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}");
+            });
+            app.MapPost("/change-username", async (MessageStore store, HttpContext context, ApplicationUserManager<TDbContext> manager, [FromForm] ChangeUsernameModel model) =>
+            {
+                var message = await manager.ChangeUsernameAsync(model);
+                var id = store.Store(message);
+                if (message.Title.StartsWith("Invalid") || message.Type is MessageType.Info) return TypedResults.Redirect($"{ApplicationRoutes.Settings}?messageId={id}");
+                await context.SignOutAsync(IdentityConstants.ApplicationScheme);
+                return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}");
+            });
+        }
     }
 }

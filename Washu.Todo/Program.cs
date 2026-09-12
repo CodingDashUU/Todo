@@ -60,22 +60,7 @@ var app = builder.Build();
 await using var scope = app.Services.CreateAsyncScope();
 var dbContext = scope.ServiceProvider.GetRequiredService<TodoDbContext>();
 await dbContext.Database.MigrateAsync();
-scope.ServiceProvider.GetRequiredService<ExternalEndpoints<TodoDbContext>>().Map(app);
-app.MapPost("/delete-account", async (MessageStore store, HttpContext context, ApplicationUserManager<TodoDbContext> manager, [FromForm] string username) =>
-{
-    var message = await manager.DeleteByUsernameAsync(username);
-    var id = store.Store(message);
-    await context.SignOutAsync(IdentityConstants.ApplicationScheme);
-    return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}");
-});
-app.MapPost("/change-username", async (MessageStore store, HttpContext context, ApplicationUserManager<TodoDbContext> manager, [FromForm] ChangeUsernameModel model) =>
-{
-    var message = await manager.ChangeUsernameAsync(model);
-    var id = store.Store(message);
-    if (message.Title.StartsWith("Invalid") || message.Type is MessageType.Info) return TypedResults.Redirect($"{ApplicationRoutes.Settings}?messageId={id}");
-    await context.SignOutAsync(IdentityConstants.ApplicationScheme);
-    return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}");
-});
+app.MapIdentityEndpoints<TodoDbContext>();
 app.UseExceptionHandler(ApplicationRoutes.Error, createScopeForErrors: true);
 app.UseForwardedHeaders();
 app.UseHsts();
