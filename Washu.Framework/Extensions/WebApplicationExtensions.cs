@@ -51,6 +51,11 @@ public static class WebApplicationExtensions
                 await context.SignOutAsync(IdentityConstants.ApplicationScheme);
                 return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}");
             });
+            app.MapPost("/sign-out", async (HttpContext context) =>
+            {
+                await context.SignOutAsync(IdentityConstants.ApplicationScheme);
+                return TypedResults.Redirect($"{ApplicationRoutes.SignIn}");
+            });
             app.MapPost("/change-username", async (MessageStore store, HttpContext context, ApplicationUserManager<TDbContext> manager, [FromForm] ChangeUsernameModel model) =>
             {
                 var message = await manager.ChangeUsernameAsync(model);
