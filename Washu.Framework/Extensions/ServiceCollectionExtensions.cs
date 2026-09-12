@@ -44,7 +44,6 @@ public static class ServiceCollectionExtensions
         public IServiceCollection AddIdentity<TDbContext>(ConfigurationManager config)
             where TDbContext : ApplicationDbContext
         {
-            services.AddSingleton<PermissionManager>();
             var connectionString = config.GetConnectionString("DefaultConnection");
             services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, AppClaimsPrincipalFactory<TDbContext>>();
             services.AddScoped<ApplicationSignInManager<TDbContext>>();

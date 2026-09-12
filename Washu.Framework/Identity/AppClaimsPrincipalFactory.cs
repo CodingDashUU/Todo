@@ -8,7 +8,6 @@ using System.Security.Claims;
 
 public sealed class AppClaimsPrincipalFactory<TDbContext>(
     IDbContextFactory<TDbContext> dbFactory,
-    PermissionManager permissionManager,
     IOptions<IdentityOptions> optionsAccessor) 
     : IUserClaimsPrincipalFactory<ApplicationUser>
     where TDbContext :  ApplicationDbContext
@@ -26,18 +25,18 @@ public sealed class AppClaimsPrincipalFactory<TDbContext>(
 
         await using var context = await dbFactory.CreateDbContextAsync();
 
-        // 1. Fetch user's assigned role names from your separate UserRoles table
-        var userRoles = await context.UserRoles
-            .AsNoTracking()
-            .Where(ur => ur.UserId == user.Id)
-            .Include(ur => ur.Role)
-            .Select(ur => ur.Role.Name)
-            .ToListAsync();
+        // // 1. Fetch user's assigned role names from your separate UserRoles table
+        // var userRoles = await context.UserRoles
+        //     .AsNoTracking()
+        //     .Where(ur => ur.UserId == user.Id)
+        //     .Include(ur => ur.Role)
+        //     .Select(ur => ur.Role.Name)
+        //     .ToListAsync();
 
-        // 2. Map roles -> permissions via the in-memory singleton (0 DB joins!)
-        var permissions = permissionManager.GetPermissionsForRoles(userRoles);
-
-        foreach (var permission in permissions) identity.AddClaim(new Claim("permission", permission));
+            // // 2. Map roles -> permissions via the in-memory singleton (0 DB joins!)
+            // var permissions = permissionManager.GetPermissionsForRoles(userRoles);
+            //
+            // foreach (var permission in permissions) identity.AddClaim(new Claim("permission", permission));
 
         return new ClaimsPrincipal(identity);
     }
