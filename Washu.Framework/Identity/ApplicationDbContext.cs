@@ -11,8 +11,6 @@ public class ApplicationDbContext(DbContextOptions options)
     public DbSet<ApplicationUser> Users { get; set; }
     public DbSet<ApplicationRole> Roles { get; set; }
     public DbSet<UserRole> UserRoles { get; set; }
-    public DbSet<UserLogin> UserLogins { get; set; }
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<UserRole>(entity =>
@@ -23,12 +21,6 @@ public class ApplicationDbContext(DbContextOptions options)
             entity.HasOne(u => u.Role)
                 .WithMany()
                 .HasForeignKey(u => u.RoleId);
-        });
-        modelBuilder.Entity<UserLogin>(entity =>
-        {
-            entity.HasOne(l => l.User)
-                .WithMany()
-                .HasForeignKey(l => l.UserId);
         });
         modelBuilder.Entity<ApplicationUser>(entity =>
         {

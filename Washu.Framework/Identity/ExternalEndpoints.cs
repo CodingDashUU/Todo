@@ -45,7 +45,6 @@ where TDbContext : ApplicationDbContext
         if (info is null) return Results.Redirect($"{ApplicationRoutes.SignIn}?PersistCookie={persistCookie}&&ReturnUrl={returnUrl}");
         // 1. Sign in if Google link exists
         var result = await signInManager.ExternalLoginSignInAsync(
-            info.LoginProvider, 
             info.ProviderKey, 
             isPersistent: persistCookie);
         return Results.Redirect(result.Succeeded ? SafeReturnUrl(returnUrl) :
@@ -83,7 +82,7 @@ where TDbContext : ApplicationDbContext
             return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}&&ReturnUrl={returnUrl}");
         }
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-        var user = new ApplicationUser(request.Username, email);
+        var user = new ApplicationUser(request.Username, email, info.ProviderKey);
         if (await dbContext.Users
                 .AnyAsync(u => u.NormalizedUsername == user.NormalizedUsername))
         {
@@ -91,22 +90,6 @@ where TDbContext : ApplicationDbContext
             return TypedResults.Redirect($"{ApplicationRoutes.Register}?messageId={id}&&ReturnUrl={returnUrl}");
         }
         await dbContext.Users.AddAsync(user);
-            
-        // Adding the user to login
-        var userLogin = new UserLogin
-        {
-            UserId = user.Id,
-            LoginProvider = info.LoginProvider,
-            ProviderKey = info.ProviderKey,
-        };
-        if (await dbContext.UserLogins
-                .AnyAsync(l => l.LoginProvider == userLogin.LoginProvider 
-                               && l.ProviderKey == userLogin.ProviderKey))
-        {
-            var id = store.Store(Message.Error("Login Error", "User already exists"));
-            return TypedResults.Redirect($"{ApplicationRoutes.Register}?messageId={id}&&ReturnUrl={returnUrl}");
-        }        
-        await dbContext.UserLogins.AddAsync(userLogin);
         // Adding user to role
         var normalizedRole = InitialUserRoles.User.ToUpperInvariant();
         var role = await dbContext.Roles
