@@ -1,6 +1,6 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @using Washu.Framework.Identity
-<form action="/change-username" method="post">
+<form action="@CoreEndpointRoutes.Identity.ChangeUsername" method="post">
     <AntiforgeryToken/>
     <input type="hidden" name="@nameof(ChangeUsernameModel.OldName)" value="@(Context.User.Identity?.Name ?? "none")" />
     <RadzenStack>

@@ -44,19 +44,19 @@ public static class WebApplicationExtensions
         {
             using var scope = app.Services.CreateScope();
             scope.ServiceProvider.GetRequiredService<ExternalEndpoints<TDbContext>>().Map(app);
-            app.MapPost("/delete-account", async (MessageStore store, HttpContext context, ApplicationUserManager<TDbContext> manager, [FromForm] string username) =>
+            app.MapPost(CoreEndpointRoutes.Identity.DeleteAccount, async (MessageStore store, HttpContext context, ApplicationUserManager<TDbContext> manager, [FromForm] string username) =>
             {
                 var message = await manager.DeleteByUsernameAsync(username);
                 var id = store.Store(message);
                 await context.SignOutAsync(IdentityConstants.ApplicationScheme);
                 return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}");
             });
-            app.MapPost("/sign-out", async (HttpContext context) =>
+            app.MapPost(CoreEndpointRoutes.Identity.SignOut, async (HttpContext context) =>
             {
                 await context.SignOutAsync(IdentityConstants.ApplicationScheme);
                 return TypedResults.Redirect($"{ApplicationRoutes.SignIn}");
             });
-            app.MapPost("/change-username", async (MessageStore store, HttpContext context, ApplicationUserManager<TDbContext> manager, [FromForm] ChangeUsernameModel model) =>
+            app.MapPost(CoreEndpointRoutes.Identity.ChangeUsername, async (MessageStore store, HttpContext context, ApplicationUserManager<TDbContext> manager, [FromForm] ChangeUsernameModel model) =>
             {
                 var message = await manager.ChangeUsernameAsync(model);
                 var id = store.Store(message);

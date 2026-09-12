@@ -22,9 +22,9 @@ where TDbContext : ApplicationDbContext
     {
         var group = app.MapGroup("")
             .RequireRateLimiting(RateLimiterPolicy.AuthLimiter);
-        group.MapGet(CoreEndpointRoutes.External.ChallengeGoogle, ChallengeExternal);
-        group.MapGet(CoreEndpointRoutes.External.ExternalCallback, ExternalCallback);
-        group.MapPost(CoreEndpointRoutes.External.CompleteRegistration, CompleteRegistration);
+        group.MapGet(CoreEndpointRoutes.Identity.External.ChallengeGoogle, ChallengeExternal);
+        group.MapGet(CoreEndpointRoutes.Identity.External.ExternalCallback, ExternalCallback);
+        group.MapPost(CoreEndpointRoutes.Identity.External.CompleteRegistration, CompleteRegistration);
     }
 
     private ChallengeHttpResult ChallengeExternal([FromQuery] bool persistCookie, [FromQuery] string returnUrl)
@@ -32,7 +32,7 @@ where TDbContext : ApplicationDbContext
         var properties =
             signInManager.ConfigureExternalAuthenticationProperties(
                 GoogleDefaults.AuthenticationScheme,
-                $"{CoreEndpointRoutes.External.ExternalCallback}?PersistCookie={persistCookie}&&ReturnUrl={returnUrl}");
+                $"{CoreEndpointRoutes.Identity.External.ExternalCallback}?PersistCookie={persistCookie}&&ReturnUrl={returnUrl}");
 
         return TypedResults.Challenge(
             properties,
