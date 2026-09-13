@@ -1,7 +1,7 @@
 ﻿namespace Washu.Framework.Radzen;
 
 using global::Radzen;
-using Washu.Framework.Notifications;
+using Notifications;
 
 public class RadzenNotificationService(NotificationService service) : INotificationService
 {
