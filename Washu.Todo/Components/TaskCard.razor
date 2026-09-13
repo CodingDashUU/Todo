@@ -25,7 +25,7 @@
         ">
             <RadzenIcon Icon="@MaterialIcons.Task"
                         Style="font-size: 42px;"
-                        IconColor="@(Entry.IsCompleted ? "#00ff00" : "#ff0000")"/>
+                        IconColor="@(Entry.IsCompleted ? "var(--rz-success)" : "var(--rz-danger)")"/>
 
             <div>
                 <RadzenText TextStyle="TextStyle.H5"
@@ -45,7 +45,7 @@
                     }
                 </RadzenStack>
                 <RadzenText TextStyle="TextStyle.Body2"
-                            Style="@($"margin: 4px 0 0; opacity: 0.7; color: {(Entry.IsCompleted ? "#00FF00" : "#FFF423")};")"
+                            Style="@($"margin: 4px 0 0; opacity: 0.7; color: {(Entry.IsCompleted ? "var(--rz-success)" : "var(--rz-danger)")};")"
                             Text="@(
                                   Entry.IsCompleted 
                                       ? $"Completed at {Entry.DateCompleted?.ToTimeZone(TimeZoneProvider.TimeZoneInfo).ToString("dd MMMM yyyy - HH:mm:ss") ?? "unknown time"}" 
@@ -53,7 +53,7 @@
                 @if (Entry.DateCompleted > Entry.GoalDate)
                 {
                     <RadzenText TextStyle="TextStyle.Body2"
-                                Style="margin: 4px 0 0; opacity: 0.7; color: #FF0000;"
+                                Style="margin: 4px 0 0; opacity: 0.7; color: var(--rz-danger);"
                                 Text="@($"Failed to complete task in time ({(Entry.DateCompleted - Entry.GoalDate).Value.Humanize(minUnit: TimeUnit.Minute)} late)")"/>
                 }
             </div>
