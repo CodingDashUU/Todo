@@ -1,14 +1,15 @@
 ﻿namespace Washu.Framework.Extensions;
 
-using Constants;
-using Identity;
+using AspNetCore;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
-using Notifications;
+using Washu.Framework.Blazor;
+using Washu.Framework.Identity;
+using Washu.Framework.Notifications;
 
 public static class WebApplicationExtensions
 {

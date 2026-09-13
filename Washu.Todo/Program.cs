@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Radzen;
+using Washu.Framework.AspNetCore;
 using Washu.Framework.Blazor;
 using Washu.Framework.Constants;
 using Washu.Framework.Identity;
