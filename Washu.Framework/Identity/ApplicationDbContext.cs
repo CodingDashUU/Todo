@@ -23,19 +23,21 @@ public class ApplicationDbContext(DbContextOptions options)
         });
         modelBuilder.Entity<ApplicationUser>(entity =>
         {
-            entity.Property(u => u.Username).HasMaxLength(Username.Rules.MaxUsernameLength);
-            entity.Property(u => u.NormalizedUsername).HasMaxLength(Username.Rules.MaxUsernameLength);
-            entity.Property(u => u.Email).HasMaxLength(100);
-            entity.Property(u => u.NormalizedEmail).HasMaxLength(100);
+            entity.Property(u => u.Username).HasMaxLength(128);
+            entity.Property(u => u.NormalizedUsername).HasMaxLength(128);
+            entity.Property(u => u.Email).HasMaxLength(255);
+            entity.Property(u => u.NormalizedEmail).HasMaxLength(255);
+            entity.Property(u => u.GoogleSubject).HasMaxLength(255);
             entity.HasIndex(u => u.Username).IsUnique();
             entity.HasIndex(u => u.Email).IsUnique();
             entity.HasIndex(u => u.NormalizedUsername).IsUnique();
             entity.HasIndex(u => u.NormalizedEmail).IsUnique();
+            entity.HasIndex(u => u.GoogleSubject).IsUnique();
         });
         modelBuilder.Entity<ApplicationRole>(entity =>
         {
-            entity.Property(u => u.Name).HasMaxLength(30);
-            entity.Property(u => u.NormalizedName).HasMaxLength(30);
+            entity.Property(u => u.Name).HasMaxLength(128);
+            entity.Property(u => u.NormalizedName).HasMaxLength(128);
             entity.HasIndex(u => u.Name).IsUnique();
             entity.HasIndex(u => u.NormalizedName).IsUnique();
         });
