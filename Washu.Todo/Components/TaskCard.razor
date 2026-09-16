@@ -85,7 +85,7 @@
 
 @code {
 
-    [Parameter] public TaskEntry Entry { get; set; } 
+    [Parameter] public TaskEntry Entry { get; set; } = null!;
     [Parameter] public required Func<Task> OnTaskCompleted { get; set; }
     [Parameter] public required Func<Task> OnSettingsClicked { get; set; }
     [Parameter] public bool IsEditing { get; set; }

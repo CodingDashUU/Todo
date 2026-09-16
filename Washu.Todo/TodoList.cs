@@ -9,7 +9,7 @@ public class TodoList(Guid userId, CreateList.Model model)
 {
     public Guid Id { get; init; } = Guid.CreateVersion7();
     public Guid UserId { get; init; } = userId;
-    public ApplicationUser User { get; init; }
+    public ApplicationUser User { get; init; } = null!;
     public string Name { get; init; } = model.ListName;
     public List<TaskEntry> Tasks { get; init; } = [];
     public DateTimeOffset CreationDate { get; init; } = DateTimeOffset.UtcNow;

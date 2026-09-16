@@ -33,8 +33,7 @@
 </html>
 
 @code {
-    [CascadingParameter]
-    private HttpContext HttpContext { get; set; }
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = null!;
 
     protected override void OnInitialized()
     {

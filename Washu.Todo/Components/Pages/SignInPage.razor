@@ -1,10 +1,9 @@
 ﻿@attribute [Route(ApplicationRoutes.SignIn)]
-@using Washu.Framework.Constants
 @inherits NotificationPage
 
 <PageTitle>Sign In</PageTitle>
 <SignInCard ReturnUrl="@ReturnUrl"/>
 
 @code {
-    [SupplyParameterFromQuery] public string ReturnUrl { get; set; }
+    [SupplyParameterFromQuery] public string ReturnUrl { get; set; } = "";
 }

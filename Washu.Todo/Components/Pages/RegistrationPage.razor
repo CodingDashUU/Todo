@@ -1,5 +1,4 @@
 ﻿@attribute [Route(ApplicationRoutes.Register)]
-@using Washu.Framework.Constants
 @inherits NotificationPage
 
 <PageTitle>Register</PageTitle>
@@ -7,6 +6,6 @@
 <RegistrationCard ReturnUrl="@ReturnUrl"/>
 
 @code {
-    
-    [SupplyParameterFromQuery] public string ReturnUrl { get; set; }
+
+    [SupplyParameterFromQuery] public string ReturnUrl { get; set; } = "";
 }

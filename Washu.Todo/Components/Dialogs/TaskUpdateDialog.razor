@@ -1,7 +1,6 @@
 ﻿@using Washu.Framework.Extensions
 @using Washu.Framework.Identity
 @using Washu.Framework.Notifications
-@using Washu.Framework.Radzen
 @using Washu.Todo.Commands
 @inject UserTimeZoneProvider TimeZoneProvider
 @inject INotificationService NotificationService
@@ -27,9 +26,9 @@
 </RadzenTemplateForm>
 
 @code {
-    public UpdateTask.Model Model { get; set; } = new();
+    public UpdateTask.Model Model { get; } = new();
     [Parameter] public required TaskEntry OldEntry { get; set; }
-    public UpdateTask.Validator Validator { get; set; }
+    public UpdateTask.Validator Validator { get; set; }= null!;
     public bool SubmitBusy { get; set; }
 
     protected override void OnInitialized()

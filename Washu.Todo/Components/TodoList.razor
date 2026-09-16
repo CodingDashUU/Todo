@@ -55,7 +55,7 @@
 </style>
 
 @code {
-    private ApplicationUser _currentUser;
+    private ApplicationUser _currentUser = null!;
 
     public bool IsEditing { get; set; }
     [Parameter] public required AuthenticationState UserContext { get; set; }

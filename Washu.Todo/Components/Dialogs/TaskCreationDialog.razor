@@ -27,9 +27,9 @@
 
 
 @code {
-    private CreateTask.Model Model { get; set; } = new();
+    private CreateTask.Model Model { get; } = new();
     [Parameter] public required Todo.TodoList List { get; set; }
-    private CreateTask.Validator Validator { get; set; }
+    private CreateTask.Validator Validator { get; set; } = null!;
     private bool SubmitBusy { get; set; }
 
     protected override void OnInitialized()
