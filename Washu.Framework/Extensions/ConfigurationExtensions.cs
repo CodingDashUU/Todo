@@ -46,7 +46,7 @@ public static class ConfigurationExtensions
             // Identity
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
             builder.Services.AddScoped<ExternalEndpoints<TDbContext>>();
-            services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, AppClaimsPrincipalFactory<TDbContext>>();
+            services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, ApplicationClaimsPrincipalFactory<TDbContext>>();
             services.AddScoped<ApplicationSignInManager<TDbContext>>();
             services.AddScoped<ApplicationUserManager<TDbContext>>();
             services.AddScoped<ApplicationRoleManager<TDbContext>>();
