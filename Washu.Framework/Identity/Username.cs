@@ -1,5 +1,6 @@
 ﻿namespace Washu.Framework.Identity;
 
+using Constants;
 using FluentValidation;
 
 public static class Username
@@ -9,7 +10,7 @@ public static class Username
         public const byte MinUsernameLength = 3;
         public const byte MaxUsernameLength = 20;
     
-        public const string ValidCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-";
+        public const string ValidCharacters = $"{Characters.Lowercase}{Characters.Uppercase}_-";
     }
     public sealed class Validator : AbstractValidator<string>
     {
