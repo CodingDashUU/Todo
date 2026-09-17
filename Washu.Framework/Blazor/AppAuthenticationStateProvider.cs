@@ -12,7 +12,7 @@ using Microsoft.Extensions.Options;
 using System.Security.Claims;
 using Washu.Framework.Identity;
 
-public class AppAuthenticationStateProvider<TDbContext>(
+public sealed class AppAuthenticationStateProvider<TDbContext>(
     ILoggerFactory loggerFactory,
     IServiceScopeFactory scopeFactory,
     IOptions<IdentityOptions> optionsAccessor)

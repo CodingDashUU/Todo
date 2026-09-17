@@ -3,7 +3,7 @@
 using Microsoft.Extensions.Caching.Memory;
 
 // Created this to store a notification specifically for a user that lasts between page navigations
-public class MessageStore(IMemoryCache cache)
+public sealed class MessageStore(IMemoryCache cache)
 {
     public string Store(params Message[] messages)
     {

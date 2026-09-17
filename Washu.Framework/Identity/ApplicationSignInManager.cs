@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
-public class ApplicationSignInManager<TDbContext>(
+public sealed class ApplicationSignInManager<TDbContext>(
     IHttpContextAccessor httpContextAccessor,
     IDbContextFactory<TDbContext> dbFactory,
     IAuthenticationSchemeProvider schemeProvider,
@@ -21,7 +21,7 @@ where TDbContext : ApplicationDbContext
         ?? throw new InvalidOperationException("An active HttpContext is required.");
 
     // 1. ConfigureExternalAuthenticationProperties with full XsrfKey support
-    public virtual AuthenticationProperties ConfigureExternalAuthenticationProperties(
+    public AuthenticationProperties ConfigureExternalAuthenticationProperties(
         string provider, 
         string? redirectUrl, 
         string? userId = null)
@@ -37,7 +37,7 @@ where TDbContext : ApplicationDbContext
     }
 
     // 2. GetExternalLoginInfoAsync with full Xsrf validation & Token preservation
-    public virtual async Task<ExternalLoginInfo?> GetExternalLoginInfoAsync(string? expectedXsrf = null)
+    public async Task<ExternalLoginInfo?> GetExternalLoginInfoAsync(string? expectedXsrf = null)
     {
         var auth = await Context.AuthenticateAsync(IdentityConstants.ExternalScheme);
         var items = auth.Properties?.Items;
@@ -63,7 +63,7 @@ where TDbContext : ApplicationDbContext
     }
 
     // 3. ExternalLoginSignInAsync backed by PostgreSQL EF Core
-    public virtual async Task<SignInResult> ExternalLoginSignInAsync(
+    public async Task<SignInResult> ExternalLoginSignInAsync(
         string loginProvider,
         bool isPersistent)
     {
@@ -83,7 +83,7 @@ where TDbContext : ApplicationDbContext
     }
 
     // 4. SignInAsync overload accepting AuthenticationProperties
-    public virtual Task SignInAsync(
+    public Task SignInAsync(
         ApplicationUser user, 
         AuthenticationProperties authenticationProperties, 
         string? authenticationMethod = null)
@@ -95,10 +95,10 @@ where TDbContext : ApplicationDbContext
     }
 
     // 5. SignInAsync simplified overload
-    public virtual Task SignInAsync(ApplicationUser user, bool isPersistent, string? authenticationMethod = null) => SignInAsync(user, new AuthenticationProperties { IsPersistent = isPersistent }, authenticationMethod);
+    public Task SignInAsync(ApplicationUser user, bool isPersistent, string? authenticationMethod = null) => SignInAsync(user, new AuthenticationProperties { IsPersistent = isPersistent }, authenticationMethod);
 
     // 6. Full SignInWithClaimsAsync updating HttpContext.User & clearing external cookie
-    public virtual async Task SignInWithClaimsAsync(
+    public async Task SignInWithClaimsAsync(
         ApplicationUser user, 
         AuthenticationProperties? authenticationProperties, 
         IEnumerable<Claim> additionalClaims)

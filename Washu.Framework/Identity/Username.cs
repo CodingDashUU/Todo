@@ -11,7 +11,7 @@ public static class Username
     
         public const string ValidCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-";
     }
-    public class Validator : AbstractValidator<string>
+    public sealed class Validator : AbstractValidator<string>
     {
         public Validator() =>
             RuleFor(u => u)

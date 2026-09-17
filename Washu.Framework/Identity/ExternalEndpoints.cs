@@ -100,7 +100,7 @@ where TDbContext : ApplicationDbContext
 
         if (role is null) 
         {
-            var id = store.Store(Message.Error("Login Error", "There was an issue whle logging you in") );
+            var id = store.Store(Message.Error("Login Error", "There was an issue while logging you in") );
             return TypedResults.Redirect($"{ApplicationRoutes.Register}?messageId={id}&&ReturnUrl={returnUrl}");
         }
         if (!await dbContext.UserRoles

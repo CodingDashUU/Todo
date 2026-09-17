@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Notifications;
 
-public class ApplicationUserManager<TDbContext>(IDbContextFactory<TDbContext> factory)
+public sealed class ApplicationUserManager<TDbContext>(IDbContextFactory<TDbContext> factory)
     where TDbContext : ApplicationDbContext
 {
 

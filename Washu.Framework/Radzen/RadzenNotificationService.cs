@@ -3,7 +3,7 @@
 using global::Radzen;
 using Notifications;
 
-public class RadzenNotificationService(NotificationService service) : INotificationService
+public sealed class RadzenNotificationService(NotificationService service) : INotificationService
 {
     public void Send(Message message)
     {

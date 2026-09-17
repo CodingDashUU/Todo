@@ -4,7 +4,7 @@ using Entities;
 using Microsoft.EntityFrameworkCore;
 using Notifications;
 
-public class ApplicationRoleManager<TContext>(IDbContextFactory<TContext> dbFactory) 
+public sealed class ApplicationRoleManager<TContext>(IDbContextFactory<TContext> dbFactory) 
     where TContext : ApplicationDbContext
 {
     public async Task AddRolesAsync(string[] roleNames, CancellationToken ct = default)
