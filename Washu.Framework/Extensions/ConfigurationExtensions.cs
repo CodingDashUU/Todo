@@ -180,7 +180,7 @@ public static class ConfigurationExtensions
             {
                 var message = await manager.ChangeUsernameAsync(model);
                 var id = store.Store(message);
-                if (message.Title.StartsWith("Invalid") || message.Type is MessageType.Info) return TypedResults.Redirect($"{ApplicationRoutes.Settings}?messageId={id}");
+                if (message.Title.StartsWith("Invalid") || message.Type is MessageType.Info) return TypedResults.Redirect($"{ApplicationRoutes.ManageAccount}?messageId={id}");
                 await context.SignOutAsync(IdentityConstants.ApplicationScheme);
                 return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}");
             });

@@ -1,6 +1,6 @@
 ﻿@using Washu.Framework.Notifications
 @inject MessageStore Store
-@inject RadzenNotificationService NotificationService
+@inject NotificationService NotificationService
 @code {
     [SupplyParameterFromQuery] public string MessageId { get; set; } = "";
     protected override void OnAfterRender(bool firstRender)
@@ -15,7 +15,7 @@
         foreach (var message in Store.Take(MessageId))
         {
             NotificationService.Show(message);
-            Task.Delay(RadzenNotificationService.Duration);
+            Task.Delay(RadzenConstants.Notifications.Duration);
         }
     }
 }

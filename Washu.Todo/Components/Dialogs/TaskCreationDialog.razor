@@ -5,7 +5,7 @@
 @using Washu.Todo.Commands
 @inject DialogService DialogService
 @inject UserTimeZoneProvider TimeZoneProvider
-@inject RadzenNotificationService BaseNotificationService
+@inject NotificationService BaseNotificationService
 <RadzenTemplateForm TItem="CreateTask.Model" Data=@Model Submit=@HandleSubmit>
     <RadzenStack Gap="1rem">
         <RadzenFormField Text="Task Name">
@@ -47,7 +47,7 @@
             BaseNotificationService.Show(
                 Message.Error("Task Creation Error", result.Errors.First().ErrorMessage)
             );
-            await Task.Delay(RadzenNotificationService.Duration);
+            await Task.Delay(RadzenConstants.Notifications.Duration);
             SubmitBusy = false;
             return;
         }

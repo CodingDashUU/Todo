@@ -1,4 +1,4 @@
-﻿@inject RadzenNotificationService NotificationService
+﻿@inject NotificationService NotificationService
 @inject DialogService DialogService
 @using Washu.Framework.Notifications
 @using Washu.Todo.Commands
@@ -27,7 +27,7 @@
                 NotificationService.Show(
                     Message.Error("List Creation Error", result.Errors.First().ErrorMessage)
                 );
-                await Task.Delay(RadzenNotificationService.Duration);
+                await Task.Delay(RadzenConstants.Notifications.Duration);
             SubmitBusy = false;
             return;
         }
