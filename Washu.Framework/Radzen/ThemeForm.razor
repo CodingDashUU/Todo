@@ -1,6 +1,6 @@
 @using Washu.Framework.AspNetCore
 @inject ThemeService ThemeService
-<form action=@CoreEndpointRoutes.Theme method="post">
+<form action="/theme" method="post">
     <AntiforgeryToken/>
     <RadzenStack>
         <RadzenFormField Text="Theme">

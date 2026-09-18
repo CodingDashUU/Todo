@@ -1,5 +1,5 @@
 @using Washu.Framework.AspNetCore
-<form action="@CoreEndpointRoutes.Identity.DeleteAccount" method="post">
+<form action="@IdentityRoutes.DeleteAccount" method="post">
     <AntiforgeryToken/>
     <RadzenStack>
         <input type="hidden" name="username" value="@(Context.User.Identity?.Name ?? "none")" />

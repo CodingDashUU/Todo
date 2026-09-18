@@ -47,7 +47,7 @@
             NotificationService.Show(
                 Message.Error("Task Update Error", result.Errors.First().ErrorMessage)
             );
-            await Task.Delay(RadzenConstants.Notifications.Duration);
+            await Task.Delay(RadzenNotificationConstants.Duration);
             SubmitBusy = false;
             return;
         }

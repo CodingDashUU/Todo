@@ -39,5 +39,5 @@
 @code {
     [Parameter] public string? ReturnUrl { get; set; }
     public bool PersistCookie { get; set; }
-    private void SignInWithGoogle() => NavManager.NavigateTo( $"{CoreEndpointRoutes.Identity.External.ChallengeGoogle}?PersistCookie={PersistCookie}&&ReturnUrl={ReturnUrl ?? "/"}", forceLoad: true);
+    private void SignInWithGoogle() => NavManager.NavigateTo( $"{IdentityRoutes.ChallengeGoogle}?PersistCookie={PersistCookie}&&ReturnUrl={ReturnUrl ?? "/"}", forceLoad: true);
 }

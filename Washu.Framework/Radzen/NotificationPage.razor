@@ -15,7 +15,7 @@
         foreach (var message in Store.Take(MessageId))
         {
             NotificationService.Show(message);
-            Task.Delay(RadzenConstants.Notifications.Duration);
+            Task.Delay(RadzenNotificationConstants.Duration);
         }
     }
 }

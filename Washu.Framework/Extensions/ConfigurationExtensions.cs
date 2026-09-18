@@ -19,6 +19,7 @@ using Notifications;
 
 public static class ConfigurationExtensions
 {
+    private const ushort ThemeCookieDuration = 365;
     extension(IServiceCollection services)
     {
         public IServiceCollection AddWashuFramework<TDbContext>(WebApplicationBuilder builder)
@@ -39,8 +40,8 @@ public static class ConfigurationExtensions
             // Radzen
             services.AddRadzenCookieThemeService(options =>
             {
-                options.Name = CookieConstants.Names.Theme;
-                options.Duration = TimeSpan.FromDays(CookieConstants.DurationInDays.Theme);
+                options.Name = CookieNames.Theme;
+                options.Duration = TimeSpan.FromDays(ThemeCookieDuration);
             });
             
             // Identity
@@ -68,7 +69,7 @@ public static class ConfigurationExtensions
             services.AddScoped<UserTimeZoneProvider>(sp =>
             {
                 var httpContext = sp.GetRequiredService<IHttpContextAccessor>().HttpContext;
-                var tzCookie = httpContext?.Request.Cookies[CookieConstants.Names.ClientTimeZone];
+                var tzCookie = httpContext?.Request.Cookies[CookieNames.ClientTimeZone];
                 try
                 {
                     var instance = new UserTimeZoneProvider { TimeZoneId = !string.IsNullOrEmpty(tzCookie) ? tzCookie : "UTC" };
@@ -103,10 +104,10 @@ public static class ConfigurationExtensions
                     options.Cookie.HttpOnly = true;
                     options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
                     options.Cookie.SameSite = SameSiteMode.Lax;
-                    options.ExpireTimeSpan = TimeSpan.FromDays(CookieConstants.DurationInDays.Application);
+                    options.ExpireTimeSpan = TimeSpan.FromDays(14);
                     options.SlidingExpiration = true;
                     options.LoginPath = ApplicationRoutes.SignIn;
-                    options.Cookie.Name = CookieConstants.Names.Application;
+                    options.Cookie.Name = ".Washu.Application";
                 })
                 .AddGoogle(options =>
                 {
@@ -147,16 +148,16 @@ public static class ConfigurationExtensions
             app.UseRateLimiter();
             app.UseAntiforgery();
             app.MapStaticAssets();
-            app.MapPost(CoreEndpointRoutes.Theme, (HttpContext context, [FromForm] string theme) =>
+            app.MapPost("/theme", (HttpContext context, [FromForm] string theme) =>
                 {
-                    context.Response.Cookies.Delete(CookieConstants.Names.Theme);
+                    context.Response.Cookies.Delete(CookieNames.Theme);
                     context.Response.Cookies.Append(
-                        CookieConstants.Names.Theme,
+                        CookieNames.Theme,
                         theme,
                         new CookieOptions
                         {
                             Secure = true,
-                            Expires = DateTimeOffset.Now.AddDays(CookieConstants.DurationInDays.Theme),
+                            Expires = DateTimeOffset.Now.AddDays(ThemeCookieDuration),
                             SameSite = SameSiteMode.Lax
                         });
     
@@ -164,19 +165,19 @@ public static class ConfigurationExtensions
                 }).RequireRateLimiting(RateLimiterPolicy.AuthLimiter)
                 .RequireAuthorization();
             scope.ServiceProvider.GetRequiredService<ExternalEndpoints<TDbContext>>().Map(app);
-            app.MapPost(CoreEndpointRoutes.Identity.DeleteAccount, async (MessageStore store, HttpContext context, ApplicationUserManager<TDbContext> manager, [FromForm] string username) =>
+            app.MapPost(IdentityRoutes.DeleteAccount, async (MessageStore store, HttpContext context, ApplicationUserManager<TDbContext> manager, [FromForm] string username) =>
             {
                 var message = await manager.DeleteByUsernameAsync(username);
                 var id = store.Store(message);
                 await context.SignOutAsync(IdentityConstants.ApplicationScheme);
                 return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}");
             });
-            app.MapPost(CoreEndpointRoutes.Identity.SignOut, async (HttpContext context) =>
+            app.MapPost(IdentityRoutes.SignOut, async (HttpContext context) =>
             {
                 await context.SignOutAsync(IdentityConstants.ApplicationScheme);
                 return TypedResults.Redirect($"{ApplicationRoutes.SignIn}");
             });
-            app.MapPost(CoreEndpointRoutes.Identity.ChangeUsername, async (MessageStore store, HttpContext context, ApplicationUserManager<TDbContext> manager, [FromForm] ChangeUsernameModel model) =>
+            app.MapPost(IdentityRoutes.ChangeUsername, async (MessageStore store, HttpContext context, ApplicationUserManager<TDbContext> manager, [FromForm] ChangeUsernameModel model) =>
             {
                 var message = await manager.ChangeUsernameAsync(model);
                 var id = store.Store(message);
