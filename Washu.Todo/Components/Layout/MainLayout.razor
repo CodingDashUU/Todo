@@ -9,10 +9,11 @@
             <div style="flex-grow: 1;"></div>
             <AuthorizeView>
                 <Authorized>
-                    <div class="rz-display-flex rz-align-items-center rz-justify-content-center rz-background-color-primary rz-color-white" 
-                         style="width: 40px; height: 40px; border-radius: 50%; font-weight: bold; font-size: 20px;">
-                        @(char.ToUpper(context.User.Identity?.Name?.First() ?? 'U'))
-                    </div>
+                        <RadzenButton 
+                            class="rz-display-flex rz-align-items-center rz-justify-content-center rz-background-color-primary rz-color-white" 
+                            style="width: 40px; height: 40px; border-radius: 50%; font-weight: bold; font-size: 20px;"
+                            Click="@(() => NavManager.NavigateTo(ApplicationRoutes.ManageAccount))"
+                            Variant="Variant.Text">@(char.ToUpper(context.User.Identity?.Name?.First() ?? 'U'))</RadzenButton>
                 </Authorized>
             </AuthorizeView>
             <div style="width: 20px;"></div>

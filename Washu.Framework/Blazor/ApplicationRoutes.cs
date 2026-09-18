@@ -9,5 +9,6 @@ public static class ApplicationRoutes
     public const string Register = "/register";
     public const string SignIn = "/sign-in";
     public const string Settings = "/settings";
+    public const string ManageAccount = "/manage-account";
 }
     
