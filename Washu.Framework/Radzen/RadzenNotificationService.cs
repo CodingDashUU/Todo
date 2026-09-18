@@ -2,18 +2,20 @@
 
 using global::Radzen;
 using Notifications;
+using System.Collections.Frozen;
 
 public sealed class RadzenNotificationService(NotificationService service) : INotificationService
 {
+    private static readonly FrozenDictionary<MessageType, NotificationSeverity> Severities =
+        new Dictionary<MessageType, NotificationSeverity>
+        {
+            [MessageType.Info] = NotificationSeverity.Info,
+            [MessageType.Error] = NotificationSeverity.Error,
+            [MessageType.Success] = NotificationSeverity.Success
+        }.ToFrozenDictionary();
     public void Send(Message message)
     {
-        var severity = message.Type switch
-        {
-            MessageType.Error => NotificationSeverity.Error,
-            MessageType.Info => NotificationSeverity.Info,
-            MessageType.Success => NotificationSeverity.Success,
-            _ => NotificationSeverity.Error
-        };
+        var severity =  Severities.GetValueOrDefault(message.Type, NotificationSeverity.Error);
         service.Notify(new NotificationMessage
         {
             Summary = message.Title,
