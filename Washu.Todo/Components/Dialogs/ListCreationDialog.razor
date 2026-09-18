@@ -1,4 +1,4 @@
-﻿@inject INotificationService NotificationService
+﻿@inject RadzenNotificationService NotificationService
 @inject DialogService DialogService
 @using Washu.Framework.Notifications
 @using Washu.Todo.Commands
@@ -24,10 +24,10 @@
         var result = await validator.ValidateAsync(model);
         if (!result.IsValid)
         {
-                NotificationService.Send(
+                NotificationService.Show(
                     Message.Error("List Creation Error", result.Errors.First().ErrorMessage)
                 );
-                await Task.Delay(2000);
+                await Task.Delay(RadzenNotificationService.Duration);
             SubmitBusy = false;
             return;
         }

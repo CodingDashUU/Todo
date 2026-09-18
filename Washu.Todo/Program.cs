@@ -9,7 +9,7 @@ using Washu.Framework.Notifications;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddWashuFramework<TodoDbContext>(builder);
-builder.Services.AddScoped<INotificationService, RadzenNotificationService>();
+builder.Services.AddScoped<RadzenNotificationService>();
 builder.Services.AddTodoCommands();
 var app = builder.Build();
 await using var scope = app.Services.CreateAsyncScope();

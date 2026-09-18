@@ -6,7 +6,7 @@
 @using Washu.Todo.Identity
 @using Dialogs
 @using Washu.Framework.Identity.Entities
-@inject INotificationService NotificationService
+@inject RadzenNotificationService NotificationService
 @inject NavigationManager NavManager
 @inject DialogService DialogService
 @inject IDbContextFactory<TodoDbContext> DbContextFactory
@@ -120,7 +120,7 @@
         if (result is not CreateList.Model model) return;
 
         var message = await CreateListCommand.ExecuteAsync(_currentUser.Id, model);
-        NotificationService.Send(message);
+        NotificationService.Show(message);
 
         await LoadListsAsync(selectDefault: true);
     }
@@ -133,7 +133,7 @@
         if (result is not CreateTask.Model model) return;
 
         var (message, newList) = await CreateTaskCommand.ExecuteAsync(SelectedList, model);
-        NotificationService.Send(message);
+        NotificationService.Show(message);
 
         await LoadListsAsync(preferredSelectedId: newList?.Id ?? SelectedList.Id);
     }
@@ -142,7 +142,7 @@
     {
         if (!await ValidateUserAsync()) return;
         var (message, newList) = await ToggleTaskCommand.ExecuteAsync(SelectedList, entry, _currentUser);
-        NotificationService.Send(message);
+        NotificationService.Show(message);
 
         await LoadListsAsync(preferredSelectedId: newList?.Id ?? SelectedList.Id);
     }
@@ -155,7 +155,7 @@
         if (result is not UpdateTask.Model model) return;
 
         var (message, newList) = await UpdateTaskCommand.ExecuteAsync(model, SelectedList, entry);
-        NotificationService.Send(message);
+        NotificationService.Show(message);
 
         await LoadListsAsync(preferredSelectedId: newList?.Id ?? SelectedList.Id);
     }

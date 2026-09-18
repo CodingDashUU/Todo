@@ -3,7 +3,7 @@
 @using Washu.Framework.Notifications
 @using Washu.Todo.Commands
 @inject UserTimeZoneProvider TimeZoneProvider
-@inject INotificationService NotificationService
+@inject RadzenNotificationService NotificationService
 @inject DialogService DialogService
 
 <RadzenTemplateForm TItem="UpdateTask.Model" Data=@Model Submit=@HandleSubmit>
@@ -44,10 +44,10 @@
         var result = await Validator.ValidateAsync(Model);
         if (!result.IsValid)
         {
-            NotificationService.Send(
+            NotificationService.Show(
                 Message.Error("Task Update Error", result.Errors.First().ErrorMessage)
             );
-            await Task.Delay(2000);
+            await Task.Delay(RadzenNotificationService.Duration);
             SubmitBusy = false;
             return;
         }
