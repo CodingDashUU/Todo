@@ -40,7 +40,10 @@
         base.OnInitialized();
         var theme = HttpContext.Request.Cookies[CookieNames.Theme];
 
-        if (!string.IsNullOrEmpty(theme)) ThemeService.SetTheme(theme);
+        if (!string.IsNullOrEmpty(theme) && Themes.Free.Any(t => t.Value == theme))
+        {
+            ThemeService.SetTheme(theme);
+        }
         else HttpContext.Response.Cookies.Append(CookieNames.Theme, "standard-dark" , new CookieOptions { Secure = Options.Value.IsSecure, Expires = DateTimeOffset.Now.Add(Options.Value.Duration) });    
     }
 }
