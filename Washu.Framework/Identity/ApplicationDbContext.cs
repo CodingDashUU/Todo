@@ -20,6 +20,7 @@ public class ApplicationDbContext(DbContextOptions options)
             entity.HasOne(u => u.Role)
                 .WithMany()
                 .HasForeignKey(u => u.RoleId);
+            entity.HasKey(u => new { u.UserId, u.RoleId });
         });
         modelBuilder.Entity<ApplicationUser>(entity =>
         {
