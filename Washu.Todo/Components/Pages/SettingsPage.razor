@@ -1,15 +1,9 @@
-﻿@using Washu.Framework.Constants
-@using Washu.Framework.Identity
-@using Washu.Todo.Identity
-@inject ApplicationUserManager<TodoDbContext> Manager;
-@attribute [Route(ApplicationRoutes.Settings)]
+﻿@attribute [Route(ApplicationRoutes.Settings)]
 @inherits NotificationPage
 
 <PageTitle>Settings</PageTitle>
-<Bouncer ReturnUrl="@ApplicationRoutes.Settings">
-    <RadzenCard Variant="Variant.Outlined">
-        <RadzenStack class="rz-p-0 rz-p-md-6 rz-p-lg-12">
-            <ThemeForm/>
-        </RadzenStack>
-    </RadzenCard>    
-</Bouncer>
+<RadzenCard Variant="Variant.Outlined">
+    <RadzenStack class="rz-p-0 rz-p-md-6 rz-p-lg-12">
+        <ThemeForm/>
+    </RadzenStack>
+</RadzenCard> 

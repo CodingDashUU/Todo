@@ -108,6 +108,24 @@ public static class ConfigurationExtensions
                     options.SlidingExpiration = true;
                     options.LoginPath = ApplicationRoutes.SignIn;
                     options.Cookie.Name = ".Washu.Application";
+                    options.Events.OnRedirectToLogin = context =>
+                    {
+                        if (!HttpMethods.IsGet(context.Request.Method))
+                        {
+                            // Grab the page they were actually standing on when they submitted the form
+                            var referer = context.Request.Headers.Referer.FirstOrDefault();
+
+                            var safeReturnUrl = !string.IsNullOrWhiteSpace(referer) 
+                                                   && Uri.TryCreate(referer, UriKind.Absolute, out var uri)
+                                ? uri.LocalPath
+                                : ApplicationRoutes.Home;
+                            // Overwrite the ReturnUrl parameter so it points to a GET page route
+                            context.RedirectUri = $"{options.LoginPath}?ReturnUrl={safeReturnUrl}";
+                        }
+
+                        context.Response.Redirect(context.RedirectUri);
+                        return Task.CompletedTask;
+                    };
                 })
                 .AddGoogle(options =>
                 {
@@ -149,34 +167,34 @@ public static class ConfigurationExtensions
             app.UseAntiforgery();
             app.MapStaticAssets();
             app.MapPost("/theme", (HttpContext context, [FromForm] string theme) =>
-                {
-                    context.Response.Cookies.Delete(CookieNames.Theme);
-                    context.Response.Cookies.Append(
-                        CookieNames.Theme,
-                        theme,
-                        new CookieOptions
-                        {
-                            Secure = true,
-                            Expires = DateTimeOffset.Now.AddDays(ThemeCookieDuration),
-                            SameSite = SameSiteMode.Lax
-                        });
-    
-                    return TypedResults.Redirect(ApplicationRoutes.Settings);
-                }).RequireRateLimiting(RateLimiterPolicy.AuthLimiter)
-                .RequireAuthorization();
+            {
+                context.Response.Cookies.Delete(CookieNames.Theme);
+                context.Response.Cookies.Append(
+                    CookieNames.Theme,
+                    theme,
+                    new CookieOptions
+                    {
+                        Secure = true,
+                        Expires = DateTimeOffset.Now.AddDays(ThemeCookieDuration),
+                        SameSite = SameSiteMode.Lax
+                    });
+
+                return TypedResults.Redirect(ApplicationRoutes.Settings);
+            }).RequireRateLimiting(RateLimiterPolicy.AuthLimiter);
             scope.ServiceProvider.GetRequiredService<ExternalEndpoints<TDbContext>>().Map(app);
-            app.MapPost(IdentityRoutes.DeleteAccount, async (MessageStore store, HttpContext context, ApplicationUserManager<TDbContext> manager, [FromForm] string username) =>
+            app.MapPost(IdentityRoutes.DeleteAccount, async (MessageStore store, HttpContext context,
+                ApplicationUserManager<TDbContext> manager, [FromForm] string username) =>
             {
                 var message = await manager.DeleteByUsernameAsync(username);
                 var id = store.Store(message);
                 await context.SignOutAsync(IdentityConstants.ApplicationScheme);
                 return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}");
-            });
+            }).RequireAuthorization();
             app.MapPost(IdentityRoutes.SignOut, async (HttpContext context) =>
             {
                 await context.SignOutAsync(IdentityConstants.ApplicationScheme);
                 return TypedResults.Redirect($"{ApplicationRoutes.SignIn}");
-            });
+            }).RequireAuthorization();;
             app.MapPost(IdentityRoutes.ChangeUsername, async (MessageStore store, HttpContext context, ApplicationUserManager<TDbContext> manager, [FromForm] ChangeUsernameModel model) =>
             {
                 var message = await manager.ChangeUsernameAsync(model);
@@ -184,7 +202,7 @@ public static class ConfigurationExtensions
                 if (message.Title.StartsWith("Invalid") || message.Type is MessageType.Info) return TypedResults.Redirect($"{ApplicationRoutes.ManageAccount}?messageId={id}");
                 await context.SignOutAsync(IdentityConstants.ApplicationScheme);
                 return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}");
-            });
+            }).RequireAuthorization();
         }
     }
 }
