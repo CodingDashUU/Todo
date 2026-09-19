@@ -8,6 +8,7 @@ using Identity.Entities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -37,6 +38,7 @@ public static class ConfigurationExtensions
                     opt.Window = TimeSpan.FromSeconds(30);
                 });
             });
+            builder.Services.AddHealthChecks().AddDbContextCheck<TDbContext>(name: "DB");
             // Radzen
             services.AddRadzenCookieThemeService(options =>
             {
@@ -166,6 +168,27 @@ public static class ConfigurationExtensions
             app.UseRateLimiter();
             app.UseAntiforgery();
             app.MapStaticAssets();
+            app.MapHealthChecks("/healthz", new HealthCheckOptions
+            {
+                ResponseWriter = async (context, report) =>
+                {
+                    context.Response.ContentType = "application/json";
+        
+                    var json = new
+                    {
+                        status = report.Status.ToString(),
+                        checks = report.Entries.Select(e => new
+                        {
+                            name = e.Key,
+                            status = e.Value.Status.ToString(),
+                            durationMs = e.Value.Duration.TotalMilliseconds
+                        }),
+                        totalDurationMs = report.TotalDuration.TotalMilliseconds
+                    };
+
+                    await context.Response.WriteAsJsonAsync(json);
+                }
+            });
             app.MapPost("/theme", (HttpContext context, [FromForm] string theme) =>
             {
                 context.Response.Cookies.Delete(CookieNames.Theme);
