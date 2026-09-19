@@ -7,7 +7,7 @@ public sealed class MessageStore(IMemoryCache cache)
 {
     public string Store(params Message[] messages)
     {
-        var id = Guid.NewGuid().ToString("N");
+        var id = Guid.CreateVersion7().ToString();
 
         cache.Set(id, messages, TimeSpan.FromMinutes(1));
 
