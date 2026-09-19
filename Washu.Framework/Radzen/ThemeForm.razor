@@ -4,7 +4,7 @@
     <AntiforgeryToken/>
     <RadzenStack>
         <RadzenFormField Text="Theme">
-            <RadzenDropDown TValue="string" Name="theme" Value="@ThemeService.Theme" Data="@Themes.Free" TextProperty=@nameof(Theme.Text) ValueProperty=@nameof(Theme.Value) />
+            <RadzenDropDown TValue="string" Name="theme" Value="@(ThemeService.Theme ?? Themes.Free.First().Value)" Data="@Themes.Free" TextProperty=@nameof(Theme.Text) ValueProperty=@nameof(Theme.Value) />
         </RadzenFormField>
         <RadzenButton ButtonType="ButtonType.Submit">Change Theme</RadzenButton>
     </RadzenStack>

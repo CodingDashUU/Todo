@@ -1,11 +1,11 @@
 ﻿namespace Washu.Framework.Blazor;
 
-using Constants;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
+using Notifications;
 
-public sealed class AntiforgeryExceptionHandler : IExceptionHandler
+public sealed class AntiforgeryExceptionHandler(MessageStore store) : IExceptionHandler
 {
     public ValueTask<bool> TryHandleAsync(
         HttpContext context,
@@ -16,8 +16,9 @@ public sealed class AntiforgeryExceptionHandler : IExceptionHandler
             {
                 InnerException: AntiforgeryValidationException
             }) return ValueTask.FromResult(false);
-        
-        context.Response.Redirect(ApplicationRoutes.FormExpired);
+        var id = store.Store(Message.Error("Form Error",
+                "There was a problem while processing your request. Please try again"));
+        context.Response.Redirect($"{context.Request.Headers.Referer.FirstOrDefault() ?? ApplicationRoutes.Home}?messageId={id}");
         return ValueTask.FromResult(true);
     }
 }
