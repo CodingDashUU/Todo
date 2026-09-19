@@ -1,0 +1,45 @@
+@inject ApplicationUserManager<TodoDbContext> UserManager
+@using System.Security.Claims
+@using Washu.Framework.Identity
+@using Washu.Framework.Identity.Entities
+@using Washu.Framework.Notifications
+@using Washu.Todo.Identity
+@inject MessageStore MessageStore
+@inject NavigationManager NavManager
+<RadzenCard Variant="Variant.Outlined">
+    <RadzenStack class="rz-p-0 rz-p-md-6 rz-p-lg-12">
+        <RadzenText>Current Username: @_name</RadzenText>
+        <RadzenText>Email: @_email</RadzenText>
+        <ChangeUsernameForm Context="UserContext"/>
+        <div height="20px"/>
+        <SignOutForm/>
+        <DeleteAccountForm Context="UserContext"/>
+    </RadzenStack>
+</RadzenCard>
+
+@code {
+    private string _email = "Unknown";
+    private string _name = "Unknown";
+    [Parameter] public required AuthenticationState UserContext { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (UserContext.User.Identity is not { Name: not null } userContext)
+        {
+            RedirectToLogin("Invalid session");
+            return;
+        }
+        _name = userContext.Name;
+        if (UserContext.User.FindFirstValue(ClaimTypes.Email) is not { } email)
+        {
+            RedirectToLogin("No email was found");
+            return;
+        }
+        _email = email;
+    }
+    private void RedirectToLogin(string errorMessage)
+    {
+        var id = MessageStore.Store(Message.Error("Identity Error", errorMessage));
+        NavManager.NavigateTo($"{ApplicationRoutes.SignIn}?messageId={id}");
+    }
+}

@@ -1,11 +1,6 @@
 @attribute [Route(ApplicationRoutes.ManageAccount)]
 @inherits NotificationPage
+
 <Bouncer ReturnUrl="@ApplicationRoutes.ManageAccount">
-    <RadzenCard Variant="Variant.Outlined">
-        <RadzenStack class="rz-p-0 rz-p-md-6 rz-p-lg-12">
-            <ChangeUsernameForm Context="context"/>
-            <SignOutForm/>
-            <DeleteAccountForm Context="context"/>
-        </RadzenStack>
-    </RadzenCard>    
+    <ManageAccountCard UserContext="context"/>
 </Bouncer>
