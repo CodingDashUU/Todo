@@ -7,7 +7,7 @@ public static class RadzenExtensions
 {
     extension(NotificationService service)
     {
-        public void Show(Message message)
+        public void Show(Message message, ushort duration = RadzenNotificationConstants.Duration)
         {
             var severity = message.Type switch
             {
@@ -21,7 +21,7 @@ public static class RadzenExtensions
                 Summary = message.Title,
                 Severity = severity,
                 ShowProgress = true,
-                Duration = RadzenNotificationConstants.Duration,
+                Duration = duration,
                 Detail = message.Details,
                 CloseOnClick = true,
                 Style = "position: fixed; top: auto; bottom: 20px; left: 40px; right: auto;",

@@ -142,7 +142,7 @@
     {
         if (!await ValidateUserAsync()) return;
         var (message, newList) = await ToggleTaskCommand.ExecuteAsync(SelectedList, entry, _currentUser);
-        NotificationService.Show(message);
+        NotificationService.Show(message, duration: RadzenNotificationConstants.ShortDuration);
 
         await LoadListsAsync(preferredSelectedId: newList?.Id ?? SelectedList.Id);
     }
