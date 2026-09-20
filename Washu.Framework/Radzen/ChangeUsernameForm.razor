@@ -1,4 +1,3 @@
-@using Washu.Framework.AspNetCore
 <form action="@IdentityRoutes.ChangeUsername" method="post">
     <AntiforgeryToken/>
     <input type="hidden" name="@nameof(ChangeUsernameModel.OldName)" value="@(Context.User.Identity?.Name ?? "none")" />

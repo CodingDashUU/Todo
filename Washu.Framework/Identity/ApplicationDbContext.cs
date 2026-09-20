@@ -1,15 +1,14 @@
 ﻿namespace Washu.Framework.Identity;
 
 using Entities;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 public class ApplicationDbContext(DbContextOptions options)
     : DbContext(options)
 {
-    public DbSet<ApplicationUser> Users { get; set; }
-    public DbSet<ApplicationRole> Roles { get; set; }
-    public DbSet<UserRole> UserRoles { get; set; }
+    public DbSet<ApplicationUser> Users => Set<ApplicationUser>();
+    public DbSet<ApplicationRole> Roles => Set<ApplicationRole>();
+    public DbSet<UserRole> UserRoles => Set<UserRole>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<UserRole>(entity =>

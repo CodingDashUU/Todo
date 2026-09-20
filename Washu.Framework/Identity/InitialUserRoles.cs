@@ -1,7 +1,5 @@
 ﻿namespace Washu.Framework.Identity;
 
-using System.Collections.Immutable;
-
 public static class InitialUserRoles
 {
     public const string User = "User";

@@ -17,14 +17,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Notifications;
-using System.Net;
 
 public static class ConfigurationExtensions
 {
     private const ushort ThemeCookieDuration = 365;
     extension(IServiceCollection services)
     {
-        public IServiceCollection AddWashuFramework<TDbContext>(WebApplicationBuilder builder)
+        public void AddWashuFramework<TDbContext>(WebApplicationBuilder builder)
         where TDbContext : ApplicationDbContext
         {
             builder.Services.AddHttpContextAccessor();
@@ -50,7 +49,7 @@ public static class ConfigurationExtensions
             // Identity
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
             builder.Services.AddScoped<ExternalEndpoints<TDbContext>>();
-            services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, ApplicationClaimsPrincipalFactory<TDbContext>>();
+            services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, ApplicationClaimsPrincipalFactory>();
             services.AddScoped<ApplicationSignInManager<TDbContext>>();
             services.AddScoped<ApplicationUserManager<TDbContext>>();
             services.AddScoped<ApplicationRoleManager<TDbContext>>();
@@ -143,8 +142,6 @@ public static class ConfigurationExtensions
             builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();
             builder.Services.AddRadzenComponents();
-            
-            return services;
         }
     }
 

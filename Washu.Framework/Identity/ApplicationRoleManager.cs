@@ -2,7 +2,6 @@ namespace Washu.Framework.Identity;
 
 using Entities;
 using Microsoft.EntityFrameworkCore;
-using Notifications;
 
 public sealed class ApplicationRoleManager<TContext>(IDbContextFactory<TContext> dbFactory) 
     where TContext : ApplicationDbContext
