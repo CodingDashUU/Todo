@@ -1,5 +1,4 @@
 ﻿@using Microsoft.EntityFrameworkCore
-@using Washu.Framework.Constants
 @using Washu.Framework.Identity
 @using Washu.Framework.Notifications
 @using Washu.Todo.Commands
@@ -22,7 +21,7 @@
                     Data="ListNames" 
                     TextProperty="Name"
                     PageSize="10" 
-                    ValueChanged="@(v => OnListSelected(v))" />
+                    ValueChanged="OnListSelected" />
     
     <RadzenButton class="big-icon-button"
                   ButtonStyle="@(IsEditing ? ButtonStyle.Success : ButtonStyle.Danger)"
@@ -49,10 +48,6 @@
         }
     }
 </Bouncer>
-
-<style>
-    .big-icon-button .rzi { font-size: 32px; }
-</style>
 
 @code {
     private ApplicationUser _currentUser = null!;
@@ -150,7 +145,7 @@
     private async Task OnSettingsClicked(TaskEntry entry)
     {
         if (!await ValidateUserAsync()) return;
-        var parameters = new Dictionary<string, object?> { { nameof(TaskUpdateDialog.OldEntry), entry } };
+        var parameters = new Dictionary<string, object?> {  [nameof(TaskUpdateDialog.OldEntry)] = entry };
         var result = await DialogService.OpenAsync<TaskUpdateDialog>("Update Task", parameters);
         if (result is not UpdateTask.Model model) return;
 
