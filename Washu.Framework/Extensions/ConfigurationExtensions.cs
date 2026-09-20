@@ -17,6 +17,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Notifications;
+using System.Net;
 
 public static class ConfigurationExtensions
 {
@@ -97,9 +98,11 @@ public static class ConfigurationExtensions
                 })
                 .AddCookie(IdentityConstants.ExternalScheme, options =>
                 {
-                    // Registers the missing 'Identity.External' scheme
+                    options.Cookie.HttpOnly = true;
+                    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                    options.Cookie.SameSite = SameSiteMode.Lax;
+                    options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
                     options.Cookie.Name = ".Washu.External";
-                    options.ExpireTimeSpan = TimeSpan.FromMinutes(10);
                 })
                 .AddCookie(IdentityConstants.ApplicationScheme, options =>
                 {
