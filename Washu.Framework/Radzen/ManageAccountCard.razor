@@ -1,17 +1,14 @@
-@inject ApplicationUserManager<TodoDbContext> UserManager
 @using System.Security.Claims
-@using Washu.Framework.Identity
-@using Washu.Framework.Identity.Entities
 @using Washu.Framework.Notifications
-@using Washu.Todo.Identity
 @inject MessageStore MessageStore
 @inject NavigationManager NavManager
+
 <RadzenCard Variant="Variant.Outlined">
     <RadzenStack class="rz-p-0 rz-p-md-6 rz-p-lg-12">
         <RadzenText>Current Username: @_name</RadzenText>
         <RadzenText>Email: @_email</RadzenText>
         <ChangeUsernameForm Context="UserContext"/>
-        <div height="20px"/>
+        <div height="20px"></div>
         <SignOutForm/>
         <DeleteAccountForm Context="UserContext"/>
     </RadzenStack>
