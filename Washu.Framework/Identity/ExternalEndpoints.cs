@@ -84,17 +84,16 @@ where TDbContext : ApplicationDbContext
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         var user = new ApplicationUser(request.Username, email, info.ProviderKey);
         if (await dbContext.Users
-                .AnyAsync(u => u.NormalizedUsername == user.NormalizedUsername))
+                .AnyAsync(u => u.Username == user.Username))
         {
             var id = store.Store(Message.Error("Login Error", "User already exists") );
             return TypedResults.Redirect($"{ApplicationRoutes.Register}?messageId={id}&&ReturnUrl={returnUrl}");
         }
         await dbContext.Users.AddAsync(user);
         // Adding user to role
-        var normalizedRole = InitialUserRoles.User.ToUpperInvariant();
         var role = await dbContext.Roles
             .AsNoTracking()
-            .FirstOrDefaultAsync(r => r.NormalizedName == normalizedRole);
+            .FirstOrDefaultAsync(r => r.Name == InitialUserRoles.User);
 
         if (role is null) 
         {

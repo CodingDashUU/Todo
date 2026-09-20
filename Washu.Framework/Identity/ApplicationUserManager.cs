@@ -10,9 +10,8 @@ public sealed class ApplicationUserManager<TDbContext>(IDbContextFactory<TDbCont
 
     public async Task<ApplicationUser?> FindByUsernameAsync(string userName, CancellationToken ct = default)
     {
-        var normalizedUsername = userName.ToUpperInvariant();
         await using var dbContext = await factory.CreateDbContextAsync(ct);
-        return await dbContext.Users.FirstOrDefaultAsync(u => u.NormalizedUsername == normalizedUsername, ct);
+        return await dbContext.Users.FirstOrDefaultAsync(u => u.Username == userName, ct);
     }
 
     public async Task<ApplicationUser?> FindByIdAsync(Guid userId, CancellationToken ct = default)
