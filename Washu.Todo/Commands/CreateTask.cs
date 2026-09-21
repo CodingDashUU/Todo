@@ -36,7 +36,7 @@ public static class CreateTask
                     Message.Error("Task Creation Error", "List does not exist"), 
                     list);
             if (list.VersionId != selectedList.VersionId) return (Message.Error("Task Creation Error", "Your todo list was already modified, please try again"), null);
-            list.Tasks.Add(new TaskEntry(model.TaskName, model.GoalDate, Guid.CreateVersion7()));
+            dbContext.Set<TaskEntry>().Add(new TaskEntry(model.TaskName, model.GoalDate, Guid.CreateVersion7(), list.Id));
             list.LastModified = DateTimeOffset.UtcNow;
             list.ChangeVersionId();
             try

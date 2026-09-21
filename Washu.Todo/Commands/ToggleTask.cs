@@ -13,8 +13,7 @@ public class ToggleTask
         public async Task<(Message, TodoList?)> ExecuteAsync(TodoList selectedList, TaskEntry entry, ApplicationUser user)
         {
             await using var dbContext = await factory.CreateDbContextAsync();
-            var list = await dbContext.TodoLists
-                .FirstOrDefaultAsync(l => l.Id == selectedList.Id && user.Id == l.UserId);
+            var list = await dbContext.GetListAsync(selectedList.Id);
             if (list is null)
                 return (
                     Message.Error("Toggle Task Error", "Todo list does not exist"), 

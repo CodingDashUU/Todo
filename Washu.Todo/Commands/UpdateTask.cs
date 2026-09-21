@@ -31,8 +31,7 @@ public static class UpdateTask
         public async Task<(Message, TodoList?)> ExecuteAsync(Model model, TodoList selectedList, TaskEntry entry)
         {
             await using var dbContext = await factory.CreateDbContextAsync();
-            var list = await dbContext.TodoLists
-                .FirstOrDefaultAsync(l => l.Id == selectedList.Id);
+            var list = await dbContext.GetListAsync(selectedList.Id);
             if (list is null) return (Message.Error(
                 title: "Task Modification Error", 
                 details: "List does not exist"), null);

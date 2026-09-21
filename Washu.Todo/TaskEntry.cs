@@ -6,9 +6,10 @@
 /// </summary>
 /// <param name="name">The name of the task entry you want to set it to</param>
 /// <param name="goalDate">The date and time you want to complete the task by that you set the task entry to</param>
-public sealed class TaskEntry(string name, DateTimeOffset goalDate, Guid id)
+public sealed class TaskEntry(string name, DateTimeOffset goalDate, Guid id, Guid todoListId)
 {
     public Guid Id { get; set; } = id;
+    public Guid TodoListId { get; set; } = todoListId;
     /// <summary>
     /// The name of the task
     /// </summary>

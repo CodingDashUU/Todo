@@ -2,11 +2,11 @@
 @inject DialogService DialogService
 @using Washu.Framework.Notifications
 @using Washu.Todo.Commands
-<RadzenTemplateForm TItem="CreateList.Model" Data=@model Submit=@HandleSubmit>
+<RadzenTemplateForm TItem="CreateList.Model" Data=@_model Submit=@HandleSubmit>
     <RadzenStack Gap="1rem">
         <RadzenFormField Text="List Name">
             <RadzenTextBox Name="@nameof(CreateList.Model.ListName)" 
-                           @bind-Value="model.ListName"
+                           @bind-Value="_model.ListName"
                            MaxLength="TodoRules.ListName.MaximumLength"/>
         </RadzenFormField>
         <RadzenButton Text="Create"
@@ -15,13 +15,13 @@
     </RadzenStack>
 </RadzenTemplateForm>
 @code {
-    private CreateList.Model model = new();
-    private CreateList.Validator validator = new();
-    private bool SubmitBusy;
+    private readonly CreateList.Model _model = new();
+    private readonly CreateList.Validator _validator = new();
+    public bool SubmitBusy;
     private async Task HandleSubmit(CreateList.Model args)
     {
         SubmitBusy = true;
-        var result = await validator.ValidateAsync(model);
+        var result = await _validator.ValidateAsync(_model);
         if (!result.IsValid)
         {
                 NotificationService.Show(
@@ -32,7 +32,7 @@
             return;
         }
 
-        DialogService.Close(model);
+        DialogService.Close(_model);
     }
 
 }

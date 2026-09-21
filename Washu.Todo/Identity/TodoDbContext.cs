@@ -16,9 +16,13 @@ public class TodoDbContext(DbContextOptions<TodoDbContext> options) : Applicatio
                 .HasForeignKey(t => t.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
             entity.Property(t => t.RowVersion).IsRowVersion();
-            entity.ComplexCollection(u => u.Tasks, t => t.ToJson());
+            
+            entity.HasMany(x => x.Tasks)
+                .WithOne()
+                .HasForeignKey(x => x.TodoListId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
-    public async Task<TodoList?> GetListAsync(Guid id) => await TodoLists.FirstOrDefaultAsync(l => l.Id == id);
-    public async Task<List<TodoList>> GetListsByUserIdAsync(Guid userId) => await TodoLists.Where(l => l.UserId == userId).ToListAsync();
+    public async Task<TodoList?> GetListAsync(Guid id) => await TodoLists.Include(l => l.Tasks.OrderBy(t => t.DateCreated)).FirstOrDefaultAsync(l => l.Id == id);
+    public async Task<List<TodoList>> GetListsByUserIdAsync(Guid userId) => await TodoLists.Where(l => l.UserId == userId).Include(l => l.Tasks.OrderBy(t => t.DateCreated)).ToListAsync();
 }
