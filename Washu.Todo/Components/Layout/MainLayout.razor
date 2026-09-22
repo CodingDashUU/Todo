@@ -1,6 +1,13 @@
-﻿@using Washu.Framework.Constants
+﻿@using System.Security.Claims
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Identity
+@using Washu.Framework.Identity
 @inherits LayoutComponentBase
+@inject IHttpContextAccessor HttpContextAccessor
 @inject NavigationManager NavManager
+@inject UserSessionManager SessionManager
+@inject CircuitState CircuitState
+@implements IDisposable
 <RadzenLayout>
     <RadzenHeader>
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0">
@@ -38,4 +45,24 @@
 
 @code {
     bool sidebarExpanded = true;
+    HttpContext Context => HttpContextAccessor.HttpContext ?? throw new InvalidOperationException("An active HttpContext is required.");
+    Guid UserId;
+    protected override void OnInitialized()
+    {
+        if (Context.User.FindFirstValue(ClaimTypes.NameIdentifier) is not { } userId
+            || !Guid.TryParse(userId, out var userGuid)) return;
+        UserId = userGuid;
+        SessionManager.AddSession(userGuid, CircuitState.Id, () =>
+        {
+            Context.SignOutAsync(IdentityConstants.ApplicationScheme);
+            NavManager.Refresh(forceReload: true);
+            return Task.CompletedTask;
+        });
+    }
+
+    public void Dispose()
+    {
+        SessionManager.RemoveSession(UserId, CircuitState.Id);
+    }
+
 }
