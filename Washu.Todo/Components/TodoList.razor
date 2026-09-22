@@ -15,6 +15,9 @@
 @inject UpdateTask.Command UpdateTaskCommand
 @inject MessageStore MessageStore
 @inject ApplicationUserManager<TodoDbContext> UserManager
+@inject UserSessionManager SessionManager
+@inject CircuitState CircuitState
+@implements IDisposable
 <Bouncer ReturnUrl="/">
     <RadzenDropDown TValue="Todo.TodoList" 
                     Value="SelectedList" 
@@ -76,7 +79,10 @@
             return;
         }
         _currentUser = user;
-
+        SessionManager.AddSession(user.Id, CircuitState.Id, async () =>
+        {
+            NavManager.NavigateTo(ApplicationRoutes.SignIn);
+        });
         await LoadListsAsync(selectDefault: true);
     }
     
@@ -149,4 +155,11 @@
 
         await LoadListsAsync(preferredSelectedId: newList?.Id ?? SelectedList.Id);
     }
+
+    public void Dispose()
+    {
+        DialogService?.Dispose();
+        SessionManager.RemoveSession(_currentUser.Id, CircuitState.Id);
+    }
+
 }

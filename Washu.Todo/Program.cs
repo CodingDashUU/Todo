@@ -11,6 +11,8 @@ using Washu.Framework.Notifications;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddWashuFramework<TodoDbContext>(builder);
 builder.Services.AddTodoCommands();
+builder.Services.AddScoped<CircuitState>();
+builder.Services.AddSingleton<UserSessionManager>();
 var app = builder.Build();
 await using var scope = app.Services.CreateAsyncScope();
 var dbContext = scope.ServiceProvider.GetRequiredService<TodoDbContext>();
