@@ -37,12 +37,7 @@ public static class CreateList
             {
                 return Message.Error("List Creation Error", "There was an unknown error while creating your list");
             }
-            return new Message
-            {
-                Type = MessageType.Success,
-                Title = "List Creation Success",
-                Details = $"Successfully created list: {model.ListName}"
-            };
+            return Message.Success("List Creation Success", $"Successfully created list: {model.ListName}");
         }
     }
 

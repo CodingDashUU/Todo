@@ -82,7 +82,6 @@
     
     private async Task LoadListsAsync(Guid? preferredSelectedId = null, bool selectDefault = false)
     {
-        if (!await ValidateUserAsync()) return;
         await using var dbContext = await DbContextFactory.CreateDbContextAsync();
         
         var fetchedLists = await dbContext.GetListsByUserIdAsync(_currentUser.Id);
@@ -110,7 +109,6 @@
 
     private async Task CreateListAsync()
     {
-        if (!await ValidateUserAsync()) return;
         var result = await DialogService.OpenAsync<ListCreationDialog>("Create List");
         if (result is not CreateList.Model model) return;
 
@@ -122,7 +120,6 @@
 
     private async Task AddTaskAsync()
     {
-        if (!await ValidateUserAsync()) return;
         var parameters = new Dictionary<string, object?> { { nameof(TaskCreationDialog.List), SelectedList } };
         var result = await DialogService.OpenAsync<TaskCreationDialog>("Create Task", parameters);
         if (result is not CreateTask.Model model) return;
@@ -135,7 +132,6 @@
 
     private async Task OnToggleTask(TaskEntry entry)
     {
-        if (!await ValidateUserAsync()) return;
         var (message, newList) = await ToggleTaskCommand.ExecuteAsync(SelectedList, entry, _currentUser);
         NotificationService.Show(message, duration: RadzenNotificationConstants.ShortDuration);
 
@@ -144,7 +140,6 @@
 
     private async Task OnSettingsClicked(TaskEntry entry)
     {
-        if (!await ValidateUserAsync()) return;
         var parameters = new Dictionary<string, object?> {  [nameof(TaskUpdateDialog.OldEntry)] = entry };
         var result = await DialogService.OpenAsync<TaskUpdateDialog>("Update Task", parameters);
         if (result is not UpdateTask.Model model) return;
@@ -153,22 +148,5 @@
         NotificationService.Show(message);
 
         await LoadListsAsync(preferredSelectedId: newList?.Id ?? SelectedList.Id);
-    }
-
-    private async Task<bool> ValidateUserAsync()
-    {
-        var user = await UserManager.FindByIdAsync(_currentUser.Id);
-        if (user is null)
-        {
-            RedirectToLogin("Invalid session, or user does not exist");
-            return false;
-        }
-        _currentUser = user;
-        return true;
-    }
-    private void RedirectToLogin(string errorMessage)
-    {
-        var id = MessageStore.Store(Message.Error("Identity Error", errorMessage));
-        NavManager.NavigateTo($"{ApplicationRoutes.SignIn}?messageId={id}");
     }
 }
