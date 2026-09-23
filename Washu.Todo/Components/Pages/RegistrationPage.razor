@@ -2,8 +2,9 @@
 @inherits NotificationPage
 
 <PageTitle>Register</PageTitle>
-
-<RegistrationCard ReturnUrl="@ReturnUrl"/>
+<ReverseBouncer>
+    <RegistrationCard ReturnUrl="@ReturnUrl"/>
+</ReverseBouncer>
 
 @code {
 

@@ -2,7 +2,9 @@
 @inherits NotificationPage
 
 <PageTitle>Sign In</PageTitle>
-<SignInCard ReturnUrl="@ReturnUrl"/>
+<ReverseBouncer>
+    <SignInCard ReturnUrl="@ReturnUrl"/>
+</ReverseBouncer>
 
 @code {
     [SupplyParameterFromQuery] public string ReturnUrl { get; set; } = "";
