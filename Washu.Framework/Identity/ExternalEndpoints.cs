@@ -32,7 +32,7 @@ where TDbContext : ApplicationDbContext
         var properties =
             signInManager.ConfigureExternalAuthenticationProperties(
                 GoogleDefaults.AuthenticationScheme,
-                $"{IdentityRoutes.ExternalCallback}?PersistCookie={persistCookie}&&ReturnUrl={returnUrl}");
+                $"{IdentityRoutes.ExternalCallback}?PersistCookie={persistCookie}&ReturnUrl={returnUrl}");
 
         return TypedResults.Challenge(
             properties,
@@ -42,13 +42,13 @@ where TDbContext : ApplicationDbContext
     private async Task<IResult> ExternalCallback([FromQuery] bool persistCookie, [FromQuery] string returnUrl)
     {
         var info = await signInManager.GetExternalLoginInfoAsync();
-        if (info is null) return Results.Redirect($"{ApplicationRoutes.SignIn}?PersistCookie={persistCookie}&&ReturnUrl={returnUrl}");
+        if (info is null) return Results.Redirect($"{ApplicationRoutes.SignIn}?PersistCookie={persistCookie}&ReturnUrl={returnUrl}");
         // 1. Sign in if Google link exists
         var result = await signInManager.ExternalLoginSignInAsync(
             info.ProviderKey, 
             isPersistent: persistCookie);
         return Results.Redirect(result.Succeeded ? SafeReturnUrl(returnUrl) :
-            $"{ApplicationRoutes.Register}?PersistCookie={persistCookie}&&ReturnUrl={returnUrl}");
+            $"{ApplicationRoutes.Register}?PersistCookie={persistCookie}&ReturnUrl={returnUrl}");
     }
 
     private async Task<RedirectHttpResult> CompleteRegistration(
@@ -63,7 +63,7 @@ where TDbContext : ApplicationDbContext
         if (!result.IsValid)
         {
             var id = store.Store([.. result.Errors.Select(e => Message.Error("Invalid Registration Details",$"{e.PropertyName}: {e.ErrorMessage}"))]);
-            return TypedResults.Redirect($"{ApplicationRoutes.Register}?messageId={id}&&ReturnUrl={returnUrl}");
+            return TypedResults.Redirect($"{ApplicationRoutes.Register}?messageId={id}&ReturnUrl={returnUrl}");
         }
         var info = await signInManager.GetExternalLoginInfoAsync();
         if (info is null)
@@ -71,7 +71,7 @@ where TDbContext : ApplicationDbContext
             var id = store.Store(
                 Message.Error("Registration Error", "You need to continue with a sign-in provider to register"));
 
-            return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}&&ReturnUrl={returnUrl}");
+            return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}&ReturnUrl={returnUrl}");
         }
 
         var email = info.Principal.FindFirstValue(ClaimTypes.Email);
@@ -79,7 +79,7 @@ where TDbContext : ApplicationDbContext
         {
             var id = store.Store(
                 Message.Error("Registration Error", "Email was not provided or not found"));
-            return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}&&ReturnUrl={returnUrl}");
+            return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}&ReturnUrl={returnUrl}");
         }
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         var user = new ApplicationUser(request.Username, email, info.ProviderKey);
@@ -87,7 +87,7 @@ where TDbContext : ApplicationDbContext
                 .AnyAsync(u => u.Username == user.Username))
         {
             var id = store.Store(Message.Error("Login Error", "User already exists") );
-            return TypedResults.Redirect($"{ApplicationRoutes.Register}?messageId={id}&&ReturnUrl={returnUrl}");
+            return TypedResults.Redirect($"{ApplicationRoutes.Register}?messageId={id}&ReturnUrl={returnUrl}");
         }
         await dbContext.Users.AddAsync(user);
         // Adding user to role
@@ -98,7 +98,7 @@ where TDbContext : ApplicationDbContext
         if (role is null) 
         {
             var id = store.Store(Message.Error("Login Error", "There was an issue while logging you in") );
-            return TypedResults.Redirect($"{ApplicationRoutes.Register}?messageId={id}&&ReturnUrl={returnUrl}");
+            return TypedResults.Redirect($"{ApplicationRoutes.Register}?messageId={id}&ReturnUrl={returnUrl}");
         }
         if (!await dbContext.UserRoles
                 .AnyAsync(ur => ur.UserId == user.Id && ur.RoleId == role.Id))
