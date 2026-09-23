@@ -248,8 +248,8 @@ public static class ConfigurationExtensions
                     return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={errorId}");
                 }
                 var message = await manager.ChangeUsernameAsync(oldUsername, newUsername);
-                var id = store.Store(message);
-                if (message.Title.StartsWith("Invalid") || message.Type is MessageType.Info) return TypedResults.Redirect($"{ApplicationRoutes.ManageAccount}?messageId={id}");
+                var id = store.Store(message.CoreMessage);
+                if (!message.RedirectToSignIn) return TypedResults.Redirect($"{ApplicationRoutes.ManageAccount}?messageId={id}");
                 await context.SignOutAsync(IdentityConstants.ApplicationScheme);
                 if (context.User.FindUserId() is { } userGuid) sessionManager.Invalidate(userGuid);
                 return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}");
