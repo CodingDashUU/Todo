@@ -206,8 +206,14 @@ public static class ConfigurationExtensions
             }).RequireRateLimiting(RateLimiterPolicy.AuthLimiter);
             scope.ServiceProvider.GetRequiredService<ExternalEndpoints<TDbContext>>().Map(app);
             app.MapPost(IdentityRoutes.DeleteAccount, async (MessageStore store, HttpContext context,
-                ApplicationUserManager<TDbContext> manager, UserSessionManager sessionManager, [FromForm] string username) =>
+                ApplicationUserManager<TDbContext> manager, UserSessionManager sessionManager) =>
             {
+                var username = context.User.Identity?.Name;
+                if (username is null)
+                {
+                    var errorId = store.Store(Message.Error("Identity Error","Invalid session, or user does not exist"));
+                    return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={errorId}");
+                }
                 var message = await manager.DeleteByUsernameAsync(username);
                 var id = store.Store(message);
                 await context.SignOutAsync(IdentityConstants.ApplicationScheme);
@@ -220,9 +226,15 @@ public static class ConfigurationExtensions
                 if (context.User.FindUserId() is { } userGuid) manager.Invalidate(userGuid);
                 return TypedResults.Redirect($"{ApplicationRoutes.SignIn}");
             }).RequireAuthorization();
-            app.MapPost(IdentityRoutes.ChangeUsername, async (MessageStore store, HttpContext context, ApplicationUserManager<TDbContext> manager, [FromForm] ChangeUsernameModel model) =>
+            app.MapPost(IdentityRoutes.ChangeUsername, async (MessageStore store, HttpContext context, ApplicationUserManager<TDbContext> manager, [FromForm] string newUsername) =>
             {
-                var message = await manager.ChangeUsernameAsync(model);
+                var oldUsername = context.User.Identity?.Name;
+                if (oldUsername is null)
+                {
+                    var errorId = store.Store(Message.Error("Identity Error","Invalid session, or user does not exist"));
+                    return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={errorId}");
+                }
+                var message = await manager.ChangeUsernameAsync(oldUsername, newUsername);
                 var id = store.Store(message);
                 if (message.Title.StartsWith("Invalid") || message.Type is MessageType.Info) return TypedResults.Redirect($"{ApplicationRoutes.ManageAccount}?messageId={id}");
                 await context.SignOutAsync(IdentityConstants.ApplicationScheme);

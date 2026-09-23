@@ -1,13 +1,12 @@
 <form action="@IdentityRoutes.ChangeUsername" method="post">
     <AntiforgeryToken/>
-    <input type="hidden" name="@nameof(ChangeUsernameModel.OldName)" value="@(Context.User.Identity?.Name ?? "none")" />
     <RadzenStack>
         <RadzenFormField Text="New Username">
             <Start>
                 <RadzenIcon Icon="@MaterialIcons.AccountCircle"/>
             </Start>
             <ChildContent>
-                <RadzenTextBox Name="@nameof(ChangeUsernameModel.NewName)" Value="@(Context.User.Identity?.Name ?? "")" MaxLength="Username.Rules.MaxUsernameLength"/>
+                <RadzenTextBox Name="NewUsername" Value="@(Context.User.Identity?.Name ?? "")" MaxLength="Username.Rules.MaxUsernameLength"/>
             </ChildContent>
         </RadzenFormField>
         <RadzenButton ButtonType="ButtonType.Submit">Change Username</RadzenButton>

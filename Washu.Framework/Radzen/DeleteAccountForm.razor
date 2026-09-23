@@ -1,7 +1,6 @@
 <form action="@IdentityRoutes.DeleteAccount" method="post">
     <AntiforgeryToken/>
     <RadzenStack>
-        <input type="hidden" name="username" value="@(Context.User.Identity?.Name ?? "none")" />
         <RadzenButton ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Danger">Delete Account</RadzenButton>
     </RadzenStack>
 </form>
