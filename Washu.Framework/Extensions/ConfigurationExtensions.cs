@@ -138,6 +138,17 @@ public static class ConfigurationExtensions
                     options.CorrelationCookie.SameSite = SameSiteMode.Lax;
                     options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
                     options.SignInScheme = IdentityConstants.ExternalScheme;
+                    
+                    options.Events.OnRemoteFailure = context =>
+                    {
+                        using var scope = context.HttpContext.RequestServices.CreateScope();
+                        var messageStore = scope.ServiceProvider.GetRequiredService<MessageStore>();
+                        var id = messageStore.Store(Message.Error("External Identity Error",
+                            "There was a problem signing in your account, please try again"));
+                        context.Response.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}");
+                        context.HandleResponse();
+                        return Task.CompletedTask;
+                    };
                 });
             builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();
