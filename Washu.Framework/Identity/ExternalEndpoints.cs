@@ -27,8 +27,9 @@ where TDbContext : ApplicationDbContext
         group.MapPost(IdentityRoutes.CompleteRegistration, CompleteRegistration);
     }
 
-    private ChallengeHttpResult ChallengeExternal([FromQuery] bool persistCookie, [FromQuery] string returnUrl)
+    private IResult ChallengeExternal(HttpContext context, [FromQuery] bool persistCookie, [FromQuery] string returnUrl)
     {
+        if (context.User.Identity is { IsAuthenticated: true }) return TypedResults.Redirect(SafeReturnUrl(returnUrl));
         var properties =
             signInManager.ConfigureExternalAuthenticationProperties(
                 GoogleDefaults.AuthenticationScheme,
