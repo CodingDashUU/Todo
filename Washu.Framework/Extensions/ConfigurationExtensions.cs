@@ -237,7 +237,9 @@ public static class ConfigurationExtensions
                 if (context.User.FindUserId() is { } userGuid) manager.Invalidate(userGuid);
                 return TypedResults.Redirect($"{ApplicationRoutes.SignIn}");
             }).RequireAuthorization();
-            app.MapPost(IdentityRoutes.ChangeUsername, async (MessageStore store, HttpContext context, ApplicationUserManager<TDbContext> manager, [FromForm] string newUsername) =>
+            app.MapPost(IdentityRoutes.ChangeUsername, async (MessageStore store, 
+                HttpContext context, 
+                ApplicationUserManager<TDbContext> manager, UserSessionManager sessionManager, [FromForm] string newUsername) =>
             {
                 var oldUsername = context.User.Identity?.Name;
                 if (oldUsername is null)
@@ -249,6 +251,7 @@ public static class ConfigurationExtensions
                 var id = store.Store(message);
                 if (message.Title.StartsWith("Invalid") || message.Type is MessageType.Info) return TypedResults.Redirect($"{ApplicationRoutes.ManageAccount}?messageId={id}");
                 await context.SignOutAsync(IdentityConstants.ApplicationScheme);
+                if (context.User.FindUserId() is { } userGuid) sessionManager.Invalidate(userGuid);
                 return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}");
             }).RequireAuthorization();
         }
