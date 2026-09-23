@@ -1,6 +1,7 @@
 ﻿@using System.Security.Claims
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Identity
+@using Washu.Framework.Extensions
 @using Washu.Framework.Identity
 @inherits LayoutComponentBase
 @inject IHttpContextAccessor HttpContextAccessor
@@ -49,12 +50,10 @@
     Guid UserId;
     protected override void OnInitialized()
     {
-        if (Context.User.FindFirstValue(ClaimTypes.NameIdentifier) is not { } userId
-            || !Guid.TryParse(userId, out var userGuid)) return;
+        if (Context.User.FindUserId() is not {} userGuid) return;
         UserId = userGuid;
         SessionManager.AddSession(userGuid, CircuitState.Id, () =>
         {
-            Context.SignOutAsync(IdentityConstants.ApplicationScheme);
             NavManager.Refresh(forceReload: true);
             return Task.CompletedTask;
         });

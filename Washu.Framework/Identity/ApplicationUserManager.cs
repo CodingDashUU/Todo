@@ -4,7 +4,7 @@ using Entities;
 using Microsoft.EntityFrameworkCore;
 using Notifications;
 
-public sealed class ApplicationUserManager<TDbContext>(IDbContextFactory<TDbContext> factory, UserSessionManager manager)
+public sealed class ApplicationUserManager<TDbContext>(IDbContextFactory<TDbContext> factory)
     where TDbContext : ApplicationDbContext
 {
 
@@ -44,7 +44,6 @@ public sealed class ApplicationUserManager<TDbContext>(IDbContextFactory<TDbCont
         if (user is null) return Message.Error("Identity Error", "Account with the given user name not found");
         dbContext.Users.Remove(user);
         await dbContext.SaveChangesAsync(ct);
-        manager.Invalidate(user.Id);
         return Message.Success("Identity Success", "Successfully deleted account");
     }
 }

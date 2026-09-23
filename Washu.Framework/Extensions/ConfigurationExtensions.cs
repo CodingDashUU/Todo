@@ -206,18 +206,20 @@ public static class ConfigurationExtensions
             }).RequireRateLimiting(RateLimiterPolicy.AuthLimiter);
             scope.ServiceProvider.GetRequiredService<ExternalEndpoints<TDbContext>>().Map(app);
             app.MapPost(IdentityRoutes.DeleteAccount, async (MessageStore store, HttpContext context,
-                ApplicationUserManager<TDbContext> manager, [FromForm] string username) =>
+                ApplicationUserManager<TDbContext> manager, UserSessionManager sessionManager, [FromForm] string username) =>
             {
                 var message = await manager.DeleteByUsernameAsync(username);
                 var id = store.Store(message);
                 await context.SignOutAsync(IdentityConstants.ApplicationScheme);
+                if (context.User.FindUserId() is { } userGuid) sessionManager.Invalidate(userGuid);
                 return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}");
             }).RequireAuthorization();
-            app.MapPost(IdentityRoutes.SignOut, async (HttpContext context) =>
+            app.MapPost(IdentityRoutes.SignOut, async (HttpContext context, UserSessionManager manager) =>
             {
                 await context.SignOutAsync(IdentityConstants.ApplicationScheme);
+                if (context.User.FindUserId() is { } userGuid) manager.Invalidate(userGuid);
                 return TypedResults.Redirect($"{ApplicationRoutes.SignIn}");
-            }).RequireAuthorization();;
+            }).RequireAuthorization();
             app.MapPost(IdentityRoutes.ChangeUsername, async (MessageStore store, HttpContext context, ApplicationUserManager<TDbContext> manager, [FromForm] ChangeUsernameModel model) =>
             {
                 var message = await manager.ChangeUsernameAsync(model);
