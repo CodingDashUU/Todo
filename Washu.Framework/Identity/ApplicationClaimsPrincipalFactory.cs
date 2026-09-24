@@ -6,11 +6,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.Security.Claims;
 
-public sealed class ApplicationClaimsPrincipalFactory(
-    IOptions<IdentityOptions> optionsAccessor) 
+public sealed class ApplicationClaimsPrincipalFactory<TDbContext>(
+    IOptions<IdentityOptions> optionsAccessor,
+    ApplicationRoleManager<TDbContext> roleManager) 
     : IUserClaimsPrincipalFactory<ApplicationUser>
+where TDbContext : ApplicationDbContext
 {
-    public Task<ClaimsPrincipal> CreateAsync(ApplicationUser user)
+    public async Task<ClaimsPrincipal> CreateAsync(ApplicationUser user)
     {
         var identity = new ClaimsIdentity(IdentityConstants.ApplicationScheme);
 
@@ -20,7 +22,9 @@ public sealed class ApplicationClaimsPrincipalFactory(
         identity.AddClaim(new Claim(
             optionsAccessor.Value.ClaimsIdentity.SecurityStampClaimType, 
             user.SecurityStamp.ToString()));
-        
-        return Task.FromResult(new ClaimsPrincipal(identity));
+
+        var roles = await roleManager.GetRolesForUserAsync(user.Id);
+        foreach (var role in roles) identity.AddClaim(new Claim(ClaimTypes.Role, role));
+        return new ClaimsPrincipal(identity);
     }
 }
