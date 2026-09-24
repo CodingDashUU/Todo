@@ -43,7 +43,33 @@
         Washu Software
     </RadzenFooter>
 </RadzenLayout>
+<script>
+    // Notice the ', true' at the end for capture phase
+    document.addEventListener('submit', async function (e) {
+        const form = e.target;
+        const tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
+        
+        if (!tokenInput || form.dataset.refreshed) return;
 
+        // 1. Prevent native submit
+        e.preventDefault();
+        
+        // 2. Freeze Blazor's scripts from intercepting this submit event
+        e.stopImmediatePropagation();
+
+        try {
+            const response = await fetch('/antiforgery/token');
+            if (response.ok) {
+                tokenInput.value = await response.text();
+            }
+        } catch (err) {
+            console.warn('Could not refresh token, submitting existing one', err);
+        } finally {
+            form.dataset.refreshed = "true";
+            form.submit(); // Clean submit with the fresh token
+        }
+    }, true); // <--- 'true' puts this in the capture phase (runs first)
+</script>
 @code {
     bool sidebarExpanded = true;
     HttpContext Context => HttpContextAccessor.HttpContext ?? throw new InvalidOperationException("An active HttpContext is required.");

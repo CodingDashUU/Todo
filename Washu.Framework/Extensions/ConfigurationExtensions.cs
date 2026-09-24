@@ -5,6 +5,7 @@ using Blazor;
 using global::Radzen;
 using Identity;
 using Identity.Entities;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -64,7 +65,6 @@ public static class ConfigurationExtensions
                             maxRetryDelay: TimeSpan.FromSeconds(30), // Max delay between retries
                             errorCodesToAdd: null              // Additional SQL/error codes if needed
                         )));
-            
             services.AddMemoryCache();
             services.AddSingleton<MessageStore>();
             // Time zone
@@ -200,8 +200,10 @@ public static class ConfigurationExtensions
                     await context.Response.WriteAsJsonAsync(json);
                 }
             });
-            app.MapPost("/theme", (HttpContext context, [FromForm] string theme) =>
+            app.MapPost("/theme", (HttpContext context, UserSessionManager sessionManager, [FromForm] string theme) =>
             {
+                var cookie = context.Request.Cookies[CookieNames.Theme];
+                if (cookie is not null && cookie == theme) return TypedResults.Redirect(ApplicationRoutes.Settings);
                 context.Response.Cookies.Delete(CookieNames.Theme);
                 context.Response.Cookies.Append(
                     CookieNames.Theme,
@@ -212,12 +214,13 @@ public static class ConfigurationExtensions
                         Expires = DateTimeOffset.Now.AddDays(ThemeCookieDuration),
                         SameSite = SameSiteMode.Lax
                     });
-
+                if (context.User.FindUserId() is { } userGuid)
+                    sessionManager.Invalidate(userGuid);
                 return TypedResults.Redirect(ApplicationRoutes.Settings);
             }).RequireRateLimiting(RateLimiterPolicy.AuthLimiter);
             scope.ServiceProvider.GetRequiredService<ExternalEndpoints<TDbContext>>().Map(app);
             app.MapPost(IdentityRoutes.DeleteAccount, async (MessageStore store, HttpContext context,
-                ApplicationUserManager<TDbContext> manager, UserSessionManager sessionManager) =>
+                ApplicationUserManager<TDbContext> manager, UserSessionManager sessionManager, [FromForm] Guid circuitId) =>
             {
                 var username = context.User.Identity?.Name;
                 if (username is null)
@@ -228,18 +231,39 @@ public static class ConfigurationExtensions
                 var message = await manager.DeleteByUsernameAsync(username);
                 var id = store.Store(message);
                 await context.SignOutAsync(IdentityConstants.ApplicationScheme);
-                if (context.User.FindUserId() is { } userGuid) sessionManager.Invalidate(userGuid);
+                if (context.User.FindUserId() is { } userGuid)
+                    context.Response.OnCompleted(
+                        static state =>
+                        {
+                            var (sessionManager, userId, circuitId) =
+                                ((UserSessionManager, Guid, Guid))state;
+
+                            sessionManager.Invalidate(userId, circuitId);
+                            return Task.CompletedTask;
+                        },
+                        (sessionManager, userGuid, circuitId));
                 return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}");
             }).RequireAuthorization();
-            app.MapPost(IdentityRoutes.SignOut, async (HttpContext context, UserSessionManager manager) =>
+            app.MapPost(IdentityRoutes.SignOut, async (HttpContext context, UserSessionManager sessionManager, [FromForm] Guid circuitId) =>
             {
                 await context.SignOutAsync(IdentityConstants.ApplicationScheme);
-                if (context.User.FindUserId() is { } userGuid) manager.Invalidate(userGuid);
+                if (context.User.FindUserId() is { } userGuid)
+                    context.Response.OnCompleted(
+                        static state =>
+                        {
+                            var (sessionManager, userId, circuitId) =
+                                ((UserSessionManager, Guid, Guid))state;
+
+                            sessionManager.Invalidate(userId, circuitId);
+                            return Task.CompletedTask;
+                        },
+                        (sessionManager, userGuid, circuitId));
                 return TypedResults.Redirect($"{ApplicationRoutes.SignIn}");
             }).RequireAuthorization();
+            
             app.MapPost(IdentityRoutes.ChangeUsername, async (MessageStore store, 
-                HttpContext context, 
-                ApplicationUserManager<TDbContext> manager, UserSessionManager sessionManager, [FromForm] string newUsername) =>
+                HttpContext context,
+                ApplicationUserManager<TDbContext> manager, UserSessionManager sessionManager, [FromForm] Guid circuitId, [FromForm] string newUsername) =>
             {
                 var oldUsername = context.User.Identity?.Name;
                 if (oldUsername is null)
@@ -251,9 +275,25 @@ public static class ConfigurationExtensions
                 var id = store.Store(message.CoreMessage);
                 if (!message.RedirectToSignIn) return TypedResults.Redirect($"{ApplicationRoutes.ManageAccount}?messageId={id}");
                 await context.SignOutAsync(IdentityConstants.ApplicationScheme);
-                if (context.User.FindUserId() is { } userGuid) sessionManager.Invalidate(userGuid);
+                if (context.User.FindUserId() is { } userGuid)
+                    context.Response.OnCompleted(
+                        static state =>
+                        {
+                            var (sessionManager, userId, circuitId) =
+                                ((UserSessionManager, Guid, Guid))state;
+
+                            sessionManager.Invalidate(userId, circuitId);
+                            return Task.CompletedTask;
+                        },
+                        (sessionManager, userGuid, circuitId));
                 return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}");
+                
             }).RequireAuthorization();
+            app.MapGet("/antiforgery/token", (IAntiforgery antiforgery, HttpContext context) =>
+            {
+                var tokens = antiforgery.GetAndStoreTokens(context);
+                return Results.Text(tokens.RequestToken);
+            });
         }
     }
 }

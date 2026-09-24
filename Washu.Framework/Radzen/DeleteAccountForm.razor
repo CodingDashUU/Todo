@@ -1,6 +1,9 @@
+@inject CircuitState State
+
 <form action="@IdentityRoutes.DeleteAccount" method="post">
     <AntiforgeryToken/>
     <RadzenStack>
+        <CircuitId/>
         <RadzenButton ButtonType="ButtonType.Submit" ButtonStyle="ButtonStyle.Danger">Delete Account</RadzenButton>
     </RadzenStack>
 </form>

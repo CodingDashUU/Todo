@@ -1,4 +1,4 @@
-namespace Washu.Todo;
+namespace Washu.Framework.Identity;
 
 public sealed class CircuitState
 {

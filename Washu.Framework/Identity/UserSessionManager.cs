@@ -19,12 +19,15 @@ public sealed class UserSessionManager
         sessions.TryRemove(sessionId, out _);
         if (sessions.IsEmpty) _sessions.TryRemove(userId, out _);
     }
-    public void Invalidate(Guid userId)
+    public void Invalidate(Guid userId, Guid? excludedSessionId = null)
     {
         if (!_sessions.Remove(userId, out var sessions))
             return;
 
         foreach (var callback in sessions)
+        {
+            if (callback.Key == excludedSessionId) continue;
             callback.Value();
+        }
     }
 }

@@ -1,5 +1,6 @@
 ﻿namespace Washu.Framework.Blazor;
 
+using Extensions;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server;
 using Microsoft.AspNetCore.Identity;
@@ -27,8 +28,8 @@ where TDbContext : ApplicationDbContext
         if (principal.Identity is not {IsAuthenticated: true}) return false;
         await using var scope = scopeFactory.CreateAsyncScope();
         var userManager = scope.ServiceProvider.GetRequiredService<ApplicationUserManager<TDbContext>>();
-        var userId = principal.FindFirstValue(_options.ClaimsIdentity.UserIdClaimType);
-        if (userId is null || !Guid.TryParse(userId, out var userIdGuid)) return false;
+        var userId = principal.FindUserId();
+        if (userId is not {} userIdGuid) return false;
         var user = await userManager.FindByIdAsync(userIdGuid, cancellationToken);
         // Check if they exist or are not banned
         if (user is not {IsBanned: false}) return false;
