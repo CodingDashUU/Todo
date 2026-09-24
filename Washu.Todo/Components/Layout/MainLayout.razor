@@ -18,8 +18,8 @@
             <AuthorizeView>
                 <Authorized>
                         <RadzenButton 
-                            class="rz-display-flex rz-align-items-center rz-justify-content-center rz-background-color-primary rz-color-white" 
-                            style="width: 40px; height: 40px; border-radius: 50%; font-weight: bold; font-size: 20px;"
+                            class="rz-display-flex rz-align-items-center rz-justify-content-center" 
+                            style="width: 40px; height: 40px; border-radius: 50%; font-weight: bold; font-size: 20px; background-color: var(--rz-secondary); color: var(--rz-white);"
                             Click="@(() => NavManager.NavigateTo(ApplicationRoutes.ManageAccount))"
                             Variant="Variant.Text">@(char.ToUpper(context.User.Identity?.Name?.First() ?? 'U'))</RadzenButton>
                 </Authorized>
@@ -50,11 +50,8 @@
         const tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
         
         if (!tokenInput || form.dataset.refreshed) return;
-
-        // 1. Prevent native submit
-        e.preventDefault();
         
-        // 2. Freeze Blazor's scripts from intercepting this submit event
+        e.preventDefault();
         e.stopImmediatePropagation();
 
         try {
@@ -66,9 +63,9 @@
             console.warn('Could not refresh token, submitting existing one', err);
         } finally {
             form.dataset.refreshed = "true";
-            form.submit(); // Clean submit with the fresh token
+            form.submit();
         }
-    }, true); // <--- 'true' puts this in the capture phase (runs first)
+    }, true);
 </script>
 @code {
     bool sidebarExpanded = true;
