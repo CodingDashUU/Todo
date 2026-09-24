@@ -18,6 +18,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Notifications;
+using System.Security.Claims;
 
 public static class ConfigurationExtensions
 {
@@ -129,6 +130,39 @@ public static class ConfigurationExtensions
 
                         context.Response.Redirect(context.RedirectUri);
                         return Task.CompletedTask;
+                    };
+                    options.Events.OnValidatePrincipal = async context =>
+                    {
+                        var userIdText = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                        if (!Guid.TryParse(userIdText, out var userId))
+                        {
+                            context.RejectPrincipal();
+                            await context.HttpContext.SignOutAsync(
+                                IdentityConstants.ApplicationScheme);
+                            return;
+                        }
+
+                        var factory = context.HttpContext.RequestServices
+                            .GetRequiredService<IDbContextFactory<TDbContext>>();
+
+                        await using var db = await factory.CreateDbContextAsync();
+                        var user = await db.Users.SingleOrDefaultAsync(u => u.Id == userId);
+
+                        const string stampType = "AspNet.Identity.SecurityStamp";
+                        if (context.Principal is null)
+                            throw new InvalidOperationException("Claims Principal cannot be null");
+                        var ticketStamp = context.Principal
+                            .FindFirstValue(stampType);
+
+                        if (user is null || user.IsBanned ||
+                            !Guid.TryParse(ticketStamp, out var stamp) ||
+                            stamp != user.SecurityStamp)
+                        {
+                            context.RejectPrincipal();
+                            await context.HttpContext.SignOutAsync(
+                                IdentityConstants.ApplicationScheme);
+                        }
                     };
                 })
                 .AddGoogle(options =>
