@@ -5,6 +5,7 @@
 @using Washu.Todo.Commands
 @using Washu.Todo.Identity
 @using Dialogs
+@using Washu.Framework.Extensions
 @using Washu.Framework.Identity.Entities
 @inject NotificationService NotificationService
 @inject NavigationManager NavManager
@@ -61,16 +62,15 @@
 
     protected override async Task OnInitializedAsync()
     {
-        if (Principal.Identity is not { Name: not null } userContext)
+        if (Principal.Identity is null || Principal.FindUserId() is not { } userId)
         {
-            var id = MessageStore.Store(Message.Error("Identity Error", "Invalid session"));
-            NavManager.NavigateTo($"{ApplicationRoutes.SignIn}?messageId={id}", forceLoad: true);
+            NavManager.NavigateTo(ApplicationRoutes.SignIn, forceLoad: true);
             return;
         }
-        var user = await UserManager.FindByUsernameAsync(userContext.Name);
+        var user = await UserManager.FindByIdAsync(userId);
         if (user is null)
         {
-            var id = MessageStore.Store(Message.Error("Identity Error", "User couldn't be found, or doesn't exist"));
+            var id = MessageStore.Store(Message.Error("Identity Error", "User couldn't be found, doesn't exist, or the session is invalid"));
             NavManager.NavigateTo($"{ApplicationRoutes.SignIn}?messageId={id}", forceLoad: true);
             return;
         }

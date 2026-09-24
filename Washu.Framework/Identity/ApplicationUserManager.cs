@@ -7,13 +7,6 @@ using Notifications;
 public sealed class ApplicationUserManager<TDbContext>(IDbContextFactory<TDbContext> factory)
     where TDbContext : ApplicationDbContext
 {
-
-    public async Task<ApplicationUser?> FindByUsernameAsync(string userName, CancellationToken ct = default)
-    {
-        await using var dbContext = await factory.CreateDbContextAsync(ct);
-        return await dbContext.Users.FirstOrDefaultAsync(u => u.Username == userName, ct);
-    }
-
     public async Task<ApplicationUser?> FindByIdAsync(Guid userId, CancellationToken ct = default)
     {
         await using var dbContext = await factory.CreateDbContextAsync(ct);
