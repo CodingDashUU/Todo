@@ -1,10 +1,7 @@
 ﻿@attribute [Route(ApplicationRoutes.SignIn)]
 @inherits NotificationPage
-
 <PageTitle>Sign In</PageTitle>
-<ReverseBouncer>
-    <SignInCard ReturnUrl="@ReturnUrl"/>
-</ReverseBouncer>
+<SignInCard ReturnUrl="@ReturnUrl"/>
 
 @code {
     [SupplyParameterFromQuery] public string ReturnUrl { get; set; } = "";

@@ -1,4 +1,5 @@
-﻿@using Microsoft.EntityFrameworkCore
+﻿@using System.Security.Claims
+@using Microsoft.EntityFrameworkCore
 @using Washu.Framework.Identity
 @using Washu.Framework.Notifications
 @using Washu.Todo.Commands
@@ -15,8 +16,7 @@
 @inject UpdateTask.Command UpdateTaskCommand
 @inject MessageStore MessageStore
 @inject ApplicationUserManager<TodoDbContext> UserManager
-<Bouncer ReturnUrl="/">
-    <RadzenDropDown TValue="Todo.TodoList" 
+<RadzenDropDown TValue="Todo.TodoList" 
                     Value="SelectedList" 
                     Data="ListNames" 
                     TextProperty="Name"
@@ -47,13 +47,12 @@
                       OnSettingsClicked="() => OnSettingsClicked(item)" />
         }
     }
-</Bouncer>
 
 @code {
     private ApplicationUser _currentUser = null!;
 
     public bool IsEditing { get; set; }
-    [Parameter] public required AuthenticationState UserContext { get; set; }
+    [Parameter] public required ClaimsPrincipal Principal { get; set; }
     
     public Todo.TodoList SelectedList { get; set; } = Todo.TodoList.None;
     public List<Todo.TodoList> ListNames { get; set; } = [];
@@ -62,17 +61,17 @@
 
     protected override async Task OnInitializedAsync()
     {
-        if (UserContext.User.Identity is not { Name: not null } userContext)
+        if (Principal.Identity is not { Name: not null } userContext)
         {
             var id = MessageStore.Store(Message.Error("Identity Error", "Invalid session"));
-            NavManager.NavigateTo($"{ApplicationRoutes.SignIn}?messageId={id}");
+            NavManager.NavigateTo($"{ApplicationRoutes.SignIn}?messageId={id}", forceLoad: true);
             return;
         }
         var user = await UserManager.FindByUsernameAsync(userContext.Name);
         if (user is null)
         {
             var id = MessageStore.Store(Message.Error("Identity Error", "User couldn't be found, or doesn't exist"));
-            NavManager.NavigateTo($"{ApplicationRoutes.SignIn}?messageId={id}");
+            NavManager.NavigateTo($"{ApplicationRoutes.SignIn}?messageId={id}", forceLoad: true);
             return;
         }
         _currentUser = user;

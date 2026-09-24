@@ -1,12 +1,15 @@
 ﻿@attribute [Route(ApplicationRoutes.Home)]
-@using Washu.Framework.Constants
+@attribute [Authorize]
+@inject IHttpContextAccessor HttpContextAccessor
 @inherits NotificationPage
 
 <PageTitle>Home</PageTitle>
-<Bouncer ReturnUrl="@ApplicationRoutes.Home">
-    <TodoList UserContext="context"/>
-</Bouncer>
+<TodoList Principal="Context.User"/>
 
+@code {
 
+    private HttpContext Context => HttpContextAccessor.HttpContext
+                                   ?? throw new InvalidOperationException("An active HttpContext is required");
 
+}
 

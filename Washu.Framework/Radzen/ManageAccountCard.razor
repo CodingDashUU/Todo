@@ -1,31 +1,34 @@
+@using Microsoft.AspNetCore.Http
 @inject MessageStore MessageStore
 @inject NavigationManager NavManager
-
+@inject IHttpContextAccessor HttpContextAccessor
 <RadzenCard Variant="Variant.Outlined">
     <RadzenStack class="rz-p-0 rz-p-md-6 rz-p-lg-12">
         <RadzenText>Current Username: @_name</RadzenText>
         <RadzenText>Email: @_email</RadzenText>
-        <ChangeUsernameForm Context="UserContext"/>
+        <ChangeUsernameForm Principal="HttpContext.User"/>
         <div height="20px"></div>
         <SignOutForm/>
-        <DeleteAccountForm Context="UserContext"/>
+        <DeleteAccountForm/>
     </RadzenStack>
 </RadzenCard>
 
 @code {
     private string _email = "Unknown";
     private string _name = "Unknown";
-    [Parameter] public required AuthenticationState UserContext { get; set; }
+
+    private HttpContext HttpContext => HttpContextAccessor.HttpContext
+                                       ?? throw new InvalidOperationException("An active HttpContext is required");
 
     protected override void OnInitialized()
     {
-        if (UserContext.User.Identity is not { Name: not null } userContext)
+        if (HttpContext.User.Identity is not { Name: not null } userContext)
         {
             RedirectToLogin("Invalid session");
             return;
         }
         _name = userContext.Name;
-        if (UserContext.User.FindFirstValue(ClaimTypes.Email) is not { } email)
+        if (HttpContext.User.FindFirstValue(ClaimTypes.Email) is not { } email)
         {
             RedirectToLogin("No email was found");
             return;

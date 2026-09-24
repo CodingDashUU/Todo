@@ -3,6 +3,7 @@
 using AspNetCore;
 using Blazor;
 using Entities;
+using Extensions;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -15,6 +16,7 @@ using System.Security.Claims;
 
 public class ExternalEndpoints<TDbContext> (
     ApplicationSignInManager<TDbContext> signInManager,
+    ApplicationUserManager<TDbContext> userManager,
     IDbContextFactory<TDbContext> dbContextFactory)
 where TDbContext : ApplicationDbContext
 {
@@ -27,9 +29,12 @@ where TDbContext : ApplicationDbContext
         group.MapPost(IdentityRoutes.CompleteRegistration, CompleteRegistration);
     }
 
-    private IResult ChallengeExternal(HttpContext context, [FromQuery] bool persistCookie, [FromQuery] string returnUrl)
+    private async Task<IResult> ChallengeExternal(HttpContext context, [FromQuery] bool persistCookie, [FromQuery] string returnUrl)
     {
-        if (context.User.Identity is { IsAuthenticated: true }) return TypedResults.Redirect(SafeReturnUrl(returnUrl));
+        if (context.User.Identity is { IsAuthenticated: true }
+            && context.User.FindUserId() is { } userGuid
+            && await userManager.FindByIdAsync(userGuid) is not null)
+            return TypedResults.Redirect(SafeReturnUrl(returnUrl));
         var properties =
             signInManager.ConfigureExternalAuthenticationProperties(
                 GoogleDefaults.AuthenticationScheme,

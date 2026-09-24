@@ -7,7 +7,7 @@
                 <RadzenIcon Icon="@MaterialIcons.AccountCircle"/>
             </Start>
             <ChildContent>
-                <RadzenTextBox Name="NewUsername" Value="@(Context.User.Identity?.Name ?? "")" MaxLength="Username.Rules.MaxUsernameLength"/>
+                <RadzenTextBox Name="NewUsername" Value="@(Principal.Identity?.Name ?? "")" MaxLength="Username.Rules.MaxUsernameLength"/>
             </ChildContent>
         </RadzenFormField>
         <RadzenButton ButtonType="ButtonType.Submit">Change Username</RadzenButton>
@@ -16,6 +16,6 @@
 
 @code {
 
-    [Parameter] public required AuthenticationState Context { get; set; }
+    [Parameter] public required ClaimsPrincipal Principal { get; set; }
 
 }
