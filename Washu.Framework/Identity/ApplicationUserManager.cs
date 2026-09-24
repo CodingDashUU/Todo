@@ -29,7 +29,7 @@ public sealed class ApplicationUserManager<TDbContext>(IDbContextFactory<TDbCont
         if (user is null) return new IdentityMessage(Message.Error("Identity Error", "Account with the given user name not found"), true);
         if (await dbContext.Users.AnyAsync(u => u.Username == newName, ct))
             return new IdentityMessage(Message.Error("Identity Error", "Username provided is already taken"));
-        user.ChangeUsername(newName);
+        user.Username = newName;
         try
         {
             await dbContext.SaveChangesAsync(ct);

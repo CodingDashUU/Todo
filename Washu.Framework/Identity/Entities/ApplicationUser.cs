@@ -7,15 +7,18 @@ public class ApplicationUser(string userName, string email, string googleSubject
     private ApplicationUser() : this(string.Empty, string.Empty, string.Empty) {}
     public Guid Id { get; private init; } = Guid.CreateVersion7();
 
-    public string Username { get; private set; } = userName;
-    public string Email { get; private init; } = email;
-    public Guid SecurityStamp { get; private set; } = Guid.CreateVersion7();
-    public string GoogleSubject { get; private set; } = googleSubject;
-    public uint RowVersion { get; }
-    public void ChangeUsername(string newName)
+    public string Username
     {
-        if (Username == newName) return;
-        Username = newName;
-        SecurityStamp = Guid.CreateVersion7();
-    }
+        get;
+        set
+        {
+            if (field == value) return;
+            field = value;
+            SecurityStamp = Guid.CreateVersion7();
+        }
+    } = userName;
+    public string Email { get; } = email;
+    public Guid SecurityStamp { get; private set; } = Guid.CreateVersion7();
+    public string GoogleSubject { get; } = googleSubject;
+    public uint RowVersion { get; }
 }
