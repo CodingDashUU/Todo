@@ -39,6 +39,7 @@ public class ApplicationDbContext(DbContextOptions options)
                 t.HasEmailCheckConstraint(p => p.Email);
                 t.HasMaxLengthCheckConstraint(p => p.GoogleSubject, 255);
             });
+            entity.Property(u => u.RowVersion).IsRowVersion();
         });
         modelBuilder.Entity<ApplicationRole>(entity =>
         {

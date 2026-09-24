@@ -76,8 +76,6 @@ where TDbContext : ApplicationDbContext
 
         if (user is null) return SignInResult.Failed;
 
-        if (user.IsBanned) return SignInResult.LockedOut;
-
         await SignInAsync(user, isPersistent, loginProvider);
         return SignInResult.Success;
     }

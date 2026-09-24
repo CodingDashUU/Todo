@@ -155,7 +155,7 @@ public static class ConfigurationExtensions
                         var ticketStamp = context.Principal
                             .FindFirstValue(stampType);
 
-                        if (user is null || user.IsBanned ||
+                        if (user is null ||
                             !Guid.TryParse(ticketStamp, out var stamp) ||
                             stamp != user.SecurityStamp)
                         {

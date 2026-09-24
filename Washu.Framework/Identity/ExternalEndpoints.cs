@@ -10,8 +10,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using Notifications;
+using Npgsql;
 using System.Security.Claims;
 
 public class ExternalEndpoints<TDbContext> (
@@ -29,16 +31,23 @@ where TDbContext : ApplicationDbContext
         group.MapPost(IdentityRoutes.CompleteRegistration, CompleteRegistration);
     }
 
-    private async Task<IResult> ChallengeExternal(HttpContext context, [FromQuery] bool persistCookie, [FromQuery] string returnUrl)
+    private async Task<IResult> ChallengeExternal(HttpContext context, [FromQuery] bool persistCookie, [FromQuery] string returnUrl = "/")
     {
         if (context.User.Identity is { IsAuthenticated: true }
             && context.User.FindUserId() is { } userGuid
             && await userManager.FindByIdAsync(userGuid) is not null)
             return TypedResults.Redirect(SafeReturnUrl(returnUrl));
+        var callbackUrl = QueryHelpers.AddQueryString(
+            IdentityRoutes.ExternalCallback,
+            new Dictionary<string, string?>
+            {
+                ["PersistCookie"] = persistCookie.ToString(),
+                ["ReturnUrl"] = returnUrl
+            });
         var properties =
             signInManager.ConfigureExternalAuthenticationProperties(
                 GoogleDefaults.AuthenticationScheme,
-                $"{IdentityRoutes.ExternalCallback}?PersistCookie={persistCookie}&ReturnUrl={returnUrl}");
+                callbackUrl);
 
         return TypedResults.Challenge(
             properties,
@@ -48,13 +57,29 @@ where TDbContext : ApplicationDbContext
     private async Task<IResult> ExternalCallback([FromQuery] bool persistCookie, [FromQuery] string returnUrl)
     {
         var info = await signInManager.GetExternalLoginInfoAsync();
-        if (info is null) return Results.Redirect($"{ApplicationRoutes.SignIn}?PersistCookie={persistCookie}&ReturnUrl={returnUrl}");
-        // 1. Sign in if Google link exists
+        if (info is null)
+        {
+            var errorUrl = QueryHelpers.AddQueryString(
+                ApplicationRoutes.SignIn,
+                new Dictionary<string, string?>
+                {
+                    ["PersistCookie"] = persistCookie.ToString(),
+                    ["ReturnUrl"] = returnUrl
+                });
+            return Results.Redirect(errorUrl);
+        }
+        var url = QueryHelpers.AddQueryString(
+            ApplicationRoutes.Register,
+            new Dictionary<string, string?>
+            {
+                ["PersistCookie"] = persistCookie.ToString(),
+                ["ReturnUrl"] = returnUrl
+            });
         var result = await signInManager.ExternalLoginSignInAsync(
             info.ProviderKey, 
             isPersistent: persistCookie);
         return Results.Redirect(result.Succeeded ? SafeReturnUrl(returnUrl) :
-            $"{ApplicationRoutes.Register}?PersistCookie={persistCookie}&ReturnUrl={returnUrl}");
+            url);
     }
 
     private async Task<RedirectHttpResult> CompleteRegistration(
@@ -69,15 +94,29 @@ where TDbContext : ApplicationDbContext
         if (!result.IsValid)
         {
             var id = store.Store([.. result.Errors.Select(e => Message.Error("Invalid Registration Details",$"{e.PropertyName}: {e.ErrorMessage}"))]);
-            return TypedResults.Redirect($"{ApplicationRoutes.Register}?messageId={id}&ReturnUrl={returnUrl}");
+            var url = QueryHelpers.AddQueryString(
+                ApplicationRoutes.Register,
+                new Dictionary<string, string?>
+                {
+                    ["PersistCookie"] = persistCookie.ToString(),
+                    ["MessageId"] = id,
+                    ["ReturnUrl"] = returnUrl
+                });
+            return TypedResults.Redirect(url);
         }
         var info = await signInManager.GetExternalLoginInfoAsync();
         if (info is null)
         {
             var id = store.Store(
                 Message.Error("Registration Error", "You need to continue with a sign-in provider to register"));
-
-            return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}&ReturnUrl={returnUrl}");
+            var url = QueryHelpers.AddQueryString(
+                ApplicationRoutes.SignIn,
+                new Dictionary<string, string?>
+                {
+                    ["MessageId"] = id,
+                    ["ReturnUrl"] = returnUrl
+                });
+            return TypedResults.Redirect(url);
         }
 
         var email = info.Principal.FindFirstValue(ClaimTypes.Email);
@@ -85,7 +124,14 @@ where TDbContext : ApplicationDbContext
         {
             var id = store.Store(
                 Message.Error("Registration Error", "Email was not provided or not found"));
-            return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}&ReturnUrl={returnUrl}");
+            var url = QueryHelpers.AddQueryString(
+                ApplicationRoutes.SignIn,
+                new Dictionary<string, string?>
+                {
+                    ["MessageId"] = id,
+                    ["ReturnUrl"] = returnUrl
+                });
+            return TypedResults.Redirect(url);
         }
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         var user = new ApplicationUser(request.Username, email, info.ProviderKey);
@@ -93,7 +139,15 @@ where TDbContext : ApplicationDbContext
                 .AnyAsync(u => u.Username == user.Username))
         {
             var id = store.Store(Message.Error("Login Error", "User already exists") );
-            return TypedResults.Redirect($"{ApplicationRoutes.Register}?messageId={id}&ReturnUrl={returnUrl}");
+            var url = QueryHelpers.AddQueryString(
+                ApplicationRoutes.Register,
+                new Dictionary<string, string?>
+                {
+                    ["PersistCookie"] = persistCookie.ToString(),
+                    ["MessageId"] = id,
+                    ["ReturnUrl"] = returnUrl
+                });
+            return TypedResults.Redirect(url);
         }
         await dbContext.Users.AddAsync(user);
         // Adding user to role
@@ -104,7 +158,15 @@ where TDbContext : ApplicationDbContext
         if (role is null) 
         {
             var id = store.Store(Message.Error("Login Error", "There was an issue while logging you in") );
-            return TypedResults.Redirect($"{ApplicationRoutes.Register}?messageId={id}&ReturnUrl={returnUrl}");
+            var url = QueryHelpers.AddQueryString(
+                ApplicationRoutes.Register,
+                new Dictionary<string, string?>
+                {
+                    ["PersistCookie"] = persistCookie.ToString(),
+                    ["MessageId"] = id,
+                    ["ReturnUrl"] = returnUrl
+                });
+            return TypedResults.Redirect(url);
         }
         if (!await dbContext.UserRoles
                 .AnyAsync(ur => ur.UserId == user.Id && ur.RoleId == role.Id))
@@ -116,7 +178,24 @@ where TDbContext : ApplicationDbContext
             };
             await dbContext.UserRoles.AddAsync(userRole);
         }
-        await dbContext.SaveChangesAsync();
+        try
+        {
+            await dbContext.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException{ SqlState: PostgresErrorCodes.UniqueViolation })
+        {
+            var id = store.Store(Message.Error("Identity Error",
+                "That username or sign-in identity is already in use."));
+            var url = QueryHelpers.AddQueryString(
+                ApplicationRoutes.Register,
+                new Dictionary<string, string?>
+                {
+                    ["PersistCookie"] = persistCookie.ToString(),
+                    ["MessageId"] = id,
+                    ["ReturnUrl"] = returnUrl
+                });
+            return TypedResults.Redirect(url);
+        }
         await signInManager.SignInAsync(user, isPersistent: persistCookie);
             
         return TypedResults.Redirect(SafeReturnUrl(returnUrl));        

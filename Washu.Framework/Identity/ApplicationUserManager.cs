@@ -3,6 +3,7 @@ namespace Washu.Framework.Identity;
 using Entities;
 using Microsoft.EntityFrameworkCore;
 using Notifications;
+using Npgsql;
 
 public sealed class ApplicationUserManager<TDbContext>(IDbContextFactory<TDbContext> factory)
     where TDbContext : ApplicationDbContext
@@ -29,7 +30,15 @@ public sealed class ApplicationUserManager<TDbContext>(IDbContextFactory<TDbCont
         if (await dbContext.Users.AnyAsync(u => u.Username == newName, ct))
             return new IdentityMessage(Message.Error("Identity Error", "Username provided is already taken"));
         user.ChangeUsername(newName);
-        await dbContext.SaveChangesAsync(ct);
+        try
+        {
+            await dbContext.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException{ SqlState: PostgresErrorCodes.UniqueViolation })
+        {
+            return new IdentityMessage(Message.Error("Identity Error",
+                "That username or sign-in identity is already in use."));
+        }
         return new IdentityMessage(Message.Success("Identity Success", "Successfully updated username"), true);
     }
     public async Task<Message> DeleteByUsernameAsync(string userName, CancellationToken ct = default)

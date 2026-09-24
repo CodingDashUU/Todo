@@ -1,4 +1,5 @@
-﻿@inject NavigationManager NavManager
+﻿@using Microsoft.AspNetCore.WebUtilities
+@inject NavigationManager NavManager
 
 <div class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">
     <RadzenCard Class="rz-my-12 rz-mx-auto rz-p-6 rz-shadow-6" Style="max-width: 400px; width: 100%; border-radius: 16px;">
@@ -38,8 +39,15 @@
 @code {
     [Parameter] public string? ReturnUrl { get; set; }
     public bool PersistCookie { get; set; }
+    public string ActionUrl => QueryHelpers.AddQueryString(
+    IdentityRoutes.ChallengeGoogle,
+    new Dictionary<string, string?>
+    {
+        ["PersistCookie"] = PersistCookie.ToString(),
+        ["ReturnUrl"] = ReturnUrl
+    });
     private void SignInWithGoogle() 
         => NavManager.NavigateTo( 
-            $"{IdentityRoutes.ChallengeGoogle}?PersistCookie={PersistCookie}&ReturnUrl={ReturnUrl ?? "/"}", 
+            ActionUrl, 
             forceLoad: true);
 }
