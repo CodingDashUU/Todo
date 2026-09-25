@@ -1,7 +1,6 @@
 ﻿@attribute [Route(ApplicationRoutes.Home)]
 @attribute [Authorize]
 @inject IHttpContextAccessor HttpContextAccessor
-@inherits NotificationPage
 
 <PageTitle>Home</PageTitle>
 <TodoList Principal="Context.User"/>

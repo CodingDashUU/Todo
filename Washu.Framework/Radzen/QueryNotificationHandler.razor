@@ -2,19 +2,19 @@
 @inject NotificationService NotificationService
 @code {
     [SupplyParameterFromQuery] public string MessageId { get; set; } = "";
-    protected override void OnAfterRender(bool firstRender)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        base.OnAfterRender(firstRender);
-        ShowMessage();
+        await base.OnAfterRenderAsync(firstRender);
+        await ShowMessageAsync();
     }
 
-    private void ShowMessage()
+    private async Task ShowMessageAsync()
     {
         if (string.IsNullOrEmpty(MessageId)) return;
         foreach (var message in Store.Take(MessageId))
         {
             NotificationService.Show(message);
-            Task.Delay(RadzenNotificationConstants.Duration);
+            await Task.Delay(RadzenNotificationConstants.Duration);
         }
     }
 }
