@@ -36,15 +36,41 @@ public static class ConfigurationExtensions
             // Rate limiting
             services.AddRateLimiter(options =>
             {
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
                 options.AddPolicy(RateLimiterPolicy.StandardRateLimiter, httpContext =>
-                    RateLimitPartition.GetFixedWindowLimiter(
-                        partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? httpContext.Request.Headers.Host.ToString(),
-                        factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    if (httpContext.User.FindUserId() is { } userId)
+                        return RateLimitPartition.GetSlidingWindowLimiter(
+                            partitionKey: $"user:{userId}",
+                            factory: _ => new SlidingWindowRateLimiterOptions
+                            {
+                                PermitLimit = 100,
+                                Window = TimeSpan.FromMinutes(1),
+                                SegmentsPerWindow = 4,
+                                QueueLimit = 0
+                            });
+                    if (httpContext.Connection.RemoteIpAddress?.ToString() is { } ipAddress)
+                        return RateLimitPartition.GetSlidingWindowLimiter(
+                            partitionKey: $"ip:{ipAddress}",
+                            factory: _ => new SlidingWindowRateLimiterOptions
+                            {
+                                PermitLimit = 30,
+                                Window = TimeSpan.FromMinutes(1),
+                                SegmentsPerWindow = 4,
+                                QueueLimit = 0
+                            });
+                    return RateLimitPartition.GetSlidingWindowLimiter(
+                        partitionKey: "anonymous",
+                        factory: _ => new SlidingWindowRateLimiterOptions
                         {
                             PermitLimit = 10,
-                            Window = TimeSpan.FromSeconds(30)
-                        }));
+                            Window = TimeSpan.FromMinutes(1),
+                            SegmentsPerWindow = 4,
+                            QueueLimit = 0
+                        });
+                });
             });
+
             builder.Services.AddHealthChecks().AddDbContextCheck<TDbContext>(name: "DB");
             // Radzen
             services.AddRadzenCookieThemeService(options =>
