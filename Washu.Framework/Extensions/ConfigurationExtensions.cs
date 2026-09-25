@@ -52,7 +52,6 @@ public static class ConfigurationExtensions
             
             // Identity
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-            builder.Services.AddScoped<ExternalEndpoints<TDbContext>>();
             services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, ApplicationClaimsPrincipalFactory<TDbContext>>();
             services.AddScoped<ApplicationSignInManager<TDbContext>>();
             services.AddScoped<ApplicationUserManager<TDbContext>>();
@@ -254,7 +253,7 @@ public static class ConfigurationExtensions
                     sessionManager.Invalidate(userGuid);
                 return TypedResults.Redirect(ApplicationRoutes.Settings);
             }).RequireRateLimiting(RateLimiterPolicy.AuthLimiter);
-            scope.ServiceProvider.GetRequiredService<ExternalEndpoints<TDbContext>>().Map(app);
+            ExternalEndpoints.Map<TDbContext>(app);
             app.MapPost(IdentityRoutes.DeleteAccount, async (MessageStore store, HttpContext context,
                 ApplicationUserManager<TDbContext> manager, UserSessionManager sessionManager, [FromForm] Guid circuitId) =>
             {

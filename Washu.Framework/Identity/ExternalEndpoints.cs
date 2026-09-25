@@ -16,22 +16,25 @@ using Notifications;
 using Npgsql;
 using System.Security.Claims;
 
-public class ExternalEndpoints<TDbContext> (
-    ApplicationSignInManager<TDbContext> signInManager,
-    ApplicationUserManager<TDbContext> userManager,
-    IDbContextFactory<TDbContext> dbContextFactory)
-where TDbContext : ApplicationDbContext
+public static class ExternalEndpoints
 {
-    public void Map(IEndpointRouteBuilder app)
+    public static void Map<TDbContext>(IEndpointRouteBuilder app)
+    where TDbContext : ApplicationDbContext
     {
         var group = app.MapGroup("")
             .RequireRateLimiting(RateLimiterPolicy.AuthLimiter);
-        group.MapGet(IdentityRoutes.ChallengeGoogle, ChallengeExternal);
-        group.MapGet(IdentityRoutes.ExternalCallback, ExternalCallback);
-        group.MapPost(IdentityRoutes.CompleteRegistration, CompleteRegistration);
+        group.MapGet(IdentityRoutes.ChallengeGoogle, ChallengeExternal<TDbContext>);
+        group.MapGet(IdentityRoutes.ExternalCallback, ExternalCallback<TDbContext>);
+        group.MapPost(IdentityRoutes.CompleteRegistration, CompleteRegistration<TDbContext>);
     }
 
-    private async Task<IResult> ChallengeExternal(HttpContext context, [FromQuery] bool persistCookie, [FromQuery] string returnUrl = "/")
+    private static async Task<IResult> ChallengeExternal<TDbContext>(
+        HttpContext context, 
+        ApplicationUserManager<TDbContext> userManager,
+        ApplicationSignInManager<TDbContext> signInManager,
+        [FromQuery] bool persistCookie, 
+        [FromQuery] string returnUrl = "/")
+    where TDbContext : ApplicationDbContext
     {
         if (context.User.Identity is { IsAuthenticated: true }
             && context.User.FindUserId() is { } userGuid
@@ -54,7 +57,11 @@ where TDbContext : ApplicationDbContext
             [GoogleDefaults.AuthenticationScheme]);
     }
 
-    private async Task<IResult> ExternalCallback([FromQuery] bool persistCookie, [FromQuery] string returnUrl)
+    private static async Task<IResult> ExternalCallback<TDbContext> (
+        ApplicationSignInManager<TDbContext> signInManager,
+        [FromQuery] bool persistCookie, 
+        [FromQuery] string returnUrl)
+    where TDbContext : ApplicationDbContext
     {
         var info = await signInManager.GetExternalLoginInfoAsync();
         if (info is null)
@@ -82,12 +89,14 @@ where TDbContext : ApplicationDbContext
             url);
     }
 
-    private async Task<RedirectHttpResult> CompleteRegistration(
+    private static async Task<RedirectHttpResult> CompleteRegistration<TDbContext> (
         [FromForm] Registration.Model request,
         [FromQuery] bool persistCookie,
         [FromQuery] string returnUrl,
-        HttpContext context,
+        ApplicationSignInManager<TDbContext> signInManager,
+        IDbContextFactory<TDbContext> dbContextFactory,
         MessageStore store)
+    where TDbContext : ApplicationDbContext
     {
         var validator = new Registration.Validator();
         var result = await validator.ValidateAsync(request);
