@@ -83,6 +83,7 @@ public static class ExternalEndpoints
                 ["ReturnUrl"] = returnUrl
             });
         var result = await signInManager.ExternalLoginSignInAsync(
+            info.LoginProvider,
             info.ProviderKey, 
             isPersistent: persistCookie);
         return Results.Redirect(result.Succeeded ? SafeReturnUrl(returnUrl) :

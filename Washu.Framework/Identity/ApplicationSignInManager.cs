@@ -65,14 +65,14 @@ where TDbContext : ApplicationDbContext
     // 3. ExternalLoginSignInAsync backed by PostgreSQL EF Core
     public async Task<SignInResult> ExternalLoginSignInAsync(
         string loginProvider,
+        string loginKey,
         bool isPersistent)
     {
         await using var db = await dbFactory.CreateDbContextAsync();
 
         var user = await db.Users
             .AsNoTracking()
-            .Where(l => l.GoogleSubject == loginProvider)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(l => l.GoogleSubject == loginKey);
 
         if (user is null) return SignInResult.Failed;
 
@@ -87,7 +87,7 @@ where TDbContext : ApplicationDbContext
         string? authenticationMethod = null)
     {
         var additionalClaims = new List<Claim>();
-        if (authenticationMethod != null) additionalClaims.Add(new Claim(ClaimTypes.AuthenticationMethod, authenticationMethod));
+        if (authenticationMethod is not null) additionalClaims.Add(new Claim(ClaimTypes.AuthenticationMethod, authenticationMethod));
 
         return SignInWithClaimsAsync(user, authenticationProperties, additionalClaims);
     }
