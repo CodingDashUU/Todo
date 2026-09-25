@@ -18,5 +18,5 @@ await dbContext.Database.MigrateAsync();
 app.UseWashuFramework<TodoDbContext>();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
-await app.SeedRolesAsync<TodoDbContext>(InitialUserRoles.Roles);
+await app.SeedRolesAsync<TodoDbContext>([.. InitialUserRoles.Roles]);
 await app.RunAsync();

@@ -2,5 +2,5 @@
 
 public static class RateLimiterPolicy
 {
-    public const string AuthLimiter = "AuthLimiter";
+    public const string StandardRateLimiter = "StandardRateLimiter";
 }

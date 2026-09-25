@@ -53,7 +53,7 @@
     private ApplicationUser _currentUser = null!;
 
     public bool IsEditing { get; set; }
-    [Parameter] public required ClaimsPrincipal Principal { get; set; }
+    [CascadingParameter] public required Task<AuthenticationState> Context { get; set; }
     
     public Todo.TodoList SelectedList { get; set; } = Todo.TodoList.None;
     public List<Todo.TodoList> ListNames { get; set; } = [];
@@ -62,7 +62,8 @@
 
     protected override async Task OnInitializedAsync()
     {
-        if (Principal.Identity is null || Principal.FindUserId() is not { } userId)
+        var principal = await Context;
+        if (principal.User.Identity is null || principal.User.FindUserId() is not { } userId)
         {
             NavManager.NavigateTo(ApplicationRoutes.SignIn, forceLoad: true);
             return;

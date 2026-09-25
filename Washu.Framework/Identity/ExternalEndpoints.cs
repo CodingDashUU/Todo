@@ -1,4 +1,4 @@
-﻿namespace Washu.Framework.Identity;
+namespace Washu.Framework.Identity;
 
 using AspNetCore;
 using Blazor;
@@ -22,7 +22,7 @@ public static class ExternalEndpoints
     where TDbContext : ApplicationDbContext
     {
         var group = app.MapGroup("")
-            .RequireRateLimiting(RateLimiterPolicy.AuthLimiter);
+            .RequireRateLimiting(RateLimiterPolicy.StandardRateLimiter);
         group.MapGet(IdentityRoutes.ChallengeGoogle, ChallengeExternal<TDbContext>);
         group.MapGet(IdentityRoutes.ExternalCallback, ExternalCallback<TDbContext>);
         group.MapPost(IdentityRoutes.CompleteRegistration, CompleteRegistration<TDbContext>);
@@ -144,11 +144,22 @@ public static class ExternalEndpoints
             return TypedResults.Redirect(url);
         }
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-        var user = new ApplicationUser(request.Username, email, info.ProviderKey);
-        if (await dbContext.Users
-                .AnyAsync(u => u.Username == user.Username))
+        if (await dbContext.Users.AnyAsync(u => u.GoogleSubject == info.ProviderKey || u.Email == email))
         {
-            var id = store.Store(Message.Error("Login Error", "User already exists") );
+            var id = store.Store(Message.Error("Registration Error", "This account or email is already registered. Please sign in."));
+            var url = QueryHelpers.AddQueryString(
+                ApplicationRoutes.SignIn,
+                new Dictionary<string, string?>
+                {
+                    ["MessageId"] = id,
+                    ["ReturnUrl"] = returnUrl
+                });
+            return TypedResults.Redirect(url);
+        }
+        var user = new ApplicationUser(request.Username, email, info.ProviderKey);
+        if (await dbContext.Users.AnyAsync(u => u.Username == user.Username))
+        {
+            var id = store.Store(Message.Error("Registration Error", "Username provided is already taken"));
             var url = QueryHelpers.AddQueryString(
                 ApplicationRoutes.Register,
                 new Dictionary<string, string?>
@@ -197,10 +208,9 @@ public static class ExternalEndpoints
             var id = store.Store(Message.Error("Identity Error",
                 "That username or sign-in identity is already in use."));
             var url = QueryHelpers.AddQueryString(
-                ApplicationRoutes.Register,
+                ApplicationRoutes.SignIn,
                 new Dictionary<string, string?>
                 {
-                    ["PersistCookie"] = persistCookie.ToString(),
                     ["MessageId"] = id,
                     ["ReturnUrl"] = returnUrl
                 });

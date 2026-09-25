@@ -13,7 +13,7 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -36,11 +36,14 @@ public static class ConfigurationExtensions
             // Rate limiting
             services.AddRateLimiter(options =>
             {
-                options.AddFixedWindowLimiter(RateLimiterPolicy.AuthLimiter, opt =>
-                {
-                    opt.PermitLimit = 10;
-                    opt.Window = TimeSpan.FromSeconds(30);
-                });
+                options.AddPolicy(RateLimiterPolicy.StandardRateLimiter, httpContext =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? httpContext.Request.Headers.Host.ToString(),
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 10,
+                            Window = TimeSpan.FromSeconds(30)
+                        }));
             });
             builder.Services.AddHealthChecks().AddDbContextCheck<TDbContext>(name: "DB");
             // Radzen
@@ -81,7 +84,7 @@ public static class ConfigurationExtensions
                     _ = instance.TimeZoneInfo;
                     return instance;
                 }
-                catch (TimeZoneNotFoundException)
+                catch (Exception ex) when (ex is TimeZoneNotFoundException or InvalidTimeZoneException)
                 {
                     return new UserTimeZoneProvider();
                 }
@@ -193,7 +196,7 @@ public static class ConfigurationExtensions
 
     extension(WebApplication app)
     {
-        public async Task SeedRolesAsync<TDbContext>(string[] roles)
+        public async Task SeedRolesAsync<TDbContext>(List<string> roles)
             where TDbContext : ApplicationDbContext
         {
             await using var serviceScope = app.Services.CreateAsyncScope();
@@ -252,7 +255,7 @@ public static class ConfigurationExtensions
                 if (context.User.FindUserId() is { } userGuid)
                     await sessionManager.InvalidateAsync(userGuid);
                 return TypedResults.Redirect(ApplicationRoutes.Settings);
-            }).RequireRateLimiting(RateLimiterPolicy.AuthLimiter);
+            }).RequireRateLimiting(RateLimiterPolicy.StandardRateLimiter);
             ExternalEndpoints.Map<TDbContext>(app);
             app.MapPost(IdentityRoutes.DeleteAccount, async (MessageStore store, HttpContext context,
                 ApplicationUserManager<TDbContext> manager, UserSessionManager sessionManager, [FromForm] Guid circuitId) =>
@@ -265,6 +268,7 @@ public static class ConfigurationExtensions
                 }
                 var message = await manager.DeleteByUsernameAsync(username);
                 var id = store.Store(message);
+                if (message.Type != MessageType.Success) return TypedResults.Redirect($"{ApplicationRoutes.ManageAccount}?messageId={id}");
                 await context.SignOutAsync(IdentityConstants.ApplicationScheme);
                 if (context.User.FindUserId() is { } userGuid)
                     context.Response.OnCompleted(

@@ -1,14 +1,6 @@
 ﻿@attribute [Route(ApplicationRoutes.Home)]
 @attribute [Authorize]
-@inject IHttpContextAccessor HttpContextAccessor
 
 <PageTitle>Home</PageTitle>
-<TodoList Principal="Context.User"/>
-
-@code {
-
-    private HttpContext Context => HttpContextAccessor.HttpContext
-                                   ?? throw new InvalidOperationException("An active HttpContext is required");
-
-}
+<TodoList />
 

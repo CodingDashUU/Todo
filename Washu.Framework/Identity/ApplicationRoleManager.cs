@@ -6,15 +6,29 @@ using Microsoft.EntityFrameworkCore;
 public sealed class ApplicationRoleManager<TContext>(IDbContextFactory<TContext> dbFactory) 
     where TContext : ApplicationDbContext
 {
-    public async Task AddRolesAsync(string[] roleNames, CancellationToken ct = default)
+    public async Task AddRolesAsync(List<string> roleNames, CancellationToken ct = default)
     {
+        if (roleNames.Count == 0) return;
+
+        var inputRoles = roleNames
+            .Where(r => !string.IsNullOrWhiteSpace(r))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (inputRoles.Count == 0) return;
+
         await using var db = await dbFactory.CreateDbContextAsync(ct);
-        foreach (var role in roleNames)
-        {
-            var exists = await db.Roles.AnyAsync(r => r.Name == role, ct);
-            if (exists) continue;
-            db.Roles.Add(new ApplicationRole(role));
-        }
+        var existingRoleNames = await db.Roles
+            .Where(r => inputRoles.Contains(r.Name))
+            .Select(r => r.Name)
+            .ToListAsync(ct);
+
+        var existingSet = new HashSet<string>(existingRoleNames, StringComparer.OrdinalIgnoreCase);
+        var newRoles = inputRoles
+            .Where(role => !existingSet.Contains(role))
+            .Select(role => new ApplicationRole(role));
+
+        db.Roles.AddRange(newRoles);
         await db.SaveChangesAsync(ct);
     }
 

@@ -1,13 +1,14 @@
-@using Microsoft.AspNetCore.Http
 @inject MessageStore MessageStore
 @inject NavigationManager NavManager
-@inject IHttpContextAccessor HttpContextAccessor
 <RadzenCard Variant="Variant.Outlined">
     <RadzenStack class="rz-p-0 rz-p-md-6 rz-p-lg-12">
         <RadzenText>Current Username: @_name</RadzenText>
         <RadzenText>Email: @_email</RadzenText>
-        <ChangeUsernameForm Principal="HttpContext.User"/>
-        <div height="20px"></div>
+        @if (_principal is not null)
+        {
+            <ChangeUsernameForm Principal="_principal"/>
+        }
+        <div style="height: 20px;"></div>
         <SignOutForm/>
         <DeleteAccountForm/>
     </RadzenStack>
@@ -16,19 +17,22 @@
 @code {
     private string _email = "Unknown";
     private string _name = "Unknown";
+    private ClaimsPrincipal? _principal;
 
-    private HttpContext HttpContext => HttpContextAccessor.HttpContext
-                                       ?? throw new InvalidOperationException("An active HttpContext is required");
+    [CascadingParameter] public required Task<AuthenticationState> AuthStateTask { get; set; }
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        if (HttpContext.User.Identity is not { Name: not null } userContext)
+        var authState = await AuthStateTask;
+        _principal = authState.User;
+
+        if (_principal.Identity is not { Name: not null } userContext)
         {
             RedirectToLogin("Invalid session");
             return;
         }
         _name = userContext.Name;
-        if (HttpContext.User.FindFirstValue(ClaimTypes.Email) is not { } email)
+        if (_principal.FindFirstValue(ClaimTypes.Email) is not { } email)
         {
             RedirectToLogin("No email was found");
             return;

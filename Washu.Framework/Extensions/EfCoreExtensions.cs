@@ -19,7 +19,7 @@ public static class EfCoreExtensions
             var propertyName = propertyInfo.Name;
             entity.HasCheckConstraint(
                 $"CK_{entityName}_{propertyName}_MaxLength",
-                $"length(\"{propertyName}\") <= {maxLength}"
+                $"length(\"{propertyName}\") > 0 AND length(\"{propertyName}\") <= {maxLength}"
             );
         }
         public void HasAllowedCharactersCheckConstraint(
@@ -29,9 +29,10 @@ public static class EfCoreExtensions
             var propertyInfo = property.GetPropertyInfo();
             var entityName = typeof(TEntity).Name;
             var propertyName = propertyInfo.Name;
+            var escapedChars = allowedCharacters.Replace("'", "''");
             entity.HasCheckConstraint(
                 $"CK_{entityName}_{propertyName}_AllowedChars",
-                $"translate(\"{propertyName}\", '{allowedCharacters}', '') = ''"
+                $"length(\"{propertyName}\") > 0 AND translate(\"{propertyName}\", '{escapedChars}', '') = ''"
             );
         }
 
@@ -42,7 +43,7 @@ public static class EfCoreExtensions
             var propertyName = propertyInfo.Name;
             entity.HasCheckConstraint(
                 $"CK_{entityName}_{propertyName}_ValidEmail",
-                $"\"{propertyName}\" LIKE '_%@%_._%'"
+                $"\"{propertyName}\" ~* '^[^[:space:]@]+@[^[:space:]@]+\\.[^[:space:]@]+$'"
             );
         }
     }

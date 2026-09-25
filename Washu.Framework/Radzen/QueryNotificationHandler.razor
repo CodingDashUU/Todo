@@ -1,11 +1,11 @@
-﻿@inject MessageStore Store
+@inject MessageStore Store
 @inject NotificationService NotificationService
 @code {
     [SupplyParameterFromQuery] public string MessageId { get; set; } = "";
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         await base.OnAfterRenderAsync(firstRender);
-        await ShowMessageAsync();
+        if (firstRender) await ShowMessageAsync();
     }
 
     private async Task ShowMessageAsync()

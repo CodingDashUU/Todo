@@ -4,7 +4,6 @@
 @using Washu.Framework.Extensions
 @using Washu.Framework.Identity
 @inherits LayoutComponentBase
-@inject IHttpContextAccessor HttpContextAccessor
 @inject NavigationManager NavManager
 @inject UserSessionManager SessionManager
 @inject CircuitState CircuitState
@@ -70,11 +69,12 @@
 </script>
 @code {
     bool sidebarExpanded = true;
-    HttpContext Context => HttpContextAccessor.HttpContext ?? throw new InvalidOperationException("An active HttpContext is required.");
+    [CascadingParameter] public required Task<AuthenticationState> Context { get; set; }
     Guid UserId;
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        if (Context.User.FindUserId() is not {} userGuid) return;
+        var state = await Context;
+        if (state.User.FindUserId() is not {} userGuid) return;
         UserId = userGuid;
         SessionManager.AddSession(userGuid, CircuitState.Id, () =>
         {
