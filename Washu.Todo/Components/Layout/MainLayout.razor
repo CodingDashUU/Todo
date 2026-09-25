@@ -43,30 +43,6 @@
         Washu Software
     </RadzenFooter>
 </RadzenLayout>
-<script>
-    // Notice the ', true' at the end for capture phase
-    document.addEventListener('submit', async function (e) {
-        const form = e.target;
-        const tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
-        
-        if (!tokenInput || form.dataset.refreshed) return;
-        
-        e.preventDefault();
-        e.stopImmediatePropagation();
-
-        try {
-            const response = await fetch('/antiforgery/token');
-            if (response.ok) {
-                tokenInput.value = await response.text();
-            }
-        } catch (err) {
-            console.warn('Could not refresh token, submitting existing one', err);
-        } finally {
-            form.dataset.refreshed = "true";
-            form.submit();
-        }
-    }, true);
-</script>
 @code {
     bool sidebarExpanded = true;
     [CascadingParameter] public required Task<AuthenticationState> Context { get; set; }
