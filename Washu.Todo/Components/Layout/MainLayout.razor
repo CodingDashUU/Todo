@@ -1,7 +1,4 @@
-﻿@using System.Security.Claims
-@using Microsoft.AspNetCore.Authentication
-@using Microsoft.AspNetCore.Identity
-@using Washu.Framework.Extensions
+﻿@using Washu.Framework.Extensions
 @using Washu.Framework.Identity
 @inherits LayoutComponentBase
 @inject NavigationManager NavManager
@@ -46,7 +43,7 @@
 @code {
     bool sidebarExpanded = true;
     [CascadingParameter] public required Task<AuthenticationState> Context { get; set; }
-    Guid UserId;
+    Guid? UserId;
     protected override async Task OnInitializedAsync()
     {
         var state = await Context;
@@ -61,7 +58,8 @@
 
     public void Dispose()
     {
-        SessionManager.RemoveSession(UserId, CircuitState.Id);
+        if (UserId.HasValue)
+            SessionManager.RemoveSession(UserId.Value, CircuitState.Id);
     }
 
 }
