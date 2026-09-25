@@ -234,10 +234,10 @@ public static class ConfigurationExtensions
                     await context.Response.WriteAsJsonAsync(json);
                 }
             });
-            app.MapPost("/theme", (HttpContext context, UserSessionManager sessionManager, [FromForm] string theme) =>
+            app.MapPost("/theme", async (HttpContext context, UserSessionManager sessionManager, [FromForm] string theme) =>
             {
                 var cookie = context.Request.Cookies[CookieNames.Theme];
-                if ((cookie is not null && cookie == theme) || Themes.Free.All(t => t.Text != theme)) return TypedResults.Redirect(ApplicationRoutes.Settings);
+                if ((cookie is not null && cookie == theme) || Themes.Free.All(t => t.Value != theme)) return TypedResults.Redirect(ApplicationRoutes.Settings);
                 context.Response.Cookies.Delete(CookieNames.Theme);
                 context.Response.Cookies.Append(
                     CookieNames.Theme,
@@ -249,7 +249,7 @@ public static class ConfigurationExtensions
                         SameSite = SameSiteMode.Lax
                     });
                 if (context.User.FindUserId() is { } userGuid)
-                    sessionManager.Invalidate(userGuid);
+                    await sessionManager.InvalidateAsync(userGuid);
                 return TypedResults.Redirect(ApplicationRoutes.Settings);
             }).RequireRateLimiting(RateLimiterPolicy.AuthLimiter);
             ExternalEndpoints.Map<TDbContext>(app);
@@ -267,13 +267,12 @@ public static class ConfigurationExtensions
                 await context.SignOutAsync(IdentityConstants.ApplicationScheme);
                 if (context.User.FindUserId() is { } userGuid)
                     context.Response.OnCompleted(
-                        static state =>
+                        static async state =>
                         {
                             var (sessionManager, userId, circuitId) =
                                 ((UserSessionManager, Guid, Guid))state;
 
-                            sessionManager.Invalidate(userId, circuitId);
-                            return Task.CompletedTask;
+                            await sessionManager.InvalidateAsync(userId, circuitId);
                         },
                         (sessionManager, userGuid, circuitId));
                 return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}");
@@ -283,13 +282,12 @@ public static class ConfigurationExtensions
                 await context.SignOutAsync(IdentityConstants.ApplicationScheme);
                 if (context.User.FindUserId() is { } userGuid)
                     context.Response.OnCompleted(
-                        static state =>
+                        static async state =>
                         {
                             var (sessionManager, userId, circuitId) =
                                 ((UserSessionManager, Guid, Guid))state;
 
-                            sessionManager.Invalidate(userId, circuitId);
-                            return Task.CompletedTask;
+                            await sessionManager.InvalidateAsync(userId, circuitId);
                         },
                         (sessionManager, userGuid, circuitId));
                 return TypedResults.Redirect($"{ApplicationRoutes.SignIn}");
@@ -311,13 +309,12 @@ public static class ConfigurationExtensions
                 if (!message.RedirectToSignIn) return TypedResults.Redirect($"{ApplicationRoutes.ManageAccount}?messageId={id}");
                 await context.SignOutAsync(IdentityConstants.ApplicationScheme);
                 context.Response.OnCompleted(
-                    static state =>
+                    static async state =>
                     {
                         var (sessionManager, userId, circuitId) =
                             ((UserSessionManager, Guid, Guid))state;
 
-                        sessionManager.Invalidate(userId, circuitId);
-                        return Task.CompletedTask;
+                        await sessionManager.InvalidateAsync(userId, circuitId);
                     },
                     (sessionManager, userGuid, circuitId));
                 return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}");
