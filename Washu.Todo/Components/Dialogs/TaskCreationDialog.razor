@@ -16,8 +16,8 @@
                 TValue="DateTimeOffset"
                 @bind-Value="Model.GoalDate"
                 ShowTime
-                Min="DateTime.UtcNow.AddMinutes(5).ToTimeZone(TimeZoneProvider.TimeZoneInfo)"
-                Max="DateTime.UtcNow.AddYears(50).ToTimeZone(TimeZoneProvider.TimeZoneInfo)"/>
+                Min="DateTimeOffset.UtcNow.AddMinutes(5).ToTimeZone(TimeZoneProvider.TimeZoneInfo).DateTime"
+                Max="DateTimeOffset.UtcNow.AddYears(50).ToTimeZone(TimeZoneProvider.TimeZoneInfo).DateTime"/>
         </RadzenFormField>
         <RadzenButton Text="Create"
                       IsBusy="SubmitBusy"

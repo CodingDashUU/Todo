@@ -206,17 +206,17 @@ public static class ConfigurationExtensions
         public void UseWashuFramework<TDbContext>()
         where TDbContext : ApplicationDbContext
         {
-            using var scope = app.Services.CreateScope();
             app.UseExceptionHandler(ApplicationRoutes.Error, createScopeForErrors: true);
+            app.UseStatusCodePagesWithReExecute(ApplicationRoutes.NotFound, createScopeForStatusCodePages: true);
             app.UseForwardedHeaders();
             app.UseHsts();
             app.UseHttpsRedirection();
+            app.MapStaticAssets();
+            app.UseRateLimiter();
             app.UseAuthentication();
             app.UseAuthorization();
-            app.UseStatusCodePagesWithReExecute(ApplicationRoutes.NotFound, createScopeForStatusCodePages: true);
-            app.UseRateLimiter();
             app.UseAntiforgery();
-            app.MapStaticAssets();
+
             app.MapHealthChecks("/healthz", new HealthCheckOptions
             {
                 ResponseWriter = async (context, report) =>
