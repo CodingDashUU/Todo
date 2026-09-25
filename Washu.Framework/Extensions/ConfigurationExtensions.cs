@@ -238,7 +238,7 @@ public static class ConfigurationExtensions
                     await context.Response.WriteAsJsonAsync(json);
                 }
             });
-            app.MapPost("/theme", async (HttpContext context, UserSessionManager sessionManager, [FromForm] string theme) =>
+            app.MapPost("/theme", (HttpContext context, [FromForm] string theme) =>
             {
                 var cookie = context.Request.Cookies[CookieNames.Theme];
                 if ((cookie is not null && cookie == theme) || Themes.Free.All(t => t.Value != theme)) return TypedResults.Redirect(ApplicationRoutes.Settings);
@@ -252,8 +252,6 @@ public static class ConfigurationExtensions
                         Expires = DateTimeOffset.Now.AddDays(ThemeCookieDuration),
                         SameSite = SameSiteMode.Lax
                     });
-                if (context.User.FindUserId() is { } userGuid)
-                    await sessionManager.InvalidateAsync(userGuid);
                 return TypedResults.Redirect(ApplicationRoutes.Settings);
             }).RequireRateLimiting(RateLimiterPolicy.StandardRateLimiter);
             ExternalEndpoints.Map<TDbContext>(app);
