@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Notifications;
 using System.Security.Claims;
 
@@ -145,11 +146,11 @@ public static class ConfigurationExtensions
 
                         var factory = context.HttpContext.RequestServices
                             .GetRequiredService<IDbContextFactory<TDbContext>>();
-
+                        var optionsAccessor = context.HttpContext.RequestServices.GetRequiredService<IOptions<IdentityOptions>>();
                         await using var db = await factory.CreateDbContextAsync();
                         var user = await db.Users.SingleOrDefaultAsync(u => u.Id == userId);
 
-                        const string stampType = "AspNet.Identity.SecurityStamp";
+                        var stampType = optionsAccessor.Value.ClaimsIdentity.SecurityStampClaimType;
                         if (context.Principal is null)
                             throw new InvalidOperationException("Claims Principal cannot be null");
                         var ticketStamp = context.Principal
