@@ -31,7 +31,6 @@ public static class ConfigurationExtensions
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<CircuitState>();
             builder.Services.AddSingleton<UserSessionManager>();
-            builder.Services.AddExceptionHandler<AntiforgeryExceptionHandler>();
             services.AddAuthorization();
             // Rate limiting
             services.AddRateLimiter(options =>
