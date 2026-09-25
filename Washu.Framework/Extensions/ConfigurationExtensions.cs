@@ -29,6 +29,8 @@ public static class ConfigurationExtensions
         where TDbContext : ApplicationDbContext
         {
             builder.Services.AddHttpContextAccessor();
+            builder.Services.AddScoped<CircuitState>();
+            builder.Services.AddSingleton<UserSessionManager>();
             builder.Services.AddExceptionHandler<AntiforgeryExceptionHandler>();
             services.AddAuthorization();
             // Rate limiting
