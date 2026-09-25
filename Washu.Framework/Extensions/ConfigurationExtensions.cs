@@ -300,26 +300,26 @@ public static class ConfigurationExtensions
                 ApplicationUserManager<TDbContext> manager, UserSessionManager sessionManager, [FromForm] Guid circuitId, [FromForm] string newUsername) =>
             {
                 var oldUsername = context.User.Identity?.Name;
-                if (oldUsername is null)
+                var userId = context.User.FindUserId();
+                if (oldUsername is null || userId is not {} userGuid)
                 {
                     var errorId = store.Store(Message.Error("Identity Error","Invalid session, or user does not exist"));
                     return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={errorId}");
                 }
-                var message = await manager.ChangeUsernameAsync(oldUsername, newUsername);
+                var message = await manager.ChangeUsernameAsync(oldUsername, newUsername, userGuid);
                 var id = store.Store(message.CoreMessage);
                 if (!message.RedirectToSignIn) return TypedResults.Redirect($"{ApplicationRoutes.ManageAccount}?messageId={id}");
                 await context.SignOutAsync(IdentityConstants.ApplicationScheme);
-                if (context.User.FindUserId() is { } userGuid)
-                    context.Response.OnCompleted(
-                        static state =>
-                        {
-                            var (sessionManager, userId, circuitId) =
-                                ((UserSessionManager, Guid, Guid))state;
+                context.Response.OnCompleted(
+                    static state =>
+                    {
+                        var (sessionManager, userId, circuitId) =
+                            ((UserSessionManager, Guid, Guid))state;
 
-                            sessionManager.Invalidate(userId, circuitId);
-                            return Task.CompletedTask;
-                        },
-                        (sessionManager, userGuid, circuitId));
+                        sessionManager.Invalidate(userId, circuitId);
+                        return Task.CompletedTask;
+                    },
+                    (sessionManager, userGuid, circuitId));
                 return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}");
                 
             }).RequireAuthorization();

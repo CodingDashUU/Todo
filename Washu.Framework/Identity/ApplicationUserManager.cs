@@ -14,7 +14,7 @@ public sealed class ApplicationUserManager<TDbContext>(IDbContextFactory<TDbCont
         return await dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
     }
 
-    public async Task<IdentityMessage> ChangeUsernameAsync(string oldName, string newName, CancellationToken ct = default)
+    public async Task<IdentityMessage> ChangeUsernameAsync(string oldName, string newName, Guid userId, CancellationToken ct = default)
     {
         if (newName == oldName) return new IdentityMessage(Message.Info("Identity Info", "Username has not been modified"));
         var validator = new Username.Validator();
@@ -25,9 +25,9 @@ public sealed class ApplicationUserManager<TDbContext>(IDbContextFactory<TDbCont
             return new IdentityMessage(Message.Error("Invalid Username", errorMessage.ErrorMessage));
         }
         await using var dbContext = await factory.CreateDbContextAsync(ct);
-        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Username == oldName, ct);
-        if (user is null) return new IdentityMessage(Message.Error("Identity Error", "Account with the given user name not found"), true);
-        if (await dbContext.Users.AnyAsync(u => u.Username == newName, ct))
+        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
+        if (user is null) return new IdentityMessage(Message.Error("Identity Error", "Account was not found"), true);
+        if (await dbContext.Users.AnyAsync(u => u.Username == newName && u.Id != userId, ct))
             return new IdentityMessage(Message.Error("Identity Error", "Username provided is already taken"));
         user.Username = newName;
         try
