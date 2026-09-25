@@ -237,7 +237,7 @@ public static class ConfigurationExtensions
             app.MapPost("/theme", (HttpContext context, UserSessionManager sessionManager, [FromForm] string theme) =>
             {
                 var cookie = context.Request.Cookies[CookieNames.Theme];
-                if (cookie is not null && cookie == theme) return TypedResults.Redirect(ApplicationRoutes.Settings);
+                if ((cookie is not null && cookie == theme) || Themes.Free.All(t => t.Text != theme)) return TypedResults.Redirect(ApplicationRoutes.Settings);
                 context.Response.Cookies.Delete(CookieNames.Theme);
                 context.Response.Cookies.Append(
                     CookieNames.Theme,
