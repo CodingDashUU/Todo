@@ -124,6 +124,7 @@ public static class ExternalEndpoints
                 new Dictionary<string, string?>
                 {
                     ["MessageId"] = id,
+                    ["PersistCookie"] = persistCookie.ToString(),
                     ["ReturnUrl"] = returnUrl
                 });
             return TypedResults.Redirect(url);
@@ -139,6 +140,7 @@ public static class ExternalEndpoints
                 new Dictionary<string, string?>
                 {
                     ["MessageId"] = id,
+                    ["PersistCookie"] = persistCookie.ToString(),
                     ["ReturnUrl"] = returnUrl
                 });
             return TypedResults.Redirect(url);
@@ -152,6 +154,7 @@ public static class ExternalEndpoints
                 new Dictionary<string, string?>
                 {
                     ["MessageId"] = id,
+                    ["PersistCookie"] = persistCookie.ToString(),
                     ["ReturnUrl"] = returnUrl
                 });
             return TypedResults.Redirect(url);
@@ -212,6 +215,7 @@ public static class ExternalEndpoints
                 new Dictionary<string, string?>
                 {
                     ["MessageId"] = id,
+                    ["PersistCookie"] = persistCookie.ToString(),
                     ["ReturnUrl"] = returnUrl
                 });
             return TypedResults.Redirect(url);
