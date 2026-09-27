@@ -91,11 +91,10 @@ public static class ConfigurationExtensions
                 options.UseNpgsql(
                     connectionString,
                     npgsqlOptions =>
-                        // Enable default resilient retries
                         npgsqlOptions.EnableRetryOnFailure(
-                            maxRetryCount: 5,                  // Default is 6
-                            maxRetryDelay: TimeSpan.FromSeconds(30), // Max delay between retries
-                            errorCodesToAdd: null              // Additional SQL/error codes if needed
+                            maxRetryCount: 5,
+                            maxRetryDelay: TimeSpan.FromSeconds(30),
+                            errorCodesToAdd: null
                         )));
             services.AddMemoryCache();
             services.AddSingleton<MessageStore>();
@@ -148,14 +147,12 @@ public static class ConfigurationExtensions
                     {
                         if (!HttpMethods.IsGet(context.Request.Method))
                         {
-                            // Grab the page they were actually standing on when they submitted the form
                             var referer = context.Request.Headers.Referer.FirstOrDefault();
 
                             var safeReturnUrl = !string.IsNullOrWhiteSpace(referer) 
                                                    && Uri.TryCreate(referer, UriKind.Absolute, out var uri)
                                 ? uri.LocalPath
                                 : ApplicationRoutes.Home;
-                            // Overwrite the ReturnUrl parameter so it points to a GET page route
                             context.RedirectUri = $"{options.LoginPath}?ReturnUrl={safeReturnUrl}";
                         }
 
@@ -164,22 +161,19 @@ public static class ConfigurationExtensions
                     };
                     options.Events.OnValidatePrincipal = async context =>
                     {
-                        var userIdText = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
+                        var userId = context.Principal?.FindUserId();
 
-                        if (!Guid.TryParse(userIdText, out var userId))
+                        if (userId is not {} userGuid)
                         {
                             context.RejectPrincipal();
                             await context.HttpContext.SignOutAsync(
                                 IdentityConstants.ApplicationScheme);
                             return;
                         }
-
-                        var factory = context.HttpContext.RequestServices
-                            .GetRequiredService<IDbContextFactory<TDbContext>>();
+                        var userManager = context.HttpContext.RequestServices
+                            .GetRequiredService<ApplicationUserManager<TDbContext>>();
                         var optionsAccessor = context.HttpContext.RequestServices.GetRequiredService<IOptions<IdentityOptions>>();
-                        await using var db = await factory.CreateDbContextAsync();
-                        var user = await db.Users.SingleOrDefaultAsync(u => u.Id == userId);
-
+                        var user = await userManager.FindByIdAsync(userGuid);
                         var stampType = optionsAccessor.Value.ClaimsIdentity.SecurityStampClaimType;
                         if (context.Principal is null)
                             throw new InvalidOperationException("Claims Principal cannot be null");
@@ -275,7 +269,8 @@ public static class ConfigurationExtensions
                     : $"{ApplicationRoutes.SignIn}?messageId={messageId}";
 
                 return TypedResults.Redirect(targetUrl);
-            });
+            }).RequireAuthorization()
+                .RequireRateLimiting(RateLimiterPolicy.StandardRateLimiter);
         }
     }
 }

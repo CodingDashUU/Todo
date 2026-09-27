@@ -55,7 +55,7 @@
         {
             IsBusy = true;
             var message = await UserManager.ChangeUsernameAsync(User.Username, NewUsername, User.Id);
-            NotificationService.Show(message.CoreMessage);
+            NotificationService.Show(message);
             CurrentUserService.ClearCache();
             await RefreshUserAsync();
             StateHasChanged();
