@@ -8,7 +8,7 @@ public static class Username
     public static class Rules
     {
         public const byte MinUsernameLength = 3;
-        public const byte MaxUsernameLength = 20;
+        public const byte MaxUsernameLength = 50;
     
         public const string ValidCharacters = $"{Characters.Alphanumeric}_-";
     }
