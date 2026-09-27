@@ -36,6 +36,19 @@ public static class EfCoreExtensions
             );
         }
 
+        public void HasAllowedFirstCharacterCheckConstraint(
+            Expression<Func<TEntity, string>> property,
+            string allowedCharacters)
+        {
+            var propertyInfo = property.GetPropertyInfo();
+            var entityName = typeof(TEntity).Name;
+            var propertyName = propertyInfo.Name;
+            var escapedChars = allowedCharacters.Replace("'", "''");
+            entity.HasCheckConstraint(
+                $"CK_{entityName}_{propertyName}_AllowedFirstChar",
+                $"\"{propertyName}\" <> '' AND position(left(\"{propertyName}\", 1) in '{escapedChars}') > 0"
+            );
+        }
         public void HasEmailCheckConstraint(Expression<Func<TEntity, string>> property)
         {
             var propertyInfo = property.GetPropertyInfo();

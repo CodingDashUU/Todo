@@ -10,7 +10,7 @@ public static class Username
         public const byte MinUsernameLength = 3;
         public const byte MaxUsernameLength = 20;
     
-        public const string ValidCharacters = $"{Characters.Lowercase}{Characters.Uppercase}_-";
+        public const string ValidCharacters = $"{Characters.Alphanumeric}_-";
     }
     public sealed class Validator : AbstractValidator<string>
     {
@@ -19,7 +19,11 @@ public static class Username
                 .Cascade(CascadeMode.Stop)
                 .NotEmpty().WithMessage("Name is required")
                 .Length(Rules.MinUsernameLength, Rules.MaxUsernameLength).WithMessage($"Name must be between {Rules.MinUsernameLength} and {Rules.MaxUsernameLength} characters")
-                .Must(HasValidCharacters).WithMessage("Name may only contain lower-, uppercase, '_' and/or '-' characters");
+                .Must(HasValidCharacters).WithMessage("Name may only contain alphanumeric, '_' and/or '-' characters")
+                .Must(StartsWithAlphaCharacters).WithMessage("Name must start with a lower-, or uppercase character");
         private static bool HasValidCharacters(string name) => name.All(Rules.ValidCharacters.Contains);
+
+        private static bool StartsWithAlphaCharacters(string name) =>
+            $"{Characters.Letters}".Contains(name.First());
     }
 }
