@@ -41,10 +41,10 @@ public sealed class ApplicationUserManager<TDbContext>(IDbContextFactory<TDbCont
         }
         return new IdentityMessage(Message.Success("Identity Success", "Successfully updated username"), true);
     }
-    public async Task<Message> DeleteByUsernameAsync(string userName, CancellationToken ct = default)
+    public async Task<Message> DeleteByIdAsync(Guid userId, CancellationToken ct = default)
     {
         await using var dbContext = await factory.CreateDbContextAsync(ct);
-        var user = await dbContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Username == userName, ct);
+        var user = await dbContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId, ct);
         if (user is null) return Message.Error("Identity Error", "Account with the given user name not found");
         dbContext.Users.Remove(user);
         await dbContext.SaveChangesAsync(ct);

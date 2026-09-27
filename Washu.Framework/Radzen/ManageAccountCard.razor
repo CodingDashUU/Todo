@@ -1,47 +1,115 @@
-@inject MessageStore MessageStore
+@using Washu.Framework.Extensions
+@using Washu.Framework.Identity.Entities
+@inject ApplicationUserManager<TDbContext> UserManager
+@inject NotificationService NotificationService
 @inject NavigationManager NavManager
+@inject CurrentUserService<TDbContext> CurrentUserService
+@inject UserSessionManager SessionManager
+@inject AuthenticationStateProvider AuthStateProvider
+@inject CircuitState CircuitState
+@inject MessageStore Store
+@typeparam TDbContext where TDbContext : ApplicationDbContext
+
+@if (User is null)
+{
+    <RadzenProgressBar Mode="ProgressBarMode.Indeterminate" />
+    return;
+}
 <RadzenCard Variant="Variant.Outlined">
     <RadzenStack class="rz-p-0 rz-p-md-6 rz-p-lg-12">
-        <RadzenText>Current Username: @_name</RadzenText>
-        <RadzenText>Email: @_email</RadzenText>
-        @if (_principal is not null)
-        {
-            <ChangeUsernameForm Principal="_principal"/>
-        }
+        <RadzenText>Current Username: @User.Username</RadzenText>
+        <RadzenText>Email: @User.Email</RadzenText>
+        <RadzenStack>
+            <RadzenFormField Text="New Username">
+                <Start>
+                    <RadzenIcon Icon="@MaterialIcons.AccountCircle"/>
+                </Start>
+                <ChildContent>
+                    <RadzenTextBox Value="@NewUsername" ValueChanged="s => NewUsername = s" MaxLength="Username.Rules.MaxUsernameLength"/>
+                </ChildContent>
+            </RadzenFormField>
+            <RadzenButton IsBusy="IsBusy" Click="OnChangeUsernameAsync" Text="Change Username"/>
+        </RadzenStack>
         <div style="height: 20px;"></div>
-        <SignOutForm/>
-        <DeleteAccountForm/>
+
+        <RadzenButton IsBusy="IsBusy" Click="@SignOutAsync" Text="Sign Out"/>
+        <RadzenButton IsBusy="IsBusy" Click="@DeleteAccountAsync" Text="Delete Account"/>
     </RadzenStack>
 </RadzenCard>
 
 @code {
-    private string _email = "Unknown";
-    private string _name = "Unknown";
-    private ClaimsPrincipal? _principal;
 
-    [CascadingParameter] public required Task<AuthenticationState> AuthStateTask { get; set; }
-
+    private ApplicationUser User { get; set; } = null!;
+    private string NewUsername { get; set; } = string.Empty;
+    private bool IsBusy { get; set; }
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthStateTask;
-        _principal = authState.User;
+        var success = await RefreshUserAsync();
+        if (!success) return;
+        NewUsername = User.Username;
+    }
 
-        if (_principal.Identity is not { Name: not null } userContext)
-        {
-            RedirectToLogin("Invalid session");
-            return;
-        }
-        _name = userContext.Name;
-        if (_principal.FindFirstValue(ClaimTypes.Email) is not { } email)
-        {
-            RedirectToLogin("No email was found");
-            return;
-        }
-        _email = email;
-    }
-    private void RedirectToLogin(string errorMessage)
+    private async Task OnChangeUsernameAsync()
     {
-        var id = MessageStore.Store(Message.Error("Identity Error", errorMessage));
-        NavManager.NavigateTo($"{ApplicationRoutes.SignIn}?messageId={id}");
+        try
+        {
+            IsBusy = true;
+            var message = await UserManager.ChangeUsernameAsync(User.Username, NewUsername, User.Id);
+            NotificationService.Show(message.CoreMessage);
+            CurrentUserService.ClearCache();
+            await RefreshUserAsync();
+            StateHasChanged();
+            await CurrentUserService.UserHasChangedAsync();
+        }
+        finally
+        {
+            await Task.Delay(500);
+            IsBusy = false;
+        }
     }
+
+    private async Task<bool> RefreshUserAsync()
+    {
+        var user = await CurrentUserService.GetCurrentUserAsync();
+        if (user is null)
+        {
+            NavManager.NavigateTo(ApplicationRoutes.SignIn);
+            return false;
+        }
+        User = user;
+        return true;
+    }
+    private async Task SignOutAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        if (authState.User.FindUserId() is { } userId)
+        {
+            await SessionManager.InvalidateAsync(userId, CircuitState.Id);
+        }
+        NavManager.NavigateTo(IdentityRoutes.SignOut, forceLoad: true);
+    }
+    private async Task DeleteAccountAsync()
+    {
+        try
+        {
+            IsBusy = true;
+            var message = await UserManager.DeleteByIdAsync(User.Id);
+
+            if (message.Type is not MessageType.Success)
+            {
+                NotificationService.Show(message);
+                return;
+            }
+
+            await SessionManager.InvalidateAsync(User.Id, CircuitState.Id);
+            var id = Store.Store(message);
+            NavManager.NavigateTo($"{IdentityRoutes.SignOut}?messageId={id}", forceLoad: true);
+        }
+        finally
+        {
+            await Task.Delay(500);
+            IsBusy = false;
+        }
+    }
+
 }

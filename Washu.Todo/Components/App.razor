@@ -27,29 +27,16 @@
 <Routes @rendermode="InteractiveServer"/>
 <script src="@Assets["_framework/blazor.web.js"]"></script>
 <script>
-    if (!window.__antiforgerySubmitListenerAttached) {
-        window.__antiforgerySubmitListenerAttached = true;
-        document.addEventListener('submit', async function (e) {
-            const form = e.target;
-            if (!(form instanceof HTMLFormElement)) return;
-            const tokenInput = form.querySelector('input[name="__RequestVerificationToken"]');
-            if (!tokenInput || form.dataset.refreshed) return;
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            try {
-                const response = await fetch('/antiforgery/token');
-                if (response.ok) {
-                    tokenInput.value = await response.text();
-                }
-            } catch (err) {
-                console.warn('Could not refresh token, submitting existing one', err);
-            } finally {
-                form.dataset.refreshed = "true";
-                // Safely invoke prototype submit method in case form has element named "submit"
-                HTMLFormElement.prototype.submit.call(form);
-            }
-        }, true);
-    }
+    window.setThemeCookie = function (name, value, days) {
+        let expires = "";
+        if (days) {
+            const date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            expires = "; expires=" + date.toUTCString();
+        }
+        // Set the cookie directly in the browser
+        document.cookie = `${name}=${value || ""}${expires}; path=/; SameSite=Lax; Secure`;
+    };
 </script>
 <script src="_content/Radzen.Blazor/Radzen.Blazor.js?v=@(typeof(Radzen.Colors).Assembly.GetName().Version)"></script>
 </body>

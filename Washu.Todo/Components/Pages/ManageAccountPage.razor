@@ -1,4 +1,5 @@
+@using Washu.Todo.Identity
 @attribute [Route(ApplicationRoutes.ManageAccount)]
 @attribute [Authorize]
 <PageTitle>Manage Account</PageTitle>
-<ManageAccountCard/>
+<ManageAccountCard TDbContext="TodoDbContext"/>

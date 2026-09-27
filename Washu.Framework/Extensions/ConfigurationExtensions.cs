@@ -81,9 +81,10 @@ public static class ConfigurationExtensions
             
             // Identity
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-            services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, ApplicationClaimsPrincipalFactory<TDbContext>>();
+            services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, ApplicationClaimsPrincipalFactory>();
             services.AddScoped<ApplicationSignInManager<TDbContext>>();
             services.AddScoped<ApplicationUserManager<TDbContext>>();
+            services.AddScoped<CurrentUserService<TDbContext>>();
             services.AddScoped<ApplicationRoleManager<TDbContext>>();
             services.AddScoped<ApplicationDbContext, TDbContext>();
             services.AddDbContextFactory<TDbContext>(options =>
@@ -264,95 +265,16 @@ public static class ConfigurationExtensions
                     await context.Response.WriteAsJsonAsync(json);
                 }
             });
-            app.MapPost("/theme", (HttpContext context, [FromForm] string theme) =>
-            {
-                var cookie = context.Request.Cookies[CookieNames.Theme];
-                if ((cookie is not null && cookie == theme) || Themes.Free.All(t => t.Value != theme)) return TypedResults.Redirect(ApplicationRoutes.Settings);
-                context.Response.Cookies.Delete(CookieNames.Theme);
-                context.Response.Cookies.Append(
-                    CookieNames.Theme,
-                    theme,
-                    new CookieOptions
-                    {
-                        Secure = true,
-                        Expires = DateTimeOffset.Now.AddDays(ThemeCookieDuration),
-                        SameSite = SameSiteMode.Lax
-                    });
-                return TypedResults.Redirect(ApplicationRoutes.Settings);
-            }).RequireRateLimiting(RateLimiterPolicy.StandardRateLimiter);
             ExternalEndpoints.Map<TDbContext>(app);
-            app.MapPost(IdentityRoutes.DeleteAccount, async (MessageStore store, HttpContext context,
-                ApplicationUserManager<TDbContext> manager, UserSessionManager sessionManager, [FromForm] Guid circuitId) =>
-            {
-                var username = context.User.Identity?.Name;
-                if (username is null)
-                {
-                    var errorId = store.Store(Message.Error("Identity Error","Invalid session, or user does not exist"));
-                    return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={errorId}");
-                }
-                var message = await manager.DeleteByUsernameAsync(username);
-                var id = store.Store(message);
-                if (message.Type != MessageType.Success) return TypedResults.Redirect($"{ApplicationRoutes.ManageAccount}?messageId={id}");
-                await context.SignOutAsync(IdentityConstants.ApplicationScheme);
-                if (context.User.FindUserId() is { } userGuid)
-                    context.Response.OnCompleted(
-                        static async state =>
-                        {
-                            var (sessionManager, userId, circuitId) =
-                                ((UserSessionManager, Guid, Guid))state;
-
-                            await sessionManager.InvalidateAsync(userId, circuitId);
-                        },
-                        (sessionManager, userGuid, circuitId));
-                return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}");
-            }).RequireAuthorization();
-            app.MapPost(IdentityRoutes.SignOut, async (HttpContext context, UserSessionManager sessionManager, [FromForm] Guid circuitId) =>
+            app.MapGet(IdentityRoutes.SignOut, async (HttpContext context, [FromQuery] string? messageId) =>
             {
                 await context.SignOutAsync(IdentityConstants.ApplicationScheme);
-                if (context.User.FindUserId() is { } userGuid)
-                    context.Response.OnCompleted(
-                        static async state =>
-                        {
-                            var (sessionManager, userId, circuitId) =
-                                ((UserSessionManager, Guid, Guid))state;
 
-                            await sessionManager.InvalidateAsync(userId, circuitId);
-                        },
-                        (sessionManager, userGuid, circuitId));
-                return TypedResults.Redirect($"{ApplicationRoutes.SignIn}");
-            }).RequireAuthorization();
-            
-            app.MapPost(IdentityRoutes.ChangeUsername, async (MessageStore store, 
-                HttpContext context,
-                ApplicationUserManager<TDbContext> manager, UserSessionManager sessionManager, [FromForm] Guid circuitId, [FromForm] string newUsername) =>
-            {
-                var oldUsername = context.User.Identity?.Name;
-                var userId = context.User.FindUserId();
-                if (oldUsername is null || userId is not {} userGuid)
-                {
-                    var errorId = store.Store(Message.Error("Identity Error","Invalid session, or user does not exist"));
-                    return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={errorId}");
-                }
-                var message = await manager.ChangeUsernameAsync(oldUsername, newUsername, userGuid);
-                var id = store.Store(message.CoreMessage);
-                if (!message.RedirectToSignIn) return TypedResults.Redirect($"{ApplicationRoutes.ManageAccount}?messageId={id}");
-                await context.SignOutAsync(IdentityConstants.ApplicationScheme);
-                context.Response.OnCompleted(
-                    static async state =>
-                    {
-                        var (sessionManager, userId, circuitId) =
-                            ((UserSessionManager, Guid, Guid))state;
+                var targetUrl = string.IsNullOrWhiteSpace(messageId)
+                    ? ApplicationRoutes.SignIn
+                    : $"{ApplicationRoutes.SignIn}?messageId={messageId}";
 
-                        await sessionManager.InvalidateAsync(userId, circuitId);
-                    },
-                    (sessionManager, userGuid, circuitId));
-                return TypedResults.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}");
-                
-            }).RequireAuthorization();
-            app.MapGet("/antiforgery/token", (IAntiforgery antiforgery, HttpContext context) =>
-            {
-                var tokens = antiforgery.GetAndStoreTokens(context);
-                return Results.Text(tokens.RequestToken);
+                return TypedResults.Redirect(targetUrl);
             });
         }
     }

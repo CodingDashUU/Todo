@@ -1,9 +1,11 @@
 ﻿@using Washu.Framework.Extensions
 @using Washu.Framework.Identity
+@using Washu.Todo.Identity
 @inherits LayoutComponentBase
 @inject NavigationManager NavManager
 @inject UserSessionManager SessionManager
 @inject CircuitState CircuitState
+@inject CurrentUserService<TodoDbContext> CurrentUserService
 @implements IDisposable
 <QueryNotificationHandler />
 <RadzenLayout>
@@ -18,7 +20,7 @@
                             class="rz-display-flex rz-align-items-center rz-justify-content-center" 
                             style="width: 40px; height: 40px; border-radius: 50%; font-weight: bold; font-size: 20px; background-color: var(--rz-secondary); color: var(--rz-white);"
                             Click="@(() => NavManager.NavigateTo(ApplicationRoutes.ManageAccount))"
-                            Variant="Variant.Text">@(char.ToUpper(context.User.Identity?.Name?.First() ?? 'U'))</RadzenButton>
+                            Variant="Variant.Text">@FirstUsernameLetter</RadzenButton>
                 </Authorized>
             </AuthorizeView>
             <div style="width: 20px;"></div>
@@ -42,6 +44,7 @@
 </RadzenLayout>
 @code {
     bool sidebarExpanded = true;
+    char FirstUsernameLetter = 'U';
     [CascadingParameter] public required Task<AuthenticationState> Context { get; set; }
     Guid? UserId;
     protected override async Task OnInitializedAsync()
@@ -49,17 +52,25 @@
         var state = await Context;
         if (state.User.FindUserId() is not {} userGuid) return;
         UserId = userGuid;
+        FirstUsernameLetter = (await CurrentUserService.GetCurrentUserAsync())?.Username.First() ?? 'U';
         SessionManager.AddSession(userGuid, CircuitState.Id, () =>
         {
             NavManager.Refresh(forceReload: true);
             return Task.CompletedTask;
         });
+        CurrentUserService.OnUserChanged += RefreshAsync;
     }
 
+    public async Task RefreshAsync()
+    {
+        FirstUsernameLetter = (await CurrentUserService.GetCurrentUserAsync())?.Username.First() ?? 'U';
+        StateHasChanged();
+    }
     public void Dispose()
     {
         if (UserId.HasValue)
             SessionManager.RemoveSession(UserId.Value, CircuitState.Id);
+        CurrentUserService.OnUserChanged -= RefreshAsync;
     }
 
 }

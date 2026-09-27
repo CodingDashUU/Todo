@@ -16,7 +16,7 @@
 @inject ToggleTask.Command ToggleTaskCommand
 @inject UpdateTask.Command UpdateTaskCommand
 @inject MessageStore MessageStore
-@inject ApplicationUserManager<TodoDbContext> UserManager
+@inject CurrentUserService<TodoDbContext> CurrentUserService
 <RadzenDropDown TValue="Todo.TodoList" 
                     Value="SelectedList" 
                     Data="ListNames" 
@@ -68,7 +68,8 @@
             NavManager.NavigateTo(ApplicationRoutes.SignIn, forceLoad: true);
             return;
         }
-        var user = await UserManager.FindByIdAsync(userId);
+
+        var user = await CurrentUserService.GetCurrentUserAsync();
         if (user is null)
         {
             var id = MessageStore.Store(Message.Error("Identity Error", "User couldn't be found, doesn't exist, or the session is invalid"));

@@ -25,15 +25,10 @@ where TDbContext : ApplicationDbContext
         AuthenticationState authenticationState, CancellationToken cancellationToken)
     {
         var principal = authenticationState.User;
-        if (principal.Identity is not {IsAuthenticated: true}) return false;
         await using var scope = scopeFactory.CreateAsyncScope();
-        var userManager = scope.ServiceProvider.GetRequiredService<ApplicationUserManager<TDbContext>>();
-        var userId = principal.FindUserId();
-        if (userId is not {} userIdGuid) return false;
-        var user = await userManager.FindByIdAsync(userIdGuid, cancellationToken);
-        // Check if they exist
+        var currentUserService = scope.ServiceProvider.GetRequiredService<CurrentUserService<TDbContext>>();
+        var user = await currentUserService.GetCurrentUserAsync();
         if (user is null) return false;
-        // Check if the security stamp is the same
         var principalStamp = principal.FindFirstValue(_options.ClaimsIdentity.SecurityStampClaimType);
         if (!Guid.TryParse(principalStamp, out var principalStampGuid)) return false;
         return principalStampGuid == user.SecurityStamp;

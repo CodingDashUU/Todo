@@ -1,10 +1,33 @@
+@using Microsoft.JSInterop
 @inject ThemeService ThemeService
-<form action="/theme" method="post">
+@inject IJSRuntime JS
     <AntiforgeryToken/>
     <RadzenStack>
         <RadzenFormField Text="Theme">
-            <RadzenDropDown TValue="string" Name="theme" Value="@(ThemeService.Theme ?? Themes.Free.First().Value)" Data="@Themes.Free" TextProperty=@nameof(Theme.Text) ValueProperty=@nameof(Theme.Value) />
+            <RadzenDropDown TValue="string" Name="theme" Value="@_theme" ValueChanged="s => _theme = s" Data="@Themes.Free" TextProperty=@nameof(Theme.Text) ValueProperty=@nameof(Theme.Value) />
         </RadzenFormField>
-        <RadzenButton ButtonType="ButtonType.Submit">Change Theme</RadzenButton>
+        <RadzenButton Click="SetThemeAsync">Change Theme</RadzenButton>
     </RadzenStack>
-</form>
+    
+    @code {
+        string _theme = Themes.Free.First().Value ?? "standard-dark";
+
+        protected override void OnInitialized()
+        {
+            base.OnInitialized();
+            var theme = ThemeService.Theme;
+            if (theme is not null)
+            {
+                _theme = theme;
+            }
+        }
+
+        private async Task SetThemeAsync()
+        {
+            if (Themes.Free.All(t => t.Value != _theme))
+                return;
+            await JS.InvokeVoidAsync("setThemeCookie", CookieNames.Theme, _theme, 365);
+            ThemeService.SetTheme(_theme);
+        }
+
+    }
