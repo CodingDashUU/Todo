@@ -39,7 +39,8 @@
 @code {
     [Parameter, SupplyParameterFromQuery] public string? ReturnUrl { get; set; }
     [SupplyParameterFromQuery] public bool PersistCookie { get; set; }
-    public string ActionUrl => QueryHelpers.AddQueryString(
+
+    private string ActionUrl => QueryHelpers.AddQueryString(
     IdentityRoutes.ChallengeGoogle,
     new Dictionary<string, string?>
     {

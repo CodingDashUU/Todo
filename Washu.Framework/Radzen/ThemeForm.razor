@@ -1,7 +1,6 @@
 @using Microsoft.JSInterop
 @inject ThemeService ThemeService
 @inject IJSRuntime JS
-    <AntiforgeryToken/>
     <RadzenStack>
         <RadzenFormField Text="Theme">
             <RadzenDropDown TValue="string" Name="theme" Value="@_theme" ValueChanged="s => _theme = s" Data="@Themes.Free" TextProperty=@nameof(Theme.Text) ValueProperty=@nameof(Theme.Value) />
