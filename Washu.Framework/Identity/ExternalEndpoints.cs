@@ -25,7 +25,6 @@ public static class ExternalEndpoints
             .RequireRateLimiting(RateLimiterPolicy.StandardRateLimiter);
         group.MapGet(IdentityRoutes.ChallengeGoogle, ChallengeExternal<TDbContext>);
         group.MapGet(IdentityRoutes.ExternalCallback, ExternalCallback<TDbContext>);
-        group.MapPost(IdentityRoutes.CompleteRegistration, CompleteRegistration<TDbContext>);
     }
 
     private static async Task<IResult> ChallengeExternal<TDbContext>(
@@ -59,7 +58,10 @@ public static class ExternalEndpoints
 
     private static async Task<IResult> ExternalCallback<TDbContext> (
         ApplicationSignInManager<TDbContext> signInManager,
+        ApplicationUserManager<TDbContext> userManager,
+        IDbContextFactory<TDbContext> dbContextFactory,
         [FromQuery] bool persistCookie, 
+        MessageStore store,
         [FromQuery] string returnUrl)
     where TDbContext : ApplicationDbContext
     {
@@ -75,61 +77,11 @@ public static class ExternalEndpoints
                 });
             return Results.Redirect(errorUrl);
         }
-        var url = QueryHelpers.AddQueryString(
-            ApplicationRoutes.Register,
-            new Dictionary<string, string?>
-            {
-                ["PersistCookie"] = persistCookie.ToString(),
-                ["ReturnUrl"] = returnUrl
-            });
         var result = await signInManager.ExternalLoginSignInAsync(
             info.LoginProvider,
             info.ProviderKey, 
             isPersistent: persistCookie);
-        return Results.Redirect(result.Succeeded ? SafeReturnUrl(returnUrl) :
-            url);
-    }
-
-    private static async Task<RedirectHttpResult> CompleteRegistration<TDbContext> (
-        [FromForm] Registration.Model request,
-        [FromQuery] bool persistCookie,
-        [FromQuery] string returnUrl,
-        ApplicationSignInManager<TDbContext> signInManager,
-        IDbContextFactory<TDbContext> dbContextFactory,
-        MessageStore store)
-    where TDbContext : ApplicationDbContext
-    {
-        var validator = new Registration.Validator();
-        var result = await validator.ValidateAsync(request);
-        if (!result.IsValid)
-        {
-            var id = store.Store([.. result.Errors.Select(e => Message.Error("Invalid Registration Details",$"{e.PropertyName}: {e.ErrorMessage}"))]);
-            var url = QueryHelpers.AddQueryString(
-                ApplicationRoutes.Register,
-                new Dictionary<string, string?>
-                {
-                    ["PersistCookie"] = persistCookie.ToString(),
-                    ["MessageId"] = id,
-                    ["ReturnUrl"] = returnUrl
-                });
-            return TypedResults.Redirect(url);
-        }
-        var info = await signInManager.GetExternalLoginInfoAsync();
-        if (info is null)
-        {
-            var id = store.Store(
-                Message.Error("Registration Error", "You need to continue with a sign-in provider to register"));
-            var url = QueryHelpers.AddQueryString(
-                ApplicationRoutes.SignIn,
-                new Dictionary<string, string?>
-                {
-                    ["MessageId"] = id,
-                    ["PersistCookie"] = persistCookie.ToString(),
-                    ["ReturnUrl"] = returnUrl
-                });
-            return TypedResults.Redirect(url);
-        }
-
+        if (result.Succeeded) return TypedResults.Redirect(SafeReturnUrl(returnUrl));
         var email = info.Principal.FindFirstValue(ClaimTypes.Email);
         if (email is null)
         {
@@ -159,31 +111,18 @@ public static class ExternalEndpoints
                 });
             return TypedResults.Redirect(url);
         }
-        var user = new ApplicationUser(request.Username, email, info.ProviderKey);
-        if (await dbContext.Users.AnyAsync(u => u.Username == user.Username))
-        {
-            var id = store.Store(Message.Error("Registration Error", "Username provided is already taken"));
-            var url = QueryHelpers.AddQueryString(
-                ApplicationRoutes.Register,
-                new Dictionary<string, string?>
-                {
-                    ["PersistCookie"] = persistCookie.ToString(),
-                    ["MessageId"] = id,
-                    ["ReturnUrl"] = returnUrl
-                });
-            return TypedResults.Redirect(url);
-        }
+
+        var username = await GenerateValidUsernameAsync(userManager, email);
+        var user = new ApplicationUser(username, email, info.ProviderKey);
         await dbContext.Users.AddAsync(user);
-        // Adding user to role
         var role = await dbContext.Roles
             .AsNoTracking()
             .FirstOrDefaultAsync(r => r.Name == InitialUserRoles.User);
-
         if (role is null) 
         {
             var id = store.Store(Message.Error("Login Error", "There was an issue while logging you in") );
             var url = QueryHelpers.AddQueryString(
-                ApplicationRoutes.Register,
+                ApplicationRoutes.SignIn,
                 new Dictionary<string, string?>
                 {
                     ["PersistCookie"] = persistCookie.ToString(),
@@ -222,13 +161,37 @@ public static class ExternalEndpoints
         }
         await signInManager.SignInAsync(user, isPersistent: persistCookie);
             
-        return TypedResults.Redirect(SafeReturnUrl(returnUrl));        
+        return TypedResults.Redirect(SafeReturnUrl(returnUrl));  
     }
+    
     private static string SafeReturnUrl(string? returnUrl) =>
         !string.IsNullOrWhiteSpace(returnUrl) &&
         returnUrl[0] == '/' &&
         (returnUrl.Length == 1 || (returnUrl[1] != '/' && returnUrl[1] != '\\'))
             ? returnUrl
             : ApplicationRoutes.Home;
+    
+    private static async Task<string> GenerateValidUsernameAsync<TDbContext>(
+        ApplicationUserManager<TDbContext> userManager, 
+        string email) 
+        where TDbContext : ApplicationDbContext
+    {
+        var raw = email.Split('@')[0];
+        var clean = new string(raw.Where(Username.Rules.ValidCharacters.Contains).ToArray());
+        clean = clean.TrimStart('_', '-');
+        
+        if (string.IsNullOrEmpty(clean) || !char.IsAsciiLetter(clean[0])) clean = $"u_{clean}".TrimEnd('_', '-');
+        
+        if (clean.Length < Username.Rules.MinUsernameLength)
+            clean = $"{clean}_{Random.Shared.Next(100, 999)}";
+        
+        const int maxBaseLength = Username.Rules.MaxUsernameLength - 5;
+        if (clean.Length > maxBaseLength) clean = clean[..maxBaseLength];
+
+        var candidate = clean;
+        while (await userManager.DoesUserExists(candidate)) candidate = $"{clean}_{Random.Shared.Next(100, 9999)}";
+
+        return candidate;
+    }
     
 }

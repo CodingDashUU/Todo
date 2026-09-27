@@ -14,6 +14,11 @@ public sealed class ApplicationUserManager<TDbContext>(IDbContextFactory<TDbCont
         return await dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
     }
 
+    public async Task<bool> DoesUserExists(string username, CancellationToken ct = default)
+    {
+        await using var dbContext = await factory.CreateDbContextAsync(ct);
+        return await dbContext.Users.AnyAsync(u => u.Username == username, ct);
+    }
     public async Task<IdentityMessage> ChangeUsernameAsync(string oldName, string newName, Guid userId, CancellationToken ct = default)
     {
         if (newName == oldName) return new IdentityMessage(Message.Info("Identity Info", "Username has not been modified"));

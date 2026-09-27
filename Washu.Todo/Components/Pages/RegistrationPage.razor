@@ -1,9 +1,0 @@
-﻿@attribute [Route(ApplicationRoutes.Register)]
-
-<PageTitle>Register</PageTitle>
-<RegistrationCard ReturnUrl="@ReturnUrl"/>
-
-@code {
-
-    [SupplyParameterFromQuery] public string ReturnUrl { get; set; } = "";
-}

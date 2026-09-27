@@ -7,5 +7,4 @@ public static class IdentityRoutes
     private const string Base = "/api/auth";
     public const string ChallengeGoogle = $"{Base}/google";
     public const string ExternalCallback = $"{Base}/external/callback";
-    public const string CompleteRegistration = $"{Base}/complete";
 }
