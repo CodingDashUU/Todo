@@ -1,0 +1,82 @@
+@implements IDisposable
+
+@if (CurrentEditContext != null && Messages.Any())
+{
+    <RadzenCard Style="
+    margin: 24px auto;
+    width: calc(100% - 48px);
+    background-color: color-mix(in srgb, var(--rz-danger) 12%, var(--rz-card-background-color, #1e1e1e));
+    border: 1px solid var(--rz-danger);
+    backdrop-filter: blur(16px);
+    border-radius: 20px;
+">
+    <div style="
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+    ">
+        <div style="
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        ">
+            <RadzenIcon Icon="error_outline" 
+                        Style="color: var(--rz-danger); font-size: 1.85rem; line-height: 1.2; flex-shrink: 0; height: 100%" />
+            <RadzenStack Gap="0.35rem" Style="flex-grow: 1;">
+                
+                <RadzenText TextStyle="TextStyle.Body1" 
+                            Style="color: var(--rz-danger); font-weight: 600; margin: 0; line-height: 1.2;">
+                    @(Messages.Count == 1 ? "Please fix the following error:" : "Please fix the following errors:")
+                </RadzenText>
+                
+                @if (Messages.Count == 1)
+                {
+                    <RadzenText Style="color: var(--rz-text-color, #ffffff); opacity: 0.9; margin: 0;">
+                        @Messages[0]
+                    </RadzenText>
+                }
+                else
+                {
+                    @foreach (var message in Messages)
+                    {
+                        <RadzenText Style="color: var(--rz-text-color, #ffffff); opacity: 0.9; margin: 0;">
+                            → @message
+                        </RadzenText>
+                    }
+                }
+
+            </RadzenStack>
+            <div>
+            </div>
+        </div>
+    </div>
+</RadzenCard>
+}
+
+@code {
+    [CascadingParameter] private EditContext? CurrentEditContext { get; set; }
+
+    private List<string> Messages => CurrentEditContext?.GetValidationMessages().Distinct().ToList() ?? [];
+
+    protected override void OnInitialized()
+    {
+        if (CurrentEditContext != null)
+        {
+            CurrentEditContext.OnValidationStateChanged += HandleValidationStateChanged;
+        }
+    }
+
+    private void HandleValidationStateChanged(object? sender, ValidationStateChangedEventArgs e)
+    {
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        if (CurrentEditContext != null)
+        {
+            CurrentEditContext.OnValidationStateChanged -= HandleValidationStateChanged;
+        }
+    }
+}

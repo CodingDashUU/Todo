@@ -2,10 +2,10 @@ namespace Washu.Framework.Extensions;
 
 using AspNetCore;
 using Blazor;
+using FluentValidation;
 using global::Radzen;
 using Identity;
 using Identity.Entities;
-using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -30,6 +30,7 @@ public static class ConfigurationExtensions
         where TDbContext : ApplicationDbContext
         {
             builder.Services.AddHttpContextAccessor();
+            ValidatorOptions.Global.DefaultRuleLevelCascadeMode = CascadeMode.Stop;
             builder.Services.AddScoped<CircuitState>();
             builder.Services.AddSingleton<UserSessionManager>();
             services.AddAuthorization();

@@ -1,38 +1,22 @@
-﻿@inject NotificationService NotificationService
+﻿@using Washu.Todo.Commands
 @inject DialogService DialogService
-@using Washu.Framework.Notifications
-@using Washu.Todo.Commands
-<RadzenTemplateForm TItem="CreateList.Model" Data=@_model Submit=@HandleSubmit>
-    <RadzenStack Gap="1rem">
-        <RadzenFormField Text="List Name">
-            <RadzenTextBox Name="@nameof(CreateList.Model.ListName)" 
-                           @bind-Value="_model.ListName"
-                           MaxLength="TodoRules.ListName.MaximumLength"/>
-        </RadzenFormField>
-        <RadzenButton Text="Create"
-                      ButtonType="ButtonType.Submit"
-                      IsBusy="SubmitBusy"/>
-    </RadzenStack>
-</RadzenTemplateForm>
+<AppForm
+    Model="_model"
+    Validator="_validator"
+    HandleValidSubmit="CloseDialog">
+    <RadzenFormField Text="List Name">
+        <RadzenTextBox Name="@nameof(CreateList.Model.ListName)" 
+                       @bind-Value="_model.ListName"
+                       MaxLength="TodoRules.ListName.MaximumLength" />
+    </RadzenFormField>
+</AppForm>
 @code {
     private readonly CreateList.Model _model = new();
     private readonly CreateList.Validator _validator = new();
-    public bool SubmitBusy;
-    private async Task HandleSubmit(CreateList.Model args)
+
+    private Task CloseDialog()
     {
-        SubmitBusy = true;
-        var result = await _validator.ValidateAsync(_model);
-        if (!result.IsValid)
-        {
-                NotificationService.Show(
-                    Message.Error("List Creation Error", result.Errors.First().ErrorMessage)
-                );
-                await Task.Delay(RadzenNotificationConstants.Duration);
-            SubmitBusy = false;
-            return;
-        }
-
         DialogService.Close(_model);
+        return Task.CompletedTask;
     }
-
 }

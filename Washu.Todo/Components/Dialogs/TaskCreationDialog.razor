@@ -1,57 +1,40 @@
 ﻿@using Washu.Framework.Extensions
 @using Washu.Framework.Identity
-@using Washu.Framework.Notifications
-@using Washu.Framework.Radzen
 @using Washu.Todo.Commands
 @inject DialogService DialogService
 @inject UserTimeZoneProvider TimeZoneProvider
-@inject NotificationService BaseNotificationService
-<RadzenTemplateForm TItem="CreateTask.Model" Data=@Model Submit=@HandleSubmit>
-    <RadzenStack Gap="1rem">
-        <RadzenFormField Text="Task Name">
-            <RadzenTextBox @bind-Value="Model.TaskName"/>
-        </RadzenFormField>
-        <RadzenFormField Text="Goal Date">
-            <RadzenDatePicker
-                TValue="DateTimeOffset"
-                @bind-Value="Model.GoalDate"
-                ShowTime
-                Min="DateTimeOffset.UtcNow.AddMinutes(5).ToTimeZone(TimeZoneProvider.TimeZoneInfo).DateTime"
-                Max="DateTimeOffset.UtcNow.AddYears(50).ToTimeZone(TimeZoneProvider.TimeZoneInfo).DateTime"/>
-        </RadzenFormField>
-        <RadzenButton Text="Create"
-                      IsBusy="SubmitBusy"
-                      ButtonType="ButtonType.Submit"/>
-    </RadzenStack>
-</RadzenTemplateForm>
+<AppForm
+    Model="Model"
+    Validator="Validator"
+    HandleValidSubmit="CloseDialog"
+    >
+    <RadzenFormField Text="Task Name">
+        <RadzenTextBox @bind-Value="Model.TaskName"/>
+    </RadzenFormField>
+    <RadzenFormField Text="Goal Date">
+        <RadzenDatePicker
+            TValue="DateTimeOffset"
+            @bind-Value="Model.GoalDate"
+            ShowTime
+            Min="DateTimeOffset.UtcNow.AddMinutes(5).ToTimeZone(TimeZoneProvider.TimeZoneInfo).DateTime"
+            Max="DateTimeOffset.UtcNow.AddYears(50).ToTimeZone(TimeZoneProvider.TimeZoneInfo).DateTime"/>
+    </RadzenFormField>
+</AppForm>
 
 
 @code {
     private CreateTask.Model Model { get; } = new();
     [Parameter] public required Todo.TodoList List { get; set; }
     private CreateTask.Validator Validator { get; set; } = null!;
-    private bool SubmitBusy { get; set; }
 
     protected override void OnInitialized()
     {
         Model.GoalDate = DateTimeOffset.UtcNow.AddHours(1).ToTimeZone(TimeZoneProvider.TimeZoneInfo);
         Validator = new CreateTask.Validator(List);
     }
-
-    private async Task HandleSubmit(CreateTask.Model args)
+    private Task CloseDialog()
     {
-        SubmitBusy = true;
-        var result = await Validator.ValidateAsync(Model);
-        if (!result.IsValid)
-        {
-            BaseNotificationService.Show(
-                Message.Error("Task Creation Error", result.Errors.First().ErrorMessage)
-            );
-            await Task.Delay(RadzenNotificationConstants.Duration);
-            SubmitBusy = false;
-            return;
-        }
-
         DialogService.Close(Model);
+        return Task.CompletedTask;
     }
 }

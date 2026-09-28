@@ -21,14 +21,7 @@ public sealed class ApplicationUserManager<TDbContext>(IDbContextFactory<TDbCont
     }
     public async Task<Message> ChangeUsernameAsync(string oldName, string newName, Guid userId, CancellationToken ct = default)
     {
-        if (newName == oldName) Message.Info("Identity Info", "Username has not been modified");
-        var validator = new Username.Validator();
-        var result = await validator.ValidateAsync(newName, ct);
-        if (!result.IsValid)
-        {
-            var errorMessage = result.Errors.First();
-            return Message.Error("Invalid Username", errorMessage.ErrorMessage);
-        }
+        if (newName == oldName) return Message.Info("Identity Info", "Username has not been modified");
         await using var dbContext = await factory.CreateDbContextAsync(ct);
         var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
         if (user is null) return Message.Error("Identity Error", "Account was not found");

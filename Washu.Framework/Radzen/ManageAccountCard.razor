@@ -1,3 +1,4 @@
+@using FluentValidation
 @using Washu.Framework.Extensions
 @using Washu.Framework.Identity.Entities
 @inject ApplicationUserManager<TDbContext> UserManager
@@ -19,17 +20,16 @@
     <RadzenStack class="rz-p-0 rz-p-md-6 rz-p-lg-12">
         <RadzenText>Current Username: @User.Username</RadzenText>
         <RadzenText>Email: @User.Email</RadzenText>
-        <RadzenStack>
+        <AppForm
+            Model="Model"
+            Validator="Validator"
+            SubmitButtonText="Update Username"
+            HandleValidSubmit="OnChangeUsernameAsync"
+            >
             <RadzenFormField Text="New Username">
-                <Start>
-                    <RadzenIcon Icon="@MaterialIcons.AccountCircle"/>
-                </Start>
-                <ChildContent>
-                    <RadzenTextBox Value="@NewUsername" ValueChanged="s => NewUsername = s" MaxLength="Username.Rules.MaxUsernameLength"/>
-                </ChildContent>
+               <RadzenTextBox @bind-Value="@Model.Username" MaxLength="Username.Rules.MaxUsernameLength"/>
             </RadzenFormField>
-            <RadzenButton IsBusy="IsBusy" Click="OnChangeUsernameAsync" Text="Change Username"/>
-        </RadzenStack>
+        </AppForm>
         <div style="height: 20px;"></div>
 
         <RadzenButton IsBusy="IsBusy" Click="@SignOutAsync" Text="Sign Out"/>
@@ -38,15 +38,15 @@
 </RadzenCard>
 
 @code {
-
     private ApplicationUser User { get; set; } = null!;
-    private string NewUsername { get; set; } = string.Empty;
+    private ChangeUsernameModel Model { get; set; } = new();
+    private ChangeUsernameValidator Validator { get; set; } = new();
     private bool IsBusy { get; set; }
     protected override async Task OnInitializedAsync()
     {
         var success = await RefreshUserAsync();
         if (!success) return;
-        NewUsername = User.Username;
+        Model.Username = User.Username;
     }
 
     private async Task OnChangeUsernameAsync()
@@ -54,7 +54,7 @@
         try
         {
             IsBusy = true;
-            var message = await UserManager.ChangeUsernameAsync(User.Username, NewUsername, User.Id);
+            var message = await UserManager.ChangeUsernameAsync(User.Username, Model.Username, User.Id);
             NotificationService.Show(message);
             CurrentUserService.ClearCache();
             await RefreshUserAsync();
@@ -112,4 +112,17 @@
         }
     }
 
+    class ChangeUsernameModel
+    {
+        public string Username { get; set; } = string.Empty;
+    }
+
+    class ChangeUsernameValidator : AbstractValidator<ChangeUsernameModel>
+    {
+        public ChangeUsernameValidator()
+        {
+            RuleFor(x => x.Username)
+                .SetValidator(new Username.Validator());
+        }
+    }
 }

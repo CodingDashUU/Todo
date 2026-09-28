@@ -1,13 +1,14 @@
 ﻿@using Washu.Framework.Extensions
 @using Washu.Framework.Identity
-@using Washu.Framework.Notifications
 @using Washu.Todo.Commands
 @inject UserTimeZoneProvider TimeZoneProvider
-@inject NotificationService NotificationService
 @inject DialogService DialogService
-
-<RadzenTemplateForm TItem="UpdateTask.Model" Data=@Model Submit=@HandleSubmit>
-    <RadzenStack Gap="1rem">
+<AppForm
+    Model="Model"
+    Validator="Validator"
+    SubmitButtonText="Update"
+    HandleValidSubmit="CloseDialog"
+    >
     <RadzenFormField Text="New Task Name">
         <RadzenTextBox @bind-Value="Model.NewTaskName"/>
     </RadzenFormField>
@@ -19,17 +20,11 @@
             Min="DateTimeOffset.UtcNow.AddMinutes(5).ToTimeZone(TimeZoneProvider.TimeZoneInfo).DateTime"
             Max="DateTimeOffset.UtcNow.AddYears(50).ToTimeZone(TimeZoneProvider.TimeZoneInfo).DateTime"/>
     </RadzenFormField>
-    <RadzenButton Text="Create"
-                  IsBusy="SubmitBusy"
-                  ButtonType="ButtonType.Submit"/>
-    </RadzenStack>
-</RadzenTemplateForm>
-
+</AppForm>
 @code {
     public UpdateTask.Model Model { get; } = new();
     [Parameter] public required TaskEntry OldEntry { get; set; }
     public UpdateTask.Validator Validator { get; set; }= null!;
-    public bool SubmitBusy { get; set; }
 
     protected override void OnInitialized()
     {
@@ -37,21 +32,9 @@
         Model.NewTaskName = OldEntry.Name;
         Validator = new UpdateTask.Validator(OldEntry);
     }
-
-    private async Task HandleSubmit(UpdateTask.Model args)
+    private Task CloseDialog()
     {
-        SubmitBusy = true;
-        var result = await Validator.ValidateAsync(Model);
-        if (!result.IsValid)
-        {
-            NotificationService.Show(
-                Message.Error("Task Update Error", result.Errors.First().ErrorMessage)
-            );
-            await Task.Delay(RadzenNotificationConstants.Duration);
-            SubmitBusy = false;
-            return;
-        }
-
         DialogService.Close(Model);
+        return Task.CompletedTask;
     }
 }

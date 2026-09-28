@@ -1,0 +1,21 @@
+@typeparam TModel
+@typeparam TValidator where TValidator : FluentValidation.IValidator
+<EditForm Model="Model" OnValidSubmit="HandleValidSubmit">
+    <FluentValidationValidator Validator="@Validator" />
+    
+    <RadzenStack Gap="1rem">
+        @ChildContent
+        <ValidationSummaryCard />
+        <RadzenButton Text="@SubmitButtonText" ButtonType="ButtonType.Submit" />
+    </RadzenStack>
+</EditForm>
+
+@code {
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public required TModel Model { get; set; }
+    [Parameter] public required TValidator Validator { get; set; }
+    [Parameter] public Func<Task> HandleValidSubmit { get; set; } = () => Task.CompletedTask;
+    [Parameter] public string SubmitButtonText { get; set; } = "Create";
+
+}
