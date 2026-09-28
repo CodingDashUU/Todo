@@ -26,7 +26,7 @@ public static class CreateList
         public async Task<Message> ExecuteAsync(Guid userId, Model model)
         {
             await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-            if (await dbContext.TodoLists.AnyAsync(l => l.Name == model.ListName))
+            if (await dbContext.TodoLists.AnyAsync(l => l.Name == model.ListName && l.UserId == userId))
                 return Message.Error("List Creation Error", "Todo List with the given name already exists");
             dbContext.TodoLists.Add(new TodoList(userId, model));
             try
