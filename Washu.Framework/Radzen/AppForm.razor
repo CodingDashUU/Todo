@@ -5,7 +5,7 @@
     
     <RadzenStack Gap="1rem">
         @ChildContent
-        <RadzenButton Text="@SubmitButtonText" ButtonType="ButtonType.Submit" />
+        <RadzenButton ButtonStyle="SubmitButtonConfig.ButtonStyle" Text="@SubmitButtonConfig.ButtonText" Disabled="SubmitButtonConfig.ButtonDisabled" ButtonType="ButtonType.Submit" />
         <ValidationSummaryCard />
     </RadzenStack>
 </EditForm>
@@ -16,6 +16,6 @@
     [Parameter] public required TModel Model { get; set; }
     [Parameter] public required TValidator Validator { get; set; }
     [Parameter] public Func<Task> HandleValidSubmit { get; set; } = () => Task.CompletedTask;
-    [Parameter] public string SubmitButtonText { get; set; } = "Create";
+    [Parameter] public SubmitButtonConfig  SubmitButtonConfig { get; set; } = new();
 
 }

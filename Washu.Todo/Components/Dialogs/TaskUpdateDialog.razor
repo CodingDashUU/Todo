@@ -6,7 +6,7 @@
 <AppForm
     Model="Model"
     Validator="Validator"
-    SubmitButtonText="Update"
+    SubmitButtonConfig="SubmitButtonConfig"
     HandleValidSubmit="CloseDialog"
     >
     <RadzenFormField Text="New Task Name">
@@ -26,6 +26,10 @@
     [Parameter] public required TaskEntry OldEntry { get; set; }
     public UpdateTask.Validator Validator { get; set; }= null!;
 
+    public SubmitButtonConfig SubmitButtonConfig { get; set; } = new()
+    {
+        ButtonText = "Update Task"
+    };
     protected override void OnInitialized()
     {
         Model.NewGoalDate = OldEntry.GoalDate.ToTimeZone(TimeZoneProvider.TimeZoneInfo);

@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="@Assets["Washu.Todo.styles.css"]"/>
     <ImportMap/>
     <HeadOutlet @rendermode="InteractiveServer" />
-    <RadzenTheme Theme="standard-dark"/>
+    <RadzenTheme Theme="material"/>
 </head>
 <body>
 <ReconnectModal/>
@@ -55,6 +55,6 @@
         {
             ThemeService.SetTheme(theme);
         }
-        else HttpContext.Response.Cookies.Append(CookieNames.Theme, "standard-dark" , new CookieOptions { Secure = Options.Value.IsSecure, Expires = DateTimeOffset.Now.Add(Options.Value.Duration) });    
+        else HttpContext.Response.Cookies.Append(CookieNames.Theme, "material" , new CookieOptions { Secure = Options.Value.IsSecure, Expires = DateTimeOffset.Now.Add(Options.Value.Duration) });    
     }
 }

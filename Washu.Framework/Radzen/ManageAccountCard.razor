@@ -24,7 +24,7 @@
         <AppForm
             Model="Model"
             Validator="Validator"
-            SubmitButtonText="Update Username"
+            SubmitButtonConfig="ChangeUsernameButtonConfig"
             HandleValidSubmit="OnChangeUsernameAsync"
             >
             <RadzenFormField Text="New Username">
@@ -42,6 +42,13 @@
     private ApplicationUser User { get; set; } = null!;
     private ChangeUsernameModel Model { get; set; } = new();
     private ChangeUsernameValidator Validator { get; set; } = new();
+    private bool UsernameChanged => Model.Username != User.Username;
+
+    private SubmitButtonConfig ChangeUsernameButtonConfig => new()
+    {
+        ButtonDisabled = !UsernameChanged,
+        ButtonText = "Update Username"
+    };
     protected override async Task OnInitializedAsync()
     {
         var success = await RefreshUserAsync();
