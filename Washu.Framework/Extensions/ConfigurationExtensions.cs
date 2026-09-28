@@ -270,7 +270,7 @@ public static class ConfigurationExtensions
                     : $"{ApplicationRoutes.SignIn}?messageId={messageId}";
 
                 return TypedResults.Redirect(targetUrl);
-            }).RequireAuthorization()
+            })
                 .RequireRateLimiting(RateLimiterPolicy.StandardRateLimiter);
         }
     }

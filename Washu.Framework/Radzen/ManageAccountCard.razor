@@ -9,6 +9,7 @@
 @inject AuthenticationStateProvider AuthStateProvider
 @inject CircuitState CircuitState
 @inject MessageStore Store
+@inject DialogService DialogService
 @typeparam TDbContext where TDbContext : ApplicationDbContext
 
 @if (User is null)
@@ -32,8 +33,8 @@
         </AppForm>
         <div style="height: 20px;"></div>
 
-        <RadzenButton IsBusy="IsBusy" Click="@SignOutAsync" Text="Sign Out"/>
-        <RadzenButton IsBusy="IsBusy" Click="@DeleteAccountAsync" Text="Delete Account"/>
+        <RadzenButton Click="@SignOutAsync" Text="Sign Out"/>
+        <RadzenButton  Click="@DeleteAccountAsync" Text="Delete Account" ButtonStyle="ButtonStyle.Danger"/>
     </RadzenStack>
 </RadzenCard>
 
@@ -41,7 +42,6 @@
     private ApplicationUser User { get; set; } = null!;
     private ChangeUsernameModel Model { get; set; } = new();
     private ChangeUsernameValidator Validator { get; set; } = new();
-    private bool IsBusy { get; set; }
     protected override async Task OnInitializedAsync()
     {
         var success = await RefreshUserAsync();
@@ -51,21 +51,12 @@
 
     private async Task OnChangeUsernameAsync()
     {
-        try
-        {
-            IsBusy = true;
-            var message = await UserManager.ChangeUsernameAsync(User.Username, Model.Username, User.Id);
-            NotificationService.Show(message);
-            CurrentUserService.ClearCache();
-            await RefreshUserAsync();
-            StateHasChanged();
-            await CurrentUserService.UserHasChangedAsync();
-        }
-        finally
-        {
-            await Task.Delay(500);
-            IsBusy = false;
-        }
+        var message = await UserManager.ChangeUsernameAsync(User.Username, Model.Username, User.Id);
+        NotificationService.Show(message);
+        CurrentUserService.ClearCache();
+        await RefreshUserAsync();
+        StateHasChanged();
+        await CurrentUserService.UserHasChangedAsync();
     }
 
     private async Task<bool> RefreshUserAsync()
@@ -90,26 +81,23 @@
     }
     private async Task DeleteAccountAsync()
     {
-        try
+        var parameters = new Dictionary<string, object?>
         {
-            IsBusy = true;
-            var message = await UserManager.DeleteByIdAsync(User.Id);
+            ["Email"] = User.Email
+        };
+        var data = await DialogService.OpenAsync<ConfirmAccountDeletionDialog>("Are you sure you want to delete your account?", parameters);
+        if (data is not ConfirmAccountDeletionDialog.ConfirmAccountDeletionModel) return;
+        var message = await UserManager.DeleteByIdAsync(User.Id);
 
-            if (message.Type is not MessageType.Success)
-            {
-                NotificationService.Show(message);
-                return;
-            }
-
-            await SessionManager.InvalidateAsync(User.Id, CircuitState.Id);
-            var id = Store.Store(message);
-            NavManager.NavigateTo($"{IdentityRoutes.SignOut}?messageId={id}", forceLoad: true);
-        }
-        finally
+        if (message.Type is not MessageType.Success)
         {
-            await Task.Delay(500);
-            IsBusy = false;
+            NotificationService.Show(message);
+            return;
         }
+
+        await SessionManager.InvalidateAsync(User.Id, CircuitState.Id);
+        var id = Store.Store(message);
+        NavManager.NavigateTo($"{IdentityRoutes.SignOut}?messageId={id}", forceLoad: true);
     }
 
     class ChangeUsernameModel

@@ -1,0 +1,44 @@
+@using FluentValidation
+@inject DialogService DialogService
+<AppForm
+    Model="Model"
+    Validator="Validator"
+    HandleValidSubmit="CloseDialog"
+    SubmitButtonText="Delete Account!"
+>
+    <RadzenFormField Text="Type your email to confirm deletion">
+        <RadzenTextBox @bind-Value="@Model.Email" MaxLength="255" />
+    </RadzenFormField>
+</AppForm>
+
+@code {
+    ConfirmAccountDeletionModel Model = new();
+    ConfirmAccountDeletionValidator Validator = new(string.Empty);
+    [Parameter] public required string Email { get; set; }
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        Validator = new(Email);
+    }
+
+    private Task CloseDialog()
+    {
+        DialogService.Close(Model);
+        return Task.CompletedTask;
+    }
+    public class ConfirmAccountDeletionModel
+    {
+        public string Email { get; set; } = "";
+    }
+
+    class ConfirmAccountDeletionValidator : AbstractValidator<ConfirmAccountDeletionModel>
+    {
+        public ConfirmAccountDeletionValidator(string email)
+        {
+            RuleFor(x => x.Email)
+                .NotEmpty().WithMessage("Email is required")
+                .EmailAddress().WithMessage("Invalid email")
+                .Must(x => x.Equals(email, StringComparison.InvariantCultureIgnoreCase)).WithMessage("Incorrect email");
+        }
+    }
+}
