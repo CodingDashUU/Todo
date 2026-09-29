@@ -21,21 +21,7 @@
     <RadzenStack class="rz-p-0 rz-p-md-6 rz-p-lg-12">
         <RadzenText>Current Username: <b>@User.Username</b></RadzenText>
         <RadzenText>Email: <b>@User.Email</b></RadzenText>
-        <AppForm
-            Model="Model"
-            Validator="Validator"
-            SubmitButtonConfig="ChangeUsernameButtonConfig"
-            HandleValidSubmit="OnChangeUsernameAsync"
-            >
-            <RadzenFormField Text="New Username">
-                <Start>
-                    <RadzenIcon Icon="@MaterialIcons.AccountCircle"/>
-                </Start>
-                <ChildContent>
-                    <RadzenTextBox @bind-Value="@Model.Username" MaxLength="Username.Rules.MaxUsernameLength"/>
-                </ChildContent>
-            </RadzenFormField>
-        </AppForm>
+        <RadzenButton Click="OnChangeUsernameAsync" Text="Change Username" Icon="@MaterialIcons.Update"/> 
         <div style="height: 20px;"></div>
 
         <RadzenButton Click="@SignOutAsync" Text="Sign Out" Icon="@MaterialIcons.Logout"/>
@@ -44,26 +30,21 @@
 </RadzenCard>
 @code {
     private ApplicationUser User { get; set; } = null!;
-    private ChangeUsernameModel Model { get; set; } = new();
-    private ChangeUsernameValidator Validator { get; set; } = new();
-    private bool UsernameChanged => Model.Username != User.Username;
-
-    private SubmitButtonConfig ChangeUsernameButtonConfig => new()
-    {
-        ButtonDisabled = !UsernameChanged,
-        ButtonText = "Update Username",
-        ButtonIcon = MaterialIcons.Update
-    };
+    
     protected override async Task OnInitializedAsync()
     {
-        var success = await RefreshUserAsync();
-        if (!success) return;
-        Model.Username = User.Username;
+        await RefreshUserAsync();
     }
 
     private async Task OnChangeUsernameAsync()
     {
-        var message = await UserManager.ChangeUsernameAsync(User.Username, Model.Username, User.Id);
+        var parameters = new Dictionary<string, object?>
+        {
+            ["OldUsername"] = User.Username
+        };
+        var data = await DialogService.OpenAsync<ChangeUsernameDialog>("Change Username", parameters);
+        if (data is not ChangeUsernameDialog.ChangeUsernameModel model) return;
+        var message = await UserManager.ChangeUsernameAsync(User.Username, model.Username, User.Id);
         NotificationService.Show(message);
         CurrentUserService.ClearCache();
         await RefreshUserAsync();
@@ -71,16 +52,15 @@
         await CurrentUserService.UserHasChangedAsync();
     }
 
-    private async Task<bool> RefreshUserAsync()
+    private async Task RefreshUserAsync()
     {
         var user = await CurrentUserService.GetCurrentUserAsync();
         if (user is null)
         {
             NavManager.NavigateTo(ApplicationRoutes.SignIn);
-            return false;
+            return;
         }
         User = user;
-        return true;
     }
     private async Task SignOutAsync()
     {
@@ -110,19 +90,5 @@
         await SessionManager.InvalidateAsync(User.Id, CircuitState.Id);
         var id = Store.Store(message);
         NavManager.NavigateTo($"{IdentityRoutes.SignOut}?messageId={id}", forceLoad: true);
-    }
-
-    class ChangeUsernameModel
-    {
-        public string Username { get; set; } = string.Empty;
-    }
-
-    class ChangeUsernameValidator : AbstractValidator<ChangeUsernameModel>
-    {
-        public ChangeUsernameValidator()
-        {
-            RuleFor(x => x.Username)
-                .SetValidator(new Username.Validator());
-        }
     }
 }

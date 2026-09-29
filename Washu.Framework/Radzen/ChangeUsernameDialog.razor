@@ -1,0 +1,56 @@
+@using FluentValidation
+@inject DialogService DialogService
+<AppForm
+    Model="Model"
+    Validator="Validator"
+    SubmitButtonConfig="ChangeUsernameButtonConfig"
+    HandleValidSubmit="CloseDialog"
+>
+    <RadzenFormField Text="New Username">
+        <Start>
+            <RadzenIcon Icon="@MaterialIcons.AccountCircle"/>
+        </Start>
+        <ChildContent>
+            <RadzenTextBox @bind-Value="@Model.Username" MaxLength="Username.Rules.MaxUsernameLength"/>
+        </ChildContent>
+    </RadzenFormField>
+</AppForm>
+
+@code {
+    ChangeUsernameModel Model = new();
+    ChangeUsernameValidator Validator = new(string.Empty);
+    [Parameter] public required string OldUsername { get; set; }
+    private bool UsernameChanged => Model.Username != OldUsername;
+    private SubmitButtonConfig ChangeUsernameButtonConfig => new()
+    {
+        ButtonDisabled = !UsernameChanged,
+        ButtonText = "Update Username",
+        ButtonIcon = MaterialIcons.Update
+    };
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        Model.Username = OldUsername;
+        Validator = new(OldUsername);
+    }
+
+    private Task CloseDialog()
+    {
+        DialogService.Close(Model);
+        return Task.CompletedTask;
+    }
+    public class ChangeUsernameModel
+    {
+        public string Username { get; set; } = string.Empty;
+    }
+
+    class ChangeUsernameValidator : AbstractValidator<ChangeUsernameModel>
+    {
+        public ChangeUsernameValidator(string username)
+        {
+            RuleFor(x => x.Username)
+                .SetValidator(new Username.Validator())
+                .Must(x => !x.Equals(username, StringComparison.InvariantCultureIgnoreCase)).WithMessage("New username cannot be equivalent to the old one");
+        }
+    }
+}
