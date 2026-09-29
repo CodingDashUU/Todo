@@ -14,6 +14,7 @@ var dbContext = scope.ServiceProvider.GetRequiredService<TodoDbContext>();
 await dbContext.Database.MigrateAsync();
 app.UseWashuFramework<TodoDbContext>();
 app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
+    .AddInteractiveServerRenderMode()
+    .DisableAntiforgery();
 await app.SeedRolesAsync<TodoDbContext>([.. InitialUserRoles.Roles]);
 await app.RunAsync();

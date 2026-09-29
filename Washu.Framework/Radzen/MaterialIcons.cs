@@ -9,4 +9,8 @@ public static class MaterialIcons
     public const string Cancel = "cancel";
     public const string AccountCircle = "account_circle";
     public const string ArrowBack = "arrow_back";
+    public const string Logout = "logout";
+    public const string Delete = "delete";
+    public const string Update = "update";
+    public const string ErrorOutline = "error_outline";
 }

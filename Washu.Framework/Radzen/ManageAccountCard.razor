@@ -19,8 +19,8 @@
 }
 <RadzenCard Variant="Variant.Outlined">
     <RadzenStack class="rz-p-0 rz-p-md-6 rz-p-lg-12">
-        <RadzenText>Current Username: @User.Username</RadzenText>
-        <RadzenText>Email: @User.Email</RadzenText>
+        <RadzenText>Current Username: <b>@User.Username</b></RadzenText>
+        <RadzenText>Email: <b>@User.Email</b></RadzenText>
         <AppForm
             Model="Model"
             Validator="Validator"
@@ -28,16 +28,20 @@
             HandleValidSubmit="OnChangeUsernameAsync"
             >
             <RadzenFormField Text="New Username">
-               <RadzenTextBox @bind-Value="@Model.Username" MaxLength="Username.Rules.MaxUsernameLength"/>
+                <Start>
+                    <RadzenIcon Icon="@MaterialIcons.AccountCircle"/>
+                </Start>
+                <ChildContent>
+                    <RadzenTextBox @bind-Value="@Model.Username" MaxLength="Username.Rules.MaxUsernameLength"/>
+                </ChildContent>
             </RadzenFormField>
         </AppForm>
         <div style="height: 20px;"></div>
 
-        <RadzenButton Click="@SignOutAsync" Text="Sign Out"/>
-        <RadzenButton  Click="@DeleteAccountAsync" Text="Delete Account" ButtonStyle="ButtonStyle.Danger"/>
+        <RadzenButton Click="@SignOutAsync" Text="Sign Out" Icon="@MaterialIcons.Logout"/>
+        <RadzenButton  Click="@DeleteAccountAsync" Text="Delete Account" Icon="@MaterialIcons.Delete" ButtonStyle="ButtonStyle.Danger"/>
     </RadzenStack>
 </RadzenCard>
-
 @code {
     private ApplicationUser User { get; set; } = null!;
     private ChangeUsernameModel Model { get; set; } = new();
@@ -47,7 +51,8 @@
     private SubmitButtonConfig ChangeUsernameButtonConfig => new()
     {
         ButtonDisabled = !UsernameChanged,
-        ButtonText = "Update Username"
+        ButtonText = "Update Username",
+        ButtonIcon = MaterialIcons.Update
     };
     protected override async Task OnInitializedAsync()
     {

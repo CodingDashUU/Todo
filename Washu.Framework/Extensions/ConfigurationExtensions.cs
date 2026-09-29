@@ -9,6 +9,7 @@ using Identity.Entities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -210,6 +211,7 @@ public static class ConfigurationExtensions
                         return Task.CompletedTask;
                     };
                 });
+            builder.Services.AddScoped<AntiforgeryStateProvider, NoOpAntiforgeryStateProvider>();
             builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();
             builder.Services.AddRadzenComponents();
@@ -237,7 +239,6 @@ public static class ConfigurationExtensions
             app.UseRateLimiter();
             app.UseAuthentication();
             app.UseAuthorization();
-            app.UseAntiforgery();
 
             app.MapHealthChecks("/healthz", new HealthCheckOptions
             {
@@ -274,4 +275,8 @@ public static class ConfigurationExtensions
                 .RequireRateLimiting(RateLimiterPolicy.StandardRateLimiter);
         }
     }
+}
+public class NoOpAntiforgeryStateProvider : AntiforgeryStateProvider
+{
+    public override AntiforgeryRequestToken? GetAntiforgeryToken() => null;
 }

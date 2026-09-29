@@ -9,7 +9,13 @@ h1:focus {
 .invalid {
     outline: 1px solid #e50000;
 }
+.rz-form-field .valid.modified {
+    outline: none;
+}
 
+.rz-form-field:has(.valid.modified) .rz-form-field-content {
+    outline: 1px solid #26b050;
+}
 .validation-message {
     color: #e50000;
 }

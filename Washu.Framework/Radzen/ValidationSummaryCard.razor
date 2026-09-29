@@ -1,6 +1,6 @@
 @implements IDisposable
 
-@if (CurrentEditContext != null && Messages.Any())
+@if (CurrentEditContext is not null && Messages.Any())
 {
     <RadzenCard Style="
     margin: 24px auto;
@@ -21,7 +21,7 @@
             align-items: center;
             gap: 18px;
         ">
-            <RadzenIcon Icon="error_outline" 
+            <RadzenIcon Icon="@MaterialIcons.ErrorOutline" 
                         Style="color: var(--rz-danger); font-size: 1.85rem; line-height: 1.2; flex-shrink: 0; height: 100%" />
             <RadzenStack Gap="0.35rem" Style="flex-grow: 1;">
                 
@@ -61,7 +61,7 @@
 
     protected override void OnInitialized()
     {
-        if (CurrentEditContext != null)
+        if (CurrentEditContext is not null)
         {
             CurrentEditContext.OnValidationStateChanged += HandleValidationStateChanged;
         }
@@ -74,7 +74,7 @@
 
     public void Dispose()
     {
-        if (CurrentEditContext != null)
+        if (CurrentEditContext is not null)
         {
             CurrentEditContext.OnValidationStateChanged -= HandleValidationStateChanged;
         }

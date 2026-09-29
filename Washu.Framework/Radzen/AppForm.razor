@@ -5,7 +5,11 @@
     
     <RadzenStack Gap="1rem">
         @ChildContent
-        <RadzenButton ButtonStyle="SubmitButtonConfig.ButtonStyle" Text="@SubmitButtonConfig.ButtonText" Disabled="SubmitButtonConfig.ButtonDisabled" ButtonType="ButtonType.Submit" />
+        <RadzenButton ButtonStyle="SubmitButtonConfig.ButtonStyle" 
+                      Text="@SubmitButtonConfig.ButtonText" 
+                      Disabled="SubmitButtonConfig.ButtonDisabled" 
+                      Icon="@SubmitButtonConfig.ButtonIcon"
+                      ButtonType="ButtonType.Submit" />
         <ValidationSummaryCard />
     </RadzenStack>
 </EditForm>
