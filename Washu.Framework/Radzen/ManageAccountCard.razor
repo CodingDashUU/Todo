@@ -19,13 +19,13 @@
 }
 <RadzenCard Variant="Variant.Outlined">
     <RadzenStack class="rz-p-0 rz-p-md-6 rz-p-lg-12">
-        <RadzenText>Current Username: <b>@User.Username</b></RadzenText>
-        <RadzenText>Email: <b>@User.Email</b></RadzenText>
-        <RadzenButton Click="OnChangeUsernameAsync" Text="Change Username" Icon="@MaterialIcons.Update"/> 
+        <RadzenText class="wrapped-text">Current Username: <b>@User.Username</b></RadzenText>
+        <RadzenText class="wrapped-text">Email: <b>@User.Email</b></RadzenText>
+        <RadzenButton class="wrapped-text" Click="OnChangeUsernameAsync" Text="Change Username" Icon="@MaterialIcons.Update"/> 
         <div style="height: 20px;"></div>
 
-        <RadzenButton Click="@SignOutAsync" Text="Sign Out" Icon="@MaterialIcons.Logout"/>
-        <RadzenButton  Click="@DeleteAccountAsync" Text="Delete Account" Icon="@MaterialIcons.Delete" ButtonStyle="ButtonStyle.Danger"/>
+        <RadzenButton class="wrapped-text" Click="@SignOutAsync" Text="Sign Out" Icon="@MaterialIcons.Logout"/>
+        <RadzenButton class="wrapped-text" Click="@DeleteAccountAsync" Text="Delete Account" Icon="@MaterialIcons.Delete" ButtonStyle="ButtonStyle.Danger"/>
     </RadzenStack>
 </RadzenCard>
 @code {

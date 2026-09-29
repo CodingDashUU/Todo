@@ -43,3 +43,9 @@ h1:focus {
     text-align: start;
 }
 
+.wrapped-text {
+    white-space: normal; 
+    overflow-wrap: break-word; 
+    word-break: break-word;
+}
+

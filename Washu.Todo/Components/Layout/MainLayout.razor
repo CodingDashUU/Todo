@@ -16,20 +16,28 @@
             <div style="flex-grow: 1;"></div>
             <AuthorizeView>
                 <Authorized>
-                        <RadzenButton 
-                            class="rz-display-flex rz-align-items-center rz-justify-content-center" 
-                            style="width: 40px; height: 40px; border-radius: 50%; font-weight: bold; font-size: 20px; background-color: var(--rz-secondary); color: var(--rz-white);"
-                            Click="@(() => NavManager.NavigateTo(ApplicationRoutes.ManageAccount))"
-                            Variant="Variant.Text">@FirstUsernameLetter</RadzenButton>
+                    <RadzenProfileMenu>
+                        <Template>
+                            <RadzenStack AlignItems="AlignItems.Center" Orientation="Orientation.Horizontal">
+                                <RadzenText
+                                    class="rz-display-flex rz-align-items-center rz-justify-content-center"
+                                    style="flex-shrink: 0; width: 40px; left: 10px; height: 40px; border-radius: 50%; font-weight: bold; font-size: 20px; background-color: var(--rz-secondary); color: var(--rz-white);"
+                                >@Username.First()</RadzenText>
+                            </RadzenStack>
+                        </Template>
+                        <ChildContent>
+                            <RadzenProfileMenuItem Text="Manage Account" Icon="@MaterialIcons.AccountCircle" Path="@ApplicationRoutes.ManageAccount"></RadzenProfileMenuItem>
+                        </ChildContent>
+                    </RadzenProfileMenu>
                 </Authorized>
             </AuthorizeView>
-            <div style="width: 20px;"></div>
+            <div style="width: 10px;"></div>
         </RadzenStack>
     </RadzenHeader>
     <RadzenSidebar @bind-Expanded="@sidebarExpanded">
         <RadzenPanelMenu>
-            <RadzenPanelMenuItem Text="Home" Icon="@MaterialIcons.Home" Click="@(() => NavManager.NavigateTo(ApplicationRoutes.Home))" />
-            <RadzenPanelMenuItem Text="Settings" Icon="@MaterialIcons.Settings" Click="@(() => NavManager.NavigateTo(ApplicationRoutes.Settings))"/>
+            <RadzenPanelMenuItem Text="Home" Icon="@MaterialIcons.Home" Path="@ApplicationRoutes.Home"/>
+            <RadzenPanelMenuItem Text="Settings" Icon="@MaterialIcons.Settings" Path="@ApplicationRoutes.Settings" />
         </RadzenPanelMenu>
     </RadzenSidebar>
     <RadzenBody>
@@ -44,7 +52,7 @@
 </RadzenLayout>
 @code {
     bool sidebarExpanded = true;
-    char FirstUsernameLetter = 'U';
+    string Username = "User";
     [CascadingParameter] public required Task<AuthenticationState> Context { get; set; }
     Guid? UserId;
     protected override async Task OnInitializedAsync()
@@ -52,7 +60,7 @@
         var state = await Context;
         if (state.User.FindUserId() is not {} userGuid) return;
         UserId = userGuid;
-        FirstUsernameLetter = (await CurrentUserService.GetCurrentUserAsync())?.Username.First() ?? 'U';
+        Username = (await CurrentUserService.GetCurrentUserAsync())?.Username ?? "User";
         SessionManager.AddSession(userGuid, CircuitState.Id, () =>
         {
             NavManager.Refresh(forceReload: true);
@@ -63,7 +71,7 @@
 
     public async Task RefreshAsync()
     {
-        FirstUsernameLetter = (await CurrentUserService.GetCurrentUserAsync())?.Username.First() ?? 'U';
+        Username = (await CurrentUserService.GetCurrentUserAsync())?.Username ?? "User";
         StateHasChanged();
     }
     public void Dispose()
