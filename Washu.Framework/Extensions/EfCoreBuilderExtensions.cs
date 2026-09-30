@@ -4,7 +4,7 @@ using Identity;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System.Linq.Expressions;
 
-public static class EfCoreExtensions
+public static class EfCoreBuilderExtensions
 {
     extension<TEntity>(EntityTypeBuilder<TEntity> entity) where TEntity : class
     {

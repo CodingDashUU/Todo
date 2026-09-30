@@ -7,7 +7,7 @@
 @inject CurrentUserService<TDbContext> CurrentUserService
 @inject UserSessionManager SessionManager
 @inject AuthenticationStateProvider AuthStateProvider
-@inject CircuitState CircuitState
+@inject ApplicationSessionState SessionState
 @inject MessageStore Store
 @inject DialogService DialogService
 @typeparam TDbContext where TDbContext : ApplicationDbContext
@@ -48,7 +48,7 @@
         NotificationService.Show(message);
         CurrentUserService.ClearCache();
         await RefreshUserAsync();
-        await SessionManager.OnRefreshSessionAsync(User.Id, CircuitState.Id);
+        await SessionManager.OnRefreshSessionAsync(User.Id, SessionState.Id);
         StateHasChanged();
         await CurrentUserService.UserHasChangedAsync();
     }
@@ -68,7 +68,7 @@
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         if (authState.User.FindUserId() is { } userId)
         {
-            await SessionManager.OnRefreshSessionAsync(userId, CircuitState.Id);
+            await SessionManager.OnRefreshSessionAsync(userId, SessionState.Id);
         }
         NavManager.NavigateTo(IdentityRoutes.SignOut, forceLoad: true);
     }
@@ -99,7 +99,7 @@
             return;
         }
 
-        await SessionManager.OnRefreshSessionAsync(User.Id, CircuitState.Id);
+        await SessionManager.OnRefreshSessionAsync(User.Id, SessionState.Id);
         var id = Store.Store(message);
         NavManager.NavigateTo($"{IdentityRoutes.SignOut}?messageId={id}", forceLoad: true);
     }

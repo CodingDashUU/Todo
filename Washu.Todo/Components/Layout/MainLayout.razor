@@ -4,7 +4,7 @@
 @inherits LayoutComponentBase
 @inject NavigationManager NavManager
 @inject UserSessionManager SessionManager
-@inject CircuitState CircuitState
+@inject ApplicationSessionState SessionState
 @inject CurrentUserService<TodoDbContext> CurrentUserService
 @implements IDisposable
 <QueryNotificationHandler />
@@ -61,7 +61,7 @@
         if (state.User.FindUserId() is not {} userGuid) return;
         UserId = userGuid;
         Username = (await CurrentUserService.GetCurrentUserAsync())?.Username ?? "User";
-        SessionManager.AddSession(userGuid, CircuitState.Id, () =>
+        SessionManager.AddSession(userGuid, SessionState.Id, () =>
         {
             NavManager.Refresh(forceReload: true);
             return Task.CompletedTask;
@@ -77,7 +77,7 @@
     public void Dispose()
     {
         if (UserId.HasValue)
-            SessionManager.RemoveSession(UserId.Value, CircuitState.Id);
+            SessionManager.RemoveSession(UserId.Value, SessionState.Id);
         CurrentUserService.OnUserChanged -= RefreshAsync;
     }
 

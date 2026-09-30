@@ -1,6 +1,6 @@
 namespace Washu.Framework.Identity;
 
-public sealed class CircuitState
+public sealed class ApplicationSessionState
 {
     public Guid Id { get; } = Guid.CreateVersion7();
 }

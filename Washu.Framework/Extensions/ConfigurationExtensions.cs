@@ -32,7 +32,7 @@ public static class ConfigurationExtensions
         {
             builder.Services.AddHttpContextAccessor();
             ValidatorOptions.Global.DefaultRuleLevelCascadeMode = CascadeMode.Stop;
-            builder.Services.AddScoped<CircuitState>();
+            builder.Services.AddScoped<ApplicationSessionState>();
             builder.Services.AddSingleton<UserSessionManager>();
             services.AddAuthorization();
             // Rate limiting
