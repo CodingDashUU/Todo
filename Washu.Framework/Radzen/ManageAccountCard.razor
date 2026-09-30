@@ -78,7 +78,18 @@
         {
             ["Email"] = User.Email
         };
-        var data = await DialogService.OpenAsync<ConfirmAccountDeletionDialog>("Are you sure you want to delete your account?", parameters);
+        var confirmData = await DialogService.Confirm(
+            "Are you sure you want to delete your account? You undo this action!", 
+            "Confirm Account Deletion", 
+            options: new ConfirmOptions
+        {
+            Icon = MaterialIcons.Delete,
+            IconColor = "var(--rz-danger)",
+            OkButtonText = "Yes",
+            CancelButtonText = "No"
+        });
+        if (!confirmData.HasValue || !confirmData.Value) return;
+        var data = await DialogService.OpenAsync<ConfirmAccountDeletionDialog>("Confirm Account Deletion", parameters);
         if (data is not ConfirmAccountDeletionDialog.ConfirmAccountDeletionModel) return;
         var message = await UserManager.DeleteByIdAsync(User.Id);
 
