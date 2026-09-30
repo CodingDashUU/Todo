@@ -11,9 +11,10 @@ public class ApplicationDbContext(DbContextOptions options)
     public DbSet<ApplicationUser> Users => Set<ApplicationUser>();
     public DbSet<ApplicationRole> Roles => Set<ApplicationRole>();
     public DbSet<UserRole> UserRoles => Set<UserRole>();
+    private const string Citext = "citext";
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.HasPostgresExtension("citext");
+        modelBuilder.HasPostgresExtension(Citext);
         modelBuilder.Entity<UserRole>(entity =>
         {
             entity.HasOne(r => r.User)
@@ -26,9 +27,9 @@ public class ApplicationDbContext(DbContextOptions options)
         });
         modelBuilder.Entity<ApplicationUser>(entity =>
         {
-            entity.Property(u => u.Username).HasColumnType("citext");
-            entity.Property(u => u.Email).HasColumnType("citext");
-            entity.Property(u => u.GoogleSubject).HasColumnType("citext");
+            entity.Property(u => u.Username).HasColumnType(Citext);
+            entity.Property(u => u.Email).HasColumnType(Citext);
+            entity.Property(u => u.GoogleSubject).HasColumnType(Citext);
             entity.HasUniqueIndex(u => u.Username);
             entity.HasUniqueIndex(u => u.Email);
             entity.HasUniqueIndex(u => u.GoogleSubject);
@@ -45,7 +46,7 @@ public class ApplicationDbContext(DbContextOptions options)
         });
         modelBuilder.Entity<ApplicationRole>(entity =>
         {
-            entity.Property(u => u.Name).HasColumnType("citext");
+            entity.Property(u => u.Name).HasColumnType(Citext);
             entity.HasUniqueIndex(u => u.Name);
             entity.ToTable(t =>
             {
