@@ -85,7 +85,7 @@
             ["Email"] = User.Email
         };
         var confirmData = await DialogService.Confirm(
-            "Are you sure you want to delete your account? You undo this action!", 
+            "Are you sure you want to delete your account? You cannot undo this action!", 
             "Confirm Account Deletion", 
             options: new ConfirmOptions
         {

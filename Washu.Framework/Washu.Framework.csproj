@@ -16,5 +16,8 @@
         <PackageReference Include="FluentValidation" />
         <PackageReference Include="Radzen.Blazor" />
     </ItemGroup>
+    <ItemGroup>
+      <None Include="wwwroot\styles.css" />
+    </ItemGroup>
 
 </Project>

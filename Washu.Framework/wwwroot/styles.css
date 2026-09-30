@@ -1,0 +1,12 @@
+.wrapped-text {
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+.rz-form-field .valid.modified {
+    outline: none;
+}
+
+.rz-form-field:has(.valid.modified) .rz-form-field-content {
+    outline: 1px solid #26b050;
+}
