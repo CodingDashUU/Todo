@@ -48,6 +48,7 @@
         NotificationService.Show(message);
         CurrentUserService.ClearCache();
         await RefreshUserAsync();
+        await SessionManager.OnRefreshSessionAsync(User.Id, CircuitState.Id);
         StateHasChanged();
         await CurrentUserService.UserHasChangedAsync();
     }
@@ -67,7 +68,7 @@
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         if (authState.User.FindUserId() is { } userId)
         {
-            await SessionManager.InvalidateAsync(userId, CircuitState.Id);
+            await SessionManager.OnRefreshSessionAsync(userId, CircuitState.Id);
         }
         NavManager.NavigateTo(IdentityRoutes.SignOut, forceLoad: true);
     }
@@ -87,7 +88,7 @@
             return;
         }
 
-        await SessionManager.InvalidateAsync(User.Id, CircuitState.Id);
+        await SessionManager.OnRefreshSessionAsync(User.Id, CircuitState.Id);
         var id = Store.Store(message);
         NavManager.NavigateTo($"{IdentityRoutes.SignOut}?messageId={id}", forceLoad: true);
     }

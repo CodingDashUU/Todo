@@ -17,6 +17,7 @@
 @inject UpdateTask.Command UpdateTaskCommand
 @inject MessageStore MessageStore
 @inject CurrentUserService<TodoDbContext> CurrentUserService
+@implements IDisposable
 <RadzenDropDown TValue="Todo.TodoList" 
                     Value="SelectedList" 
                     Data="ListNames" 
@@ -77,9 +78,15 @@
             return;
         }
         _currentUser = user;
+        CurrentUserService.OnUserChanged += RefreshUserAsync;
         await LoadListsAsync(selectDefault: true);
     }
-    
+
+    private async Task RefreshUserAsync()
+    {
+        var user = await CurrentUserService.GetCurrentUserAsync();
+        if (user is not null) _currentUser = user;
+    }
     private async Task LoadListsAsync(Guid? preferredSelectedId = null, bool selectDefault = false)
     {
         await using var dbContext = await DbContextFactory.CreateDbContextAsync();
@@ -149,4 +156,12 @@
 
         await LoadListsAsync(preferredSelectedId: newList?.Id ?? SelectedList.Id);
     }
+
+    public void Dispose()
+    {
+        DialogService.Dispose();
+        Context.Dispose();
+        CurrentUserService.OnUserChanged -= RefreshUserAsync;
+    }
+
 }

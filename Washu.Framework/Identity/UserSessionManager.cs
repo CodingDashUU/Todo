@@ -19,9 +19,10 @@ public sealed class UserSessionManager
         sessions.TryRemove(sessionId, out _);
         if (sessions.IsEmpty) _sessions.TryRemove(userId, out _);
     }
-    public async Task InvalidateAsync(Guid userId, Guid? excludedSessionId = null)
+
+    public async Task OnRefreshSessionAsync(Guid userId, Guid? excludedSessionId = null)
     {
-        if (!_sessions.Remove(userId, out var sessions))
+        if (!_sessions.TryGetValue(userId, out var sessions))
             return;
 
         foreach (var callback in sessions)
