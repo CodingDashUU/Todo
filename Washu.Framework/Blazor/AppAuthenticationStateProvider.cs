@@ -25,12 +25,14 @@ where TDbContext : ApplicationDbContext
         AuthenticationState authenticationState, CancellationToken cancellationToken)
     {
         var principal = authenticationState.User;
-        await using var scope = scopeFactory.CreateAsyncScope();
-        var currentUserService = scope.ServiceProvider.GetRequiredService<CurrentUserService<TDbContext>>();
-        var user = await currentUserService.GetCurrentUserAsync();
-        if (user is null) return false;
+        var userId = principal.FindUserId();
+        if (!userId.HasValue) return false;
         var principalStamp = principal.FindFirstValue(_options.ClaimsIdentity.SecurityStampClaimType);
         if (!Guid.TryParse(principalStamp, out var principalStampGuid)) return false;
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var userStore = scope.ServiceProvider.GetRequiredService<ApplicationUserStore<TDbContext>>();
+        var user = await userStore.GetOrAddUserAsync(userId.Value);
+        if (user is null) return false;
         return principalStampGuid == user.SecurityStamp;
     }
     

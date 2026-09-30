@@ -16,7 +16,7 @@
 @inject ToggleTask.Command ToggleTaskCommand
 @inject UpdateTask.Command UpdateTaskCommand
 @inject MessageStore MessageStore
-@inject CurrentUserService<TodoDbContext> CurrentUserService
+@inject ApplicationUserStore<TodoDbContext> UserStore
 @implements IDisposable
 <RadzenDropDown TValue="Todo.TodoList" 
                     Value="SelectedList" 
@@ -70,7 +70,7 @@
             return;
         }
 
-        var user = await CurrentUserService.GetCurrentUserAsync();
+        var user = await UserStore.GetOrAddUserAsync(userId);
         if (user is null)
         {
             var id = MessageStore.Store(Message.Error("Identity Error", "User couldn't be found, doesn't exist, or the session is invalid"));
@@ -78,13 +78,13 @@
             return;
         }
         _currentUser = user;
-        CurrentUserService.OnUserChanged += RefreshUserAsync;
+        UserStore.OnUserChanged += RefreshUserAsync;
         await LoadListsAsync(selectDefault: true);
     }
 
     private async Task RefreshUserAsync()
     {
-        var user = await CurrentUserService.GetCurrentUserAsync();
+        var user = await UserStore.GetOrAddUserAsync(_currentUser.Id);
         if (user is not null) _currentUser = user;
     }
     private async Task LoadListsAsync(Guid? preferredSelectedId = null, bool selectDefault = false)
@@ -161,7 +161,7 @@
     {
         DialogService.Dispose();
         Context.Dispose();
-        CurrentUserService.OnUserChanged -= RefreshUserAsync;
+        UserStore.OnUserChanged -= RefreshUserAsync;
     }
 
 }

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Washu.Framework.AspNetCore;
 using Washu.Framework.Identity;
 using Washu.Todo;
 using Washu.Todo.Components;
@@ -15,6 +16,7 @@ await dbContext.Database.MigrateAsync();
 app.UseWashuFramework<TodoDbContext>();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
+    .RequireRateLimiting(RateLimiterPolicy.BlazorHandshakeRateLimiter)
     .DisableAntiforgery();
 await app.SeedRolesAsync<TodoDbContext>([.. InitialUserRoles.Roles]);
 await app.RunAsync();

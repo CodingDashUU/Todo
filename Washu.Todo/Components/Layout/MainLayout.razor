@@ -5,7 +5,7 @@
 @inject NavigationManager NavManager
 @inject UserSessionManager SessionManager
 @inject ApplicationSessionState SessionState
-@inject CurrentUserService<TodoDbContext> CurrentUserService
+@inject ApplicationUserStore<TodoDbContext> UserStore
 @implements IDisposable
 <QueryNotificationHandler />
 <RadzenLayout>
@@ -60,25 +60,26 @@
         var state = await Context;
         if (state.User.FindUserId() is not {} userGuid) return;
         UserId = userGuid;
-        Username = (await CurrentUserService.GetCurrentUserAsync())?.Username ?? "User";
+        Username = (await UserStore.GetOrAddUserAsync(userGuid))?.Username ?? "User";
         SessionManager.AddSession(userGuid, SessionState.Id, () =>
         {
             NavManager.Refresh(forceReload: true);
             return Task.CompletedTask;
         });
-        CurrentUserService.OnUserChanged += RefreshAsync;
+        UserStore.OnUserChanged += RefreshAsync;
     }
 
     public async Task RefreshAsync()
     {
-        Username = (await CurrentUserService.GetCurrentUserAsync())?.Username ?? "User";
+        if (UserId.HasValue)
+            Username = (await UserStore.GetOrAddUserAsync(UserId.Value))?.Username ?? "User";
         StateHasChanged();
     }
     public void Dispose()
     {
         if (UserId.HasValue)
             SessionManager.RemoveSession(UserId.Value, SessionState.Id);
-        CurrentUserService.OnUserChanged -= RefreshAsync;
+        UserStore.OnUserChanged -= RefreshAsync;
     }
 
 }
