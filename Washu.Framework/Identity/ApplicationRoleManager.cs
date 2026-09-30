@@ -1,6 +1,7 @@
 namespace Washu.Framework.Identity;
 
 using Entities;
+using Extensions;
 using Microsoft.EntityFrameworkCore;
 
 public sealed class ApplicationRoleManager<TContext>(IDbContextFactory<TContext> dbFactory) 
@@ -8,14 +9,14 @@ public sealed class ApplicationRoleManager<TContext>(IDbContextFactory<TContext>
 {
     public async Task AddRolesAsync(List<string> roleNames, CancellationToken ct = default)
     {
-        if (roleNames.Count == 0) return;
+        if (roleNames.IsEmpty) return;
 
         var inputRoles = roleNames
             .Where(r => !string.IsNullOrWhiteSpace(r))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-        if (inputRoles.Count == 0) return;
+        if (inputRoles.IsEmpty) return;
 
         await using var db = await dbFactory.CreateDbContextAsync(ct);
         var existingRoleNames = await db.Roles
@@ -30,17 +31,5 @@ public sealed class ApplicationRoleManager<TContext>(IDbContextFactory<TContext>
 
         db.Roles.AddRange(newRoles);
         await db.SaveChangesAsync(ct);
-    }
-
-    public async Task<string[]> GetRolesForUserAsync(Guid userId, CancellationToken ct = default)
-    {
-        await using var db = await dbFactory.CreateDbContextAsync(ct);
-        var roles = await db.UserRoles
-            .AsNoTracking()
-            .Where(ur => ur.UserId == userId)
-            .Include(ur => ur.Role)
-            .Select(ur => ur.Role.Name)
-            .ToArrayAsync(ct);
-        return roles;
     }
 }
