@@ -4,7 +4,7 @@
 @inject ApplicationUserManager<TDbContext> UserManager
 @inject NotificationService NotificationService
 @inject NavigationManager NavManager
-@inject ApplicationUserStore<TDbContext> CurrentUserService
+@inject ApplicationUserStore<TDbContext> UserStore
 @inject UserSessionManager SessionManager
 @inject AuthenticationStateProvider AuthStateProvider
 @inject ApplicationSessionState SessionState
@@ -46,11 +46,11 @@
         if (data is not ChangeUsernameDialog.ChangeUsernameModel model) return;
         var message = await UserManager.ChangeUsernameAsync(User.Username, model.Username, User.Id);
         NotificationService.Show(message);
-        CurrentUserService.RemoveUser(User.Id);
+        UserStore.RemoveUser(User.Id);
         await RefreshUserAsync();
         await SessionManager.OnRefreshSessionAsync(User.Id, SessionState.Id);
         StateHasChanged();
-        await CurrentUserService.UserHasChangedAsync();
+        await UserStore.UserHasChangedAsync();
     }
 
     private async Task RefreshUserAsync()
@@ -61,7 +61,7 @@
             NavManager.NavigateTo(ApplicationRoutes.SignIn);
             return;
         }
-        var user = await CurrentUserService.GetOrAddUserAsync(userId);
+        var user = await UserStore.GetOrAddUserAsync(userId);
         if (user is null)
         {
             NavManager.NavigateTo(ApplicationRoutes.SignIn);
@@ -92,7 +92,7 @@
             Icon = MaterialIcons.Delete,
             IconColor = "var(--rz-danger)",
             OkButtonText = "Yes",
-            CancelButtonText = "No"
+            CancelButtonText = "No" 
         });
         if (!confirmData.HasValue || !confirmData.Value) return;
         var data = await DialogService.OpenAsync<ConfirmAccountDeletionDialog>("Confirm Account Deletion", parameters);

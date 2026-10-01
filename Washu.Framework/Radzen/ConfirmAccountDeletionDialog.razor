@@ -7,7 +7,12 @@
     SubmitButtonConfig="DeleteAccountButtonConfig"
 >
     <RadzenFormField Text="Type your email to confirm deletion">
-        <RadzenTextBox @bind-Value="@Model.Email" MaxLength="255" />
+        <Start>
+            <RadzenIcon Icon="@MaterialIcons.Email"/>
+        </Start>
+        <ChildContent>
+            <RadzenTextBox @bind-Value="@Model.Email" MaxLength="255"/>
+        </ChildContent>
     </RadzenFormField>
 </AppForm>
 
