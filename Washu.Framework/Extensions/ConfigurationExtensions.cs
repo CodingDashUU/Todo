@@ -48,7 +48,7 @@ public static class ConfigurationExtensions
                             partitionKey: $"ip:{ipAddress}",
                             factory: _ => new SlidingWindowRateLimiterOptions
                             {
-                                PermitLimit = 30,
+                                PermitLimit = 45,
                                 Window = TimeSpan.FromMinutes(1),
                                 SegmentsPerWindow = 6,
                                 QueueLimit = 0
@@ -57,7 +57,7 @@ public static class ConfigurationExtensions
                         partitionKey: "anonymous",
                         factory: _ => new SlidingWindowRateLimiterOptions
                         {
-                            PermitLimit = 15,
+                            PermitLimit = 30,
                             Window = TimeSpan.FromMinutes(1),
                             SegmentsPerWindow = 4,
                             QueueLimit = 0

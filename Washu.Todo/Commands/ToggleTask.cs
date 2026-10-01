@@ -6,7 +6,7 @@ using Framework.Notifications;
 using Identity;
 using Microsoft.EntityFrameworkCore;
 
-public class ToggleTask
+public static class ToggleTask
 {
     public class Command(IDbContextFactory<TodoDbContext> factory)
     {

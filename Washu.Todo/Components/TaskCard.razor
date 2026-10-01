@@ -78,6 +78,14 @@
                               Click="async () => await OnTaskCompleted()"
                               Icon="@(Entry.IsCompleted ? MaterialIcons.CheckCircle : MaterialIcons.Cancel)"/>
             }
+            @if (IsDeleting)
+            {
+                <RadzenButton class="big-icon-button"
+                              Variant="Variant.Text"
+                              Click="async () => await OnDeleteClicked()"
+                              ButtonStyle="ButtonStyle.Danger"
+                              Icon="@MaterialIcons.Delete"/>
+            }
             <div style="width: 10px"/>
         </div>
     </div>
@@ -88,6 +96,8 @@
     [Parameter] public TaskEntry Entry { get; set; } = null!;
     [Parameter] public required Func<Task> OnTaskCompleted { get; set; }
     [Parameter] public required Func<Task> OnSettingsClicked { get; set; }
+    [Parameter] public required Func<Task> OnDeleteClicked { get; set; }
     [Parameter] public bool IsEditing { get; set; }
+    [Parameter] public bool IsDeleting { get; set; }
 
 }
