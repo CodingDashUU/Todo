@@ -13,6 +13,7 @@ public static class ConfigurationExtensions
             services.AddScoped<ToggleTask.Command>();
             services.AddScoped<UpdateTask.Command>();
             services.AddScoped<DeleteTask.Command>();
+            services.AddScoped<DeleteList.Command>();
             return services;
         }
     }
