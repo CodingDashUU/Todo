@@ -14,9 +14,8 @@ public static class EfCoreBuilderExtensions
     {
         public void HasMaxLengthCheckConstraint(Expression<Func<TEntity, string>> property, ushort maxLength)
         {
-            var propertyInfo = property.GetPropertyInfo();
+            var propertyName = property.GetPropertyInfo().Name;
             var entityName = typeof(TEntity).Name;
-            var propertyName = propertyInfo.Name;
             entity.HasCheckConstraint(
                 $"CK_{entityName}_{propertyName}_MaxLength",
                 $"length(\"{propertyName}\") > 0 AND length(\"{propertyName}\") <= {maxLength}"
@@ -26,12 +25,11 @@ public static class EfCoreBuilderExtensions
             Expression<Func<TEntity, string>> property, 
             string allowedCharacters)
         {
-            var propertyInfo = property.GetPropertyInfo();
+            var propertyName = property.GetPropertyInfo().Name;
             var entityName = typeof(TEntity).Name;
-            var propertyName = propertyInfo.Name;
             var escapedChars = allowedCharacters.Replace("'", "''");
             entity.HasCheckConstraint(
-                $"CK_{entityName}_{propertyName}_AllowedChars",
+                $"CK_{entityName}_{propertyName}_AllowedChar",
                 $"length(\"{propertyName}\") > 0 AND translate(\"{propertyName}\", '{escapedChars}', '') = ''"
             );
         }
@@ -40,9 +38,8 @@ public static class EfCoreBuilderExtensions
             Expression<Func<TEntity, string>> property,
             string allowedCharacters)
         {
-            var propertyInfo = property.GetPropertyInfo();
+            var propertyName = property.GetPropertyInfo().Name;
             var entityName = typeof(TEntity).Name;
-            var propertyName = propertyInfo.Name;
             var escapedChars = allowedCharacters.Replace("'", "''");
             entity.HasCheckConstraint(
                 $"CK_{entityName}_{propertyName}_AllowedFirstChar",
@@ -51,12 +48,34 @@ public static class EfCoreBuilderExtensions
         }
         public void HasEmailCheckConstraint(Expression<Func<TEntity, string>> property)
         {
-            var propertyInfo = property.GetPropertyInfo();
+            var propertyName = property.GetPropertyInfo().Name;
             var entityName = typeof(TEntity).Name;
-            var propertyName = propertyInfo.Name;
             entity.HasCheckConstraint(
                 $"CK_{entityName}_{propertyName}_ValidEmail",
                 $"\"{propertyName}\" ~* '^[^[:space:]@]+@[^[:space:]@]+\\.[^[:space:]@]+$'"
+            );
+        }
+
+        public void HasDateLessThanOrEqualToOtherDateCheckConstraint(Expression<Func<TEntity, DateTimeOffset>> firstDate,
+            Expression<Func<TEntity, DateTimeOffset>> secondDate)
+        {
+            var firstDateName = firstDate.GetPropertyInfo().Name;
+            var secondDateName = secondDate.GetPropertyInfo().Name;
+            var entityName = typeof(TEntity).Name;
+            entity.HasCheckConstraint(
+                $"CK_{entityName}_{firstDateName}_LTE_{secondDateName}", // LTE - Less Than or Equal To
+                $"\"{firstDateName}\" <= \"{secondDateName}\""
+                );
+        }
+        public void HasDateLessThanOrEqualToNullableDateCheckConstraint(Expression<Func<TEntity, DateTimeOffset>> firstDate,
+            Expression<Func<TEntity, DateTimeOffset?>> secondDate)
+        {
+            var firstDateName = firstDate.GetPropertyInfo().Name;
+            var secondDateName = secondDate.GetPropertyInfo().Name;
+            var entityName = typeof(TEntity).Name;
+            entity.HasCheckConstraint(
+                $"CK_{entityName}_{firstDateName}_LTE_N_{secondDateName}", // LTE - Less Than or Equal To; N - Nullable
+                $"\"{secondDateName}\" IS NULL OR \"{firstDateName}\" <= \"{secondDateName}\""
             );
         }
     }
