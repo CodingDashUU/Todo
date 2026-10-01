@@ -14,4 +14,5 @@ public static class MaterialIcons
     public const string Update = "update";
     public const string ErrorOutline = "error_outline";
     public const string Email = "mail";
+    public const string SearchOff = "search_off";
 }
