@@ -25,20 +25,16 @@
         const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
         document.cookie = `@CookieNames.ClientTimeZone=${tz}; path=/; max-age=31536000; samesite=lax`;
     </script>
-<Routes @rendermode="InteractiveServer"/>
-<script src="@Assets["_framework/blazor.web.js"]"></script>
 <script>
-    window.setThemeCookie = function (name, value, days) {
-        let expires = "";
-        if (days) {
-            const date = new Date();
-            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-            expires = "; expires=" + date.toUTCString();
-        }
-        // Set the cookie directly in the browser
-        document.cookie = `${name}=${value || ""}${expires}; path=/; SameSite=Lax; Secure`;
+    window.setThemeCookie = function (value) {
+        const date = new Date();
+        date.setTime(date.getTime() + (365 * 24 * 60 * 60 * 1000));
+        const expires = "; expires=" + date.toUTCString();
+        document.cookie = `@CookieNames.Theme=${value || "material"}${expires}; path=/; SameSite=Lax; Secure`;
     };
 </script>
+<Routes @rendermode="InteractiveServer"/>
+<script src="@Assets["_framework/blazor.web.js"]"></script>
 <script src="_content/Radzen.Blazor/Radzen.Blazor.js?v=@(typeof(Radzen.Colors).Assembly.GetName().Version)"></script>
 </body>
 
