@@ -196,36 +196,6 @@ public static class ConfigurationExtensions
                         context.Response.Redirect(context.RedirectUri);
                         return Task.CompletedTask;
                     };
-                    options.Events.OnValidatePrincipal = async context =>
-                    {
-                        var userId = context.Principal?.FindUserId();
-
-                        if (userId is not {} userGuid)
-                        {
-                            context.RejectPrincipal();
-                            await context.HttpContext.SignOutAsync(
-                                IdentityConstants.ApplicationScheme);
-                            return;
-                        }
-                        var userManager = context.HttpContext.RequestServices
-                            .GetRequiredService<ApplicationUserManager<TDbContext>>();
-                        var optionsAccessor = context.HttpContext.RequestServices.GetRequiredService<IOptions<IdentityOptions>>();
-                        var user = await userManager.FindByIdAsync(userGuid);
-                        var stampType = optionsAccessor.Value.ClaimsIdentity.SecurityStampClaimType;
-                        if (context.Principal is null)
-                            throw new InvalidOperationException("Claims Principal cannot be null");
-                        var ticketStamp = context.Principal
-                            .FindFirstValue(stampType);
-
-                        if (user is null ||
-                            !Guid.TryParse(ticketStamp, out var stamp) ||
-                            stamp != user.SecurityStamp)
-                        {
-                            context.RejectPrincipal();
-                            await context.HttpContext.SignOutAsync(
-                                IdentityConstants.ApplicationScheme);
-                        }
-                    };
                 })
                 .AddGoogle(options =>
                 {
