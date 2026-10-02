@@ -11,7 +11,7 @@ public class ApplicationDbContext(DbContextOptions options)
     public DbSet<ApplicationUser> Users => Set<ApplicationUser>();
     public DbSet<ApplicationRole> Roles => Set<ApplicationRole>();
     public DbSet<UserRole> UserRoles => Set<UserRole>();
-    private const string Citext = "citext";
+    protected const string Citext = "citext";
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasPostgresExtension(Citext);
