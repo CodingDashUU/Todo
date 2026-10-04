@@ -1,0 +1,36 @@
+@using Microsoft.JSInterop
+@inject ThemeService ThemeService
+@inject IJSRuntime JS
+<RadzenButton 
+    Icon="@(_isDarkMode ? "light_mode" : "dark_mode")" 
+    Click="@ToggleThemeAsync" 
+    Variant="Variant.Text" 
+    ButtonStyle="ButtonStyle.Base"
+    Size="ButtonSize.Small" 
+    id="theme-toggle"
+    class="rz-button-circle" />
+
+<style>
+    #theme-toggle:hover {
+        cursor: pointer;
+        background-color: #8a8888;
+    }
+</style>
+@code {
+        bool _isDarkMode;
+        protected override void OnInitialized()
+        {
+            base.OnInitialized();
+            _isDarkMode = ThemeService.Theme?.Contains("dark", StringComparison.OrdinalIgnoreCase) ?? false;
+        }
+
+        private async Task ToggleThemeAsync()
+        {
+            _isDarkMode = !_isDarkMode;
+            var newThemeMode = _isDarkMode ? "dark" : "light";
+            var newTheme = _isDarkMode ? "material-dark" : "material";
+            await JS.InvokeVoidAsync("setThemeCookie", newThemeMode);
+            ThemeService.SetTheme(newTheme);
+        }
+
+    }

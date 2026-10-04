@@ -6,7 +6,6 @@ public static class ApplicationRoutes
     public const string Home = "/";
     public const string NotFound = "/not-found";
     public const string SignIn = "/sign-in";
-    public const string Settings = "/settings";
     public const string ManageAccount = "/manage-account";
 }
     

@@ -14,7 +14,7 @@
             <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />
             <RadzenLabel>Todo Application</RadzenLabel>
             <div style="flex-grow: 1;"></div>
-            <RadzenAppearanceToggle />
+            <ThemeToggle/>
             <AuthorizeView>
                 <Authorized>
                     <RadzenProfileMenu>
@@ -38,7 +38,6 @@
     <RadzenSidebar @bind-Expanded="@sidebarExpanded">
         <RadzenPanelMenu>
             <RadzenPanelMenuItem Text="Home" Icon="@MaterialIcons.Home" Path="@ApplicationRoutes.Home"/>
-            <RadzenPanelMenuItem Text="Settings" Icon="@MaterialIcons.Settings" Path="@ApplicationRoutes.Settings" />
         </RadzenPanelMenu>
     </RadzenSidebar>
     <RadzenBody>

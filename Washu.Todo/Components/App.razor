@@ -23,14 +23,14 @@
 <ReconnectModal/>
 <script>
         const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        document.cookie = `@CookieNames.ClientTimeZone=${tz}; path=/; max-age=31536000; samesite=lax`;
+        document.cookie = `@CookieNames.ClientTimeZone=${tz}; path=/; max-age=31536000; samesite=lax; Secure`;
     </script>
 <script>
     window.setThemeCookie = function (value) {
         const date = new Date();
         date.setTime(date.getTime() + (365 * 24 * 60 * 60 * 1000));
         const expires = "; expires=" + date.toUTCString();
-        document.cookie = `@CookieNames.Theme=${value || "material"}${expires}; path=/; SameSite=Lax; Secure`;
+        document.cookie = `@CookieNames.Theme=${value || "light"}${expires}; path=/; SameSite=Lax; Secure`;
     };
 </script>
 <Routes @rendermode="InteractiveServer"/>
@@ -46,12 +46,19 @@
     protected override void OnInitialized()
     {
         base.OnInitialized();
-        var theme = HttpContext.Request.Cookies[CookieNames.Theme];
-
-        if (!string.IsNullOrEmpty(theme) && Themes.Free.Any(t => t.Value == theme))
+        var themeFound = HttpContext.Request.Cookies[CookieNames.Theme];
+        var isLight = themeFound?.Equals("light", StringComparison.OrdinalIgnoreCase) ?? false;
+        var isDark = themeFound?.Equals("dark", StringComparison.OrdinalIgnoreCase) ?? false;
+        if (!string.IsNullOrEmpty(themeFound) && (isLight || isDark))
         {
+            string theme;
+            if (isLight)
+                theme = "material";
+            else if (isDark)
+                theme = "material-dark";
+            else theme = "material";
             ThemeService.SetTheme(theme);
         }
-        else HttpContext.Response.Cookies.Append(CookieNames.Theme, "material" , new CookieOptions { Secure = Options.Value.IsSecure, Expires = DateTimeOffset.Now.Add(Options.Value.Duration) });    
+        else HttpContext.Response.Cookies.Append(CookieNames.Theme, "light" , new CookieOptions { SameSite=SameSiteMode.Lax ,Secure = Options.Value.IsSecure, Expires = DateTimeOffset.Now.Add(Options.Value.Duration) });    
     }
 }
