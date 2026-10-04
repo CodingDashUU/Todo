@@ -7,8 +7,8 @@ public class CircuitRateLimitingFilter : IHubFilter
 {
     private static readonly ConcurrentDictionary<string, ConnectionTokenState> Tracking = new();
 
-    private const double MaxTokens = 70.0;
-    private const double RefillRatePerSecond = 30.0;
+    private const double MaxTokens = 50.0;
+    private const double RefillRatePerSecond = 25.0;
 
     public async ValueTask<object?> InvokeMethodAsync(
         HubInvocationContext invocationContext, 
@@ -44,7 +44,6 @@ public class CircuitRateLimitingFilter : IHubFilter
             return true;
         }
     }
-
     private sealed class ConnectionTokenState(double initialTokens, DateTimeOffset now)
     {
         public double Tokens { get; set; } = initialTokens;
