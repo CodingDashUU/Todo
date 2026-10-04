@@ -1,0 +1,32 @@
+<RadzenStack Orientation="Orientation.Horizontal" Gap="0.75rem" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap">
+    <RadzenText Text="Rows:" />
+    <RadzenSelectBar @bind-Value="_scope" TValue="DataGridExportScope" Size="ButtonSize.Small">
+        <Items>
+            <RadzenSelectBarItem Text="Current page" Value="DataGridExportScope.CurrentPage" />
+            <RadzenSelectBarItem Text="All" Value="DataGridExportScope.All" />
+        </Items>
+    </RadzenSelectBar>
+    <RadzenCheckBox @bind-Value="_useTheme" Name="useTheme" />
+    <RadzenLabel Text="Use theme" Component="useTheme" />
+    <RadzenButton Text="Export Excel" Icon="@MaterialIcons.Grid" ButtonStyle="ButtonStyle.Success" Click="ExportExcel" />
+    <RadzenButton Text="Export CSV" Icon="@MaterialIcons.Description" ButtonStyle="ButtonStyle.Secondary" Click="ExportCsv" />
+</RadzenStack>
+
+@code {
+
+    DataGridExportScope _scope = DataGridExportScope.CurrentPage;
+    bool _useTheme = true;
+    [Parameter] public required RadzenDataGrid<TaskEntry> DataGrid { get; set; }
+    [Parameter] public string? ExcelTitle { get; set; }
+    [Parameter] public required string FileName { get; set; }
+    Task ExportExcel()
+    {
+        return DataGrid.ExportToExcelAsync($"{FileName}.xlsx", new DataGridExcelExportOptions { Scope = _scope, Title = ExcelTitle, UseTheme = _useTheme });
+    }
+
+    Task ExportCsv()
+    {
+        return DataGrid.ExportToCsvAsync($"{FileName}.csv", new DataGridCsvExportOptions { Scope = _scope });
+    }
+
+}

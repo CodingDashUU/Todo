@@ -2,5 +2,28 @@
 @attribute [Authorize]
 
 <PageTitle>Home</PageTitle>
-<TodoList />
+<RadzenColumn>
+    <RadzenSelectBar TValue="TodoDisplayMode" @bind-Value="@_mode">
+        <Items>
+            <RadzenSelectBarItem Value="TodoDisplayMode.List" Text="List" />
+            <RadzenSelectBarItem Value="TodoDisplayMode.Table" Text="Table" />
+        </Items>
+    </RadzenSelectBar>
+    <div style="height: 20px;"/>
+    @switch (_mode)
+    {
+        case TodoDisplayMode.List:
+            <TodoList />
+            break;
+        case TodoDisplayMode.Table:
+            <TodoDataGrid/>
+            break;
+    }
+</RadzenColumn>
+
+@code {
+    TodoDisplayMode _mode;
+    enum TodoDisplayMode { List, Table }
+
+}
 

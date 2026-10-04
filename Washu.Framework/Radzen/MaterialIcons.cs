@@ -15,4 +15,7 @@ public static class MaterialIcons
     public const string ErrorOutline = "error_outline";
     public const string Email = "mail";
     public const string SearchOff = "search_off";
+    public const string Target = "target";
+    public const string Grid = "grid_on";
+    public const string Description = "description";
 }

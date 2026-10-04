@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+      <NoWarn>$(NoWarn);BL0005</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="GreatIdeas.Blazored.FluentValidation" Version="3.0.0" />
@@ -18,7 +19,7 @@
     <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Identity.Stores" Version="10.0.4" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
-    <PackageVersion Include="Radzen.Blazor" Version="11.2.5" />
+    <PackageVersion Include="Radzen.Blazor" Version="12.0.5" />
     <PackageVersion Include="Refit" Version="15.0.0" />
     <PackageVersion Include="Refit.HttpClientFactory" Version="15.0.0" />
     <PackageVersion Include="Scalar.AspNetCore" Version="2.16.8" />

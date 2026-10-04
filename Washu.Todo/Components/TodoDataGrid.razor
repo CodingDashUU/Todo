@@ -1,0 +1,253 @@
+@using Microsoft.EntityFrameworkCore
+@using System.Linq.Dynamic.Core 
+@using Microsoft.AspNetCore.WebUtilities
+@using Washu.Framework.Extensions
+@using Washu.Framework.Identity
+@using Washu.Framework.Notifications
+@using Washu.Todo.Identity
+@using TodoList = Washu.Todo.TodoList
+@inject UserTimeZoneProvider TimeZoneProvider
+@inject IDbContextFactory<TodoDbContext> DbContextFactory
+@inject MessageStore Store
+@inject AuthenticationStateProvider Provider
+@inject NavigationManager NavManager
+
+
+<RadzenDataGrid @ref="_grid" 
+                @bind-Value="@_selectedTasks" 
+                TItem="TaskEntry"
+                AllowFiltering
+                AllowColumnResize
+                AllowAlternatingRows 
+                AllowSorting
+                AllowPaging
+                ShowPagingSummary
+                PageSize="5"  
+                FilterMode="FilterMode.SimpleWithMenu" 
+                PagerHorizontalAlign="HorizontalAlign.Left"
+                SelectionMode="DataGridSelectionMode.Single" 
+                IsLoading="@_isLoading"  
+                Data="@_tasks" 
+                Count="@_count"
+                LoadData="@LoadData" 
+                Filter="OnFilter" 
+                FilterCleared="@OnFilterCleared"
+                ColumnWidth="300px"
+                IsNullText="Is N/A" 
+                IsNotNullText="Is not N/A">
+    <HeaderTemplate>
+        <RadzenStack Orientation="Orientation.Horizontal">
+            <RadzenFormField Text="Selected Todo List">
+                <RadzenDropDown TValue="Todo.TodoList"
+                                Value="_selectedList"
+                                Data="_lists"
+                                TextProperty="Name"
+                                PageSize="10"
+                                ValueChanged="OnListSelected"/>
+            </RadzenFormField>
+            <TableExport DataGrid="_grid" ExcelTitle="@_selectedList.Name" FileName="todo"/>
+        </RadzenStack>
+    </HeaderTemplate>
+    <Columns>
+        <RadzenDataGridColumn Property="@nameof(TaskEntry.Name)" Title="Task Name" Width="140px"/>
+        <RadzenDataGridColumn Property="@nameof(TaskEntry.DateCreated)" Title="Date Created" Width="160px" FilterValue="DateCreatedFilterValue">
+            <FilterValueTemplate>
+                <RadzenDatePicker TValue="DateTimeOffset?"
+                                  ShowTime="true"
+                                  DateFormat="d MMMM yyyy HH:mm:ss"
+                                  @bind-Value="DateCreatedFilterValue"/>
+            </FilterValueTemplate>
+            <Template>
+                @context.DateCreated.ToTimeZone(TimeZoneProvider.TimeZoneInfo).ToString("F")
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn Property="@nameof(TaskEntry.GoalDate)" Title="Goal Date" Width="160px" FilterMode="FilterMode.SimpleWithMenu" FilterValue="GoalDateFilterValue">
+            <FilterValueTemplate>
+                <RadzenDatePicker TValue="DateTimeOffset?"
+                                  ShowTime="true"
+                                  DateFormat="d MMMM yyyy HH:mm:ss"
+                                  @bind-Value="GoalDateFilterValue"/>
+            </FilterValueTemplate>
+            <Template>
+                <RadzenStack Orientation="Orientation.Horizontal" Gap="1.1rem">
+                    <RadzenIcon Icon="@MaterialIcons.Target"/>
+                    @context.GoalDate.ToTimeZone(TimeZoneProvider.TimeZoneInfo).ToString("F")
+                </RadzenStack>
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn Property="@nameof(TaskEntry.DateCompleted)" Title="Date Completed" Width="160px" FilterMode="FilterMode.SimpleWithMenu" FilterValue="DateCompletedFilterValue">
+            <FilterValueTemplate>
+                <RadzenDatePicker TValue="DateTimeOffset?"
+                                  ShowTime="true"
+                                  DateFormat="d MMMM yyyy HH:mm:ss"
+                                  @bind-Value="DateCompletedFilterValue"/>
+            </FilterValueTemplate>
+            <Template>
+                @(context.DateCompleted?.ToTimeZone(TimeZoneProvider.TimeZoneInfo).ToString("F") ?? "N/A")
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn Property="@nameof(TaskEntry.IsCompleted)" Title="Completed?" TextAlign="TextAlign.Center" Width="100px">
+            <Template>
+                <RadzenIcon IconColor="@(context.IsCompleted ? "var(--rz-success)" : "var(--rz-danger)")" Icon="@(context.IsCompleted ? MaterialIcons.CheckCircle : MaterialIcons.Cancel)"/>
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+    
+</RadzenDataGrid>
+
+@code {
+    RadzenDataGrid<TaskEntry> _grid = null!;
+    bool _isLoading;
+    int _count;
+    IEnumerable<TaskEntry>? _tasks;
+    IList<TaskEntry> _selectedTasks = new List<TaskEntry>();
+    Todo.TodoList _selectedList = Todo.TodoList.None;
+    List<Todo.TodoList> _lists = [];
+    Task? _initTask;
+    DateTimeOffset? DateCreatedFilterValue
+    {
+        get => field?.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
+        set => field = value?.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
+    }
+    DateTimeOffset? GoalDateFilterValue
+    {
+        get => field?.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
+        set => field = value?.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
+    }
+    DateTimeOffset? DateCompletedFilterValue
+    {
+        get => field?.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
+        set => field = value?.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
+    }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        _initTask = FetchTargetListIdAsync();
+    }
+
+    static bool IsNullOrEmpty(FilterOperator? value)
+    {
+        return value is FilterOperator.IsEmpty or FilterOperator.IsNotEmpty or FilterOperator.IsNull or FilterOperator.IsNotNull;
+    }
+    void OnListSelected(Todo.TodoList newList)
+    {
+        _selectedList = newList;
+        StateHasChanged();
+        _grid.Reload();
+    }
+    void OnFilter(DataGridColumnFilterEventArgs<TaskEntry> args)
+    {
+        if (IsNullOrEmpty(args.Column?.GetFilterOperator()))
+        {
+            OnFilterCleared(args);
+        }
+    }
+    private void OnFilterCleared(DataGridColumnFilterEventArgs<TaskEntry> args)
+    {
+        switch (args.Column?.Property)
+        {
+            case nameof(TaskEntry.DateCreated):
+                DateCreatedFilterValue = null;
+                break;
+            case nameof(TaskEntry.DateCompleted):    
+                DateCompletedFilterValue = null;
+                break;
+            case nameof(TaskEntry.GoalDate):
+                GoalDateFilterValue = null;
+                break;
+        }
+        _grid.Reload();
+    }
+    private async Task FetchTargetListIdAsync()
+    {
+        var authState = await Provider.GetAuthenticationStateAsync();
+        if (authState.User.FindUserId() is not { } userId)
+        {
+            var id = Store.Store(Message.Error("Identity Error", "Please sign in before continuing"));
+            var url = QueryHelpers.AddQueryString(ApplicationRoutes.SignIn, new Dictionary<string, string?>
+            {
+                ["messageid"] = id,
+                ["returnurl"] = "/analytics"
+            });
+            NavManager.NavigateTo(url);
+            return;
+        }
+        await using var context = await DbContextFactory.CreateDbContextAsync();
+        var lists = await context.TodoLists
+            .Where(l => l.UserId == userId)
+            .OrderByDescending(l => l.LastModified)
+            .ToListAsync();
+        _lists = lists;
+        if (lists.IsNotEmpty)
+        {
+            _selectedList = lists[0];
+        }
+    }
+   
+    async Task LoadData(LoadDataArgs args)
+    {
+        try
+        {
+            _isLoading = true;
+            await InvokeAsync(StateHasChanged);
+
+            if (_initTask is not null)
+            {
+                await _initTask;
+                _initTask = null;
+            }
+            
+            if (_selectedList.Id == Todo.TodoList.None.Id)
+            {
+                _tasks = [];
+                _count = 0;
+                return;
+            }
+
+            await using var context = await DbContextFactory.CreateDbContextAsync();
+            
+            var query = context.Set<TaskEntry>()
+                .Where(e => e.TodoListId == _selectedList.Id)
+                .OrderBy(e => e.DateCreated)
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(args.Filter))
+            {
+                query = query.Where(args.Filter);
+            }
+
+            if (!string.IsNullOrEmpty(args.OrderBy))
+            {
+                query = query.OrderBy(args.OrderBy);
+            }
+
+            _count = await query.CountAsync();
+
+            if (args.Skip is not null)
+            {
+                query = query.Skip(args.Skip.Value);
+            }
+            if (args.Top is not null)
+            {
+                query = query.Take(args.Top.Value);
+            }
+            _tasks = await query.ToListAsync();
+
+            if (_tasks.IsNotEmpty && _selectedTasks.IsEmpty)
+            {
+                _selectedTasks = new List<TaskEntry> { _tasks.First() };
+            }
+        }
+        catch (Exception)
+        {
+            _tasks = new List<TaskEntry>();
+            _count = 0;
+        }
+        finally
+        {
+            _isLoading = false;
+            await InvokeAsync(StateHasChanged); 
+        }
+    }
+}
