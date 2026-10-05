@@ -7,12 +7,11 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
-public sealed class ApplicationSignInManager<TDbContext>(
+public sealed class ApplicationSignInManager(
     IHttpContextAccessor httpContextAccessor,
-    IDbContextFactory<TDbContext> dbFactory,
+    IDbContextFactory<ApplicationDbContext> dbFactory,
     IAuthenticationSchemeProvider schemeProvider,
     IUserClaimsPrincipalFactory<ApplicationUser> claimsFactory)
-where TDbContext : ApplicationDbContext
 {
     private const string LoginProviderKey = "LoginProvider";
     private const string XsrfKey = "XsrfId";

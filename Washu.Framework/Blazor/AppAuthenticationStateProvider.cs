@@ -10,12 +10,11 @@ using Microsoft.Extensions.Options;
 using System.Security.Claims;
 using Identity;
 
-public sealed class AppAuthenticationStateProvider<TDbContext>(
+public sealed class AppAuthenticationStateProvider(
     ILoggerFactory loggerFactory,
     IServiceScopeFactory scopeFactory,
     IOptions<IdentityOptions> optionsAccessor)
     : RevalidatingServerAuthenticationStateProvider(loggerFactory)
-where TDbContext : ApplicationDbContext
 {
     private readonly IdentityOptions _options = optionsAccessor.Value;
 
@@ -30,7 +29,7 @@ where TDbContext : ApplicationDbContext
         var principalStamp = principal.FindFirstValue(_options.ClaimsIdentity.SecurityStampClaimType);
         if (!Guid.TryParse(principalStamp, out var principalStampGuid)) return false;
         await using var scope = scopeFactory.CreateAsyncScope();
-        var userStore = scope.ServiceProvider.GetRequiredService<ApplicationUserStore<TDbContext>>();
+        var userStore = scope.ServiceProvider.GetRequiredService<ApplicationUserStore>();
         var user = await userStore.GetOrAddUserAsync(userId.Value);
         if (user is null) return false;
         return principalStampGuid == user.SecurityStamp;

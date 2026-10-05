@@ -4,8 +4,7 @@ using Entities;
 using Extensions;
 using Microsoft.EntityFrameworkCore;
 
-public sealed class ApplicationRoleManager<TContext>(IDbContextFactory<TContext> dbFactory) 
-    where TContext : ApplicationDbContext
+public sealed class ApplicationRoleManager(IDbContextFactory<ApplicationDbContext> dbFactory)
 {
     public async Task AddRolesAsync(List<string> roleNames, CancellationToken ct = default)
     {

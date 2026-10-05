@@ -5,8 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Notifications;
 using Npgsql;
 
-public sealed class ApplicationUserManager<TDbContext>(IDbContextFactory<TDbContext> factory)
-    where TDbContext : ApplicationDbContext
+public sealed class ApplicationUserManager(IDbContextFactory<ApplicationDbContext> factory)
 {
     public async Task<ApplicationUser?> FindByIdAsync(Guid userId, CancellationToken ct = default)
     {

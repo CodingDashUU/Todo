@@ -13,10 +13,10 @@ var app = builder.Build();
 await using var scope = app.Services.CreateAsyncScope();
 var dbContext = scope.ServiceProvider.GetRequiredService<TodoDbContext>();
 await dbContext.Database.MigrateAsync();
-app.UseWashuFramework<TodoDbContext>();
+app.UseWashuFramework();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
     .RequireRateLimiting(RateLimiterPolicy.BlazorHandshakeRateLimiter)
     .DisableAntiforgery();
-await app.SeedRolesAsync<TodoDbContext>([.. InitialUserRoles.Roles]);
+await app.SeedRolesAsync([.. InitialUserRoles.Roles]);
 await app.RunAsync();

@@ -1,16 +1,15 @@
 @using FluentValidation
 @using Washu.Framework.Extensions
 @using Washu.Framework.Identity.Entities
-@inject ApplicationUserManager<TDbContext> UserManager
+@inject ApplicationUserManager UserManager
 @inject NotificationService NotificationService
 @inject NavigationManager NavManager
-@inject ApplicationUserStore<TDbContext> UserStore
+@inject ApplicationUserStore UserStore
 @inject UserSessionManager SessionManager
 @inject AuthenticationStateProvider AuthStateProvider
 @inject ApplicationSessionState SessionState
 @inject MessageStore Store
 @inject DialogService DialogService
-@typeparam TDbContext where TDbContext : ApplicationDbContext
 
 @if (User is null)
 {

@@ -19,6 +19,7 @@ using System.Threading.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Notifications;
 using System.Security.Claims;
@@ -119,12 +120,12 @@ public static class ConfigurationExtensions
             // Identity
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
             services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, ApplicationClaimsPrincipalFactory>();
-            services.AddScoped<ApplicationSignInManager<TDbContext>>();
-            services.AddScoped<ApplicationUserManager<TDbContext>>();
-            services.AddSingleton<ApplicationUserStore<TDbContext>>();
-            services.AddScoped<ApplicationRoleManager<TDbContext>>();
+            services.AddScoped<ApplicationSignInManager>();
+            services.AddScoped<ApplicationUserManager>();
+            services.AddSingleton<ApplicationUserStore>();
+            services.AddScoped<ApplicationRoleManager>();
             services.AddScoped<ApplicationDbContext, TDbContext>();
-            services.AddDbContextFactory<TDbContext>(options =>
+            services.AddDbContextFactory<ApplicationDbContext, TDbContext>(options =>
                 options.UseNpgsql(
                     connectionString,
                     npgsqlOptions =>
@@ -154,7 +155,7 @@ public static class ConfigurationExtensions
             });
             
             services.AddCascadingAuthenticationState();
-            services.AddScoped<AuthenticationStateProvider, AppAuthenticationStateProvider<TDbContext>>();
+            services.AddScoped<AuthenticationStateProvider, AppAuthenticationStateProvider>();
             
             // Authentication and cookies
             builder.Services
@@ -192,7 +193,7 @@ public static class ConfigurationExtensions
                             return;
                         }
                         var userStore = context.HttpContext.RequestServices
-                            .GetRequiredService<ApplicationUserStore<TDbContext>>();
+                            .GetRequiredService<ApplicationUserStore>();
                         var optionsAccessor = context.HttpContext.RequestServices.GetRequiredService<IOptions<IdentityOptions>>();
                         var user = await userStore.GetOrAddUserAsync(userId.Value);
                         var stampType = optionsAccessor.Value.ClaimsIdentity.SecurityStampClaimType;
@@ -251,19 +252,39 @@ public static class ConfigurationExtensions
                 .AddInteractiveServerComponents();
             builder.Services.AddRadzenComponents();
         }
+    public void AddDbContextFactory<TBaseContext, TDerivedContext>(
+        Action<DbContextOptionsBuilder>? optionsAction = null,
+        ServiceLifetime lifetime = ServiceLifetime.Singleton)
+        where TBaseContext : DbContext
+        where TDerivedContext : TBaseContext =>
+        services.AddDbContextFactory<TBaseContext, TDerivedContext>(
+            (_, builder) => optionsAction?.Invoke(builder), 
+            lifetime);
+        
+    public void AddDbContextFactory<TBaseContext, TDerivedContext>(
+        Action<IServiceProvider, DbContextOptionsBuilder> optionsAction,
+        ServiceLifetime lifetime = ServiceLifetime.Singleton)
+        where TBaseContext : DbContext
+        where TDerivedContext : TBaseContext
+    {
+        services.AddDbContextFactory<TDerivedContext>(optionsAction, lifetime);
+        services.TryAdd(new ServiceDescriptor(
+            typeof(IDbContextFactory<TBaseContext>),
+            sp => new DbContextFactoryAdapter<TBaseContext, TDerivedContext>(
+                sp.GetRequiredService<IDbContextFactory<TDerivedContext>>()),
+            lifetime));
     }
-
+    }
+    
     extension(WebApplication app)
     {
-        public async Task SeedRolesAsync<TDbContext>(List<string> roles)
-            where TDbContext : ApplicationDbContext
+        public async Task SeedRolesAsync(List<string> roles)
         {
             await using var serviceScope = app.Services.CreateAsyncScope();
-            var roleManager = serviceScope.ServiceProvider.GetRequiredService<ApplicationRoleManager<TDbContext>>();
+            var roleManager = serviceScope.ServiceProvider.GetRequiredService<ApplicationRoleManager>();
             await roleManager.AddRolesAsync(roles);
         }
-        public void UseWashuFramework<TDbContext>()
-        where TDbContext : ApplicationDbContext
+        public void UseWashuFramework()
         {
             app.UseExceptionHandler(ApplicationRoutes.Error, createScopeForErrors: true);
             app.UseStatusCodePagesWithReExecute(ApplicationRoutes.NotFound, createScopeForStatusCodePages: true);
@@ -275,7 +296,7 @@ public static class ConfigurationExtensions
             app.UseAuthentication();
             app.UseAuthorization();
 
-            app.MapHealthChecks("/healthz", new HealthCheckOptions
+            app.MapHealthChecks("/health", new HealthCheckOptions
             {
                 ResponseWriter = async (context, report) =>
                 {
@@ -296,22 +317,35 @@ public static class ConfigurationExtensions
                     await context.Response.WriteAsJsonAsync(json);
                 }
             });
-            ExternalEndpoints.Map<TDbContext>(app);
-            app.MapGet(IdentityRoutes.SignOut, async (HttpContext context, [FromQuery] string? messageId) =>
-            {
-                await context.SignOutAsync(IdentityConstants.ApplicationScheme);
-
-                var targetUrl = string.IsNullOrWhiteSpace(messageId)
-                    ? ApplicationRoutes.SignIn
-                    : $"{ApplicationRoutes.SignIn}?messageId={messageId}";
-
-                return TypedResults.Redirect(targetUrl);
-            })
-                .RequireRateLimiting(RateLimiterPolicy.StandardRateLimiter);
+            app.MapExternalEndpoints();
+            app.MapSignOutEndpoint();
         }
+
+        public void MapSignOutEndpoint() =>
+            app.MapGet(IdentityRoutes.SignOut, async (HttpContext context, [FromQuery] string? messageId) =>
+                {
+                    await context.SignOutAsync(IdentityConstants.ApplicationScheme);
+
+                    var targetUrl = string.IsNullOrWhiteSpace(messageId)
+                        ? ApplicationRoutes.SignIn
+                        : $"{ApplicationRoutes.SignIn}?messageId={messageId}";
+
+                    return TypedResults.Redirect(targetUrl);
+                })
+                .RequireRateLimiting(RateLimiterPolicy.StandardRateLimiter);
     }
 }
 file sealed class NoOpAntiforgeryStateProvider : AntiforgeryStateProvider
 {
     public override AntiforgeryRequestToken? GetAntiforgeryToken() => null;
+}
+file sealed class DbContextFactoryAdapter<TBaseContext, TDerivedContext>(
+    IDbContextFactory<TDerivedContext> innerFactory) : IDbContextFactory<TBaseContext>
+    where TBaseContext : DbContext
+    where TDerivedContext : TBaseContext
+{
+    private readonly IDbContextFactory<TDerivedContext> _innerFactory = innerFactory ?? throw new ArgumentNullException(nameof(innerFactory));
+    
+    public TBaseContext CreateDbContext() =>
+        _innerFactory.CreateDbContext();
 }
