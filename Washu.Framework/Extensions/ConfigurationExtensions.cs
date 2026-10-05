@@ -180,6 +180,36 @@ public static class ConfigurationExtensions
                     options.SlidingExpiration = true;
                     options.LoginPath = ApplicationRoutes.SignIn;
                     options.Cookie.Name = ".Washu.Application";
+                    options.Events.OnValidatePrincipal = async context =>
+                    {
+                        var userId = context.Principal?.FindUserId();
+
+                        if (!userId.HasValue)
+                        {
+                            context.RejectPrincipal();
+                            await context.HttpContext.SignOutAsync(
+                                IdentityConstants.ApplicationScheme);
+                            return;
+                        }
+                        var userStore = context.HttpContext.RequestServices
+                            .GetRequiredService<ApplicationUserStore<TDbContext>>();
+                        var optionsAccessor = context.HttpContext.RequestServices.GetRequiredService<IOptions<IdentityOptions>>();
+                        var user = await userStore.GetOrAddUserAsync(userId.Value);
+                        var stampType = optionsAccessor.Value.ClaimsIdentity.SecurityStampClaimType;
+                        if (context.Principal is null)
+                            throw new InvalidOperationException("Claims Principal cannot be null");
+                        var ticketStamp = context.Principal
+                            .FindFirstValue(stampType);
+
+                        if (user is null ||
+                            !Guid.TryParse(ticketStamp, out var stamp) ||
+                            stamp != user.SecurityStamp)
+                        {
+                            context.RejectPrincipal();
+                            await context.HttpContext.SignOutAsync(
+                                IdentityConstants.ApplicationScheme);
+                        }
+                    };
                     options.Events.OnRedirectToLogin = context =>
                     {
                         if (!HttpMethods.IsGet(context.Request.Method))
