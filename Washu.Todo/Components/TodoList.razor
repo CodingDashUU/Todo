@@ -1,4 +1,3 @@
-@using System.Security.Claims
 @using Microsoft.EntityFrameworkCore
 @using Washu.Framework.Identity
 @using Washu.Framework.Notifications
@@ -114,9 +113,9 @@
         if (!confirmData.HasValue || !confirmData.Value) return;
         await using var dbContext = await DbContextFactory.CreateDbContextAsync();
         var command = new DeleteTaskCommand(entry.Id, _selectedList.Id, _selectedList.VersionId);
-        var (message, newList) = await DeleteTaskHandler.HandleAsync(command);
+        var message = await DeleteTaskHandler.HandleAsync(command);
         NotificationService.Show(message);
-        await LoadListsAsync(preferredSelectedId: newList?.Id ?? _selectedList.Id);
+        await LoadListsAsync(preferredSelectedId: _selectedList.Id);
     }
     private async Task RefreshUserAsync()
     {
@@ -191,19 +190,19 @@
         var result = await DialogService.OpenAsync<TaskCreationDialog>("Create Task", parameters);
         if (result is not CreateTaskCommand command) return;
 
-        var (message, newList) = await CreateTaskHandler.HandleAsync(command);
+        var message = await CreateTaskHandler.HandleAsync(command);
         NotificationService.Show(message);
 
-        await LoadListsAsync(preferredSelectedId: newList?.Id ?? _selectedList.Id);
+        await LoadListsAsync(preferredSelectedId: _selectedList.Id);
     }
 
     private async Task OnToggleTask(TaskEntry entry)
     {
         var command = new ToggleTaskCommand(entry.Id, _selectedList.Id, _selectedList.VersionId);
-        var (message, newList) = await ToggleTaskHandler.HandleAsync(command);
+        var message = await ToggleTaskHandler.HandleAsync(command);
         NotificationService.Show(message, duration: RadzenNotificationConstants.ShortDuration);
 
-        await LoadListsAsync(preferredSelectedId: newList?.Id ?? _selectedList.Id);
+        await LoadListsAsync(preferredSelectedId: _selectedList.Id);
     }
 
     private async Task OnSettingsClicked(TaskEntry entry)
@@ -217,10 +216,10 @@
         var result = await DialogService.OpenAsync<TaskUpdateDialog>("Update Task", parameters);
         if (result is not UpdateTaskCommand command) return;
 
-        var (message, newList) = await UpdateTaskHandler.HandleAsync(command);
+        var message = await UpdateTaskHandler.HandleAsync(command);
         NotificationService.Show(message);
 
-        await LoadListsAsync(preferredSelectedId: newList?.Id ?? _selectedList.Id);
+        await LoadListsAsync(preferredSelectedId: _selectedList.Id);
     }
 
     public void Dispose()

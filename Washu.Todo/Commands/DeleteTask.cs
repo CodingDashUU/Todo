@@ -8,14 +8,14 @@ public sealed record DeleteTaskCommand(Guid TaskId, Guid ListId, Guid ListVersio
 
 public sealed class DeleteTaskHandler(IDbContextFactory<TodoDbContext> factory)
 {
-    public async Task<(Message, TodoList?)> HandleAsync(DeleteTaskCommand command)
+    public async Task<Message> HandleAsync(DeleteTaskCommand command)
     {
         await using var dbContext = await factory.CreateDbContextAsync();
         var list = await dbContext.GetListAsync(command.ListId);
-        if (list is null) return (Message.Error("Task Deletion Error", "Todo list was not found"), null);
-        if (list.VersionId != command.ListVersionId) return (Message.Error("Task Deletion Error", "Your todo list was already modified, please try again"), null);
+        if (list is null) return Message.Error("Task Deletion Error", "Todo list was not found");
+        if (list.VersionId != command.ListVersionId) return Message.Error("Task Deletion Error", "Your todo list was already modified, please try again");
         var task = list.Tasks.SingleOrDefault(t => t.Id == command.TaskId);
-        if (task is null) return (Message.Error("Task Deletion Error", "Task was not found"), null);
+        if (task is null) return Message.Error("Task Deletion Error", "Task was not found");
         dbContext.Set<TaskEntry>().Remove(task);
         list.LastModified = DateTimeOffset.UtcNow;
         list.ChangeVersionId();
@@ -25,8 +25,8 @@ public sealed class DeleteTaskHandler(IDbContextFactory<TodoDbContext> factory)
         }
         catch (Exception)
         {
-            return (Message.Error("Task Deletion Error", "There was an unknown error while deleting your task"), null);
+            return Message.Error("Task Deletion Error", "There was an unknown error while deleting your task");
         }
-        return (Message.Success("Task Deletion Success", "Successfully deleted task"), list);
+        return Message.Success("Task Deletion Success", "Successfully deleted task");
     }
 }
