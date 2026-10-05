@@ -1,6 +1,6 @@
 namespace Washu.Framework.Identity.Entities;
 
-public class ApplicationRole(string name)
+public sealed class ApplicationRole(string name)
 {
     private ApplicationRole() : this(string.Empty) {}
     public Guid Id { get; private init; } = Guid.CreateVersion7();

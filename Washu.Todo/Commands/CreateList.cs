@@ -1,13 +1,12 @@
 ﻿namespace Washu.Todo.Commands;
 
-using FluentValidation;
 using Framework.Notifications;
 using Identity;
 using Microsoft.EntityFrameworkCore;
 using TodoList = TodoList;
 
 public sealed record CreateListCommand(Guid UserId, string ListName);
-public class CreateListHandler(IDbContextFactory<TodoDbContext> dbContextFactory)
+public sealed class CreateListHandler(IDbContextFactory<TodoDbContext> dbContextFactory)
 {
     public async Task<Message> HandleAsync(CreateListCommand command)
     {

@@ -311,7 +311,7 @@ public static class ConfigurationExtensions
         }
     }
 }
-public class NoOpAntiforgeryStateProvider : AntiforgeryStateProvider
+file sealed class NoOpAntiforgeryStateProvider : AntiforgeryStateProvider
 {
     public override AntiforgeryRequestToken? GetAntiforgeryToken() => null;
 }

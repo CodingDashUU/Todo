@@ -4,7 +4,7 @@ using Entities;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 
-public class ApplicationUserStore<TDbContext>(IMemoryCache cache, IServiceScopeFactory scopeFactory)
+public sealed class ApplicationUserStore<TDbContext>(IMemoryCache cache, IServiceScopeFactory scopeFactory)
     where TDbContext : ApplicationDbContext
 {
     public event Func<Task>? OnUserChanged;

@@ -3,7 +3,7 @@ namespace Washu.Framework.AspNetCore;
 using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
 
-public class CircuitRateLimitingFilter : IHubFilter
+public sealed class CircuitRateLimitingFilter : IHubFilter
 {
     private static readonly ConcurrentDictionary<string, ConnectionTokenState> Tracking = new();
 

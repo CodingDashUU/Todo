@@ -2,10 +2,10 @@ namespace Washu.Framework.Radzen;
 
 using global::Radzen;
 
-public class SubmitButtonConfig
+public sealed class SubmitButtonConfig
 {
-    public string ButtonText { get; set; } = "Submit";
-    public bool ButtonDisabled { get; set; }
-    public ButtonStyle ButtonStyle { get; set; }
-    public string ButtonIcon { get; set; } = "";
+    public string ButtonText { get; init; } = "Submit";
+    public bool ButtonDisabled { get; init; }
+    public ButtonStyle ButtonStyle { get; init; }
+    public string ButtonIcon { get; init; } = "";
 }
