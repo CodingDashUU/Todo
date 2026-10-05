@@ -124,7 +124,6 @@ public static class ConfigurationExtensions
             services.AddScoped<ApplicationUserManager>();
             services.AddSingleton<ApplicationUserStore>();
             services.AddScoped<ApplicationRoleManager>();
-            services.AddScoped<ApplicationDbContext, TDbContext>();
             services.AddDbContextFactory<ApplicationDbContext, TDbContext>(options =>
                 options.UseNpgsql(
                     connectionString,
@@ -252,7 +251,8 @@ public static class ConfigurationExtensions
                 .AddInteractiveServerComponents();
             builder.Services.AddRadzenComponents();
         }
-    public void AddDbContextFactory<TBaseContext, TDerivedContext>(
+
+        private void AddDbContextFactory<TBaseContext, TDerivedContext>(
         Action<DbContextOptionsBuilder>? optionsAction = null,
         ServiceLifetime lifetime = ServiceLifetime.Singleton)
         where TBaseContext : DbContext
@@ -260,8 +260,8 @@ public static class ConfigurationExtensions
         services.AddDbContextFactory<TBaseContext, TDerivedContext>(
             (_, builder) => optionsAction?.Invoke(builder), 
             lifetime);
-        
-    public void AddDbContextFactory<TBaseContext, TDerivedContext>(
+
+    private void AddDbContextFactory<TBaseContext, TDerivedContext>(
         Action<IServiceProvider, DbContextOptionsBuilder> optionsAction,
         ServiceLifetime lifetime = ServiceLifetime.Singleton)
         where TBaseContext : DbContext
@@ -295,8 +295,14 @@ public static class ConfigurationExtensions
             app.UseRateLimiter();
             app.UseAuthentication();
             app.UseAuthorization();
+            
+            app.MapExternalEndpoints();
+            app.MapWfHealthChecks();
+            app.MapSignOutEndpoint();
+        }
 
-            app.MapHealthChecks("/health", new HealthCheckOptions
+        private void MapWfHealthChecks() =>
+            app.MapHealthChecks("/health-wf", new HealthCheckOptions
             {
                 ResponseWriter = async (context, report) =>
                 {
@@ -317,11 +323,8 @@ public static class ConfigurationExtensions
                     await context.Response.WriteAsJsonAsync(json);
                 }
             });
-            app.MapExternalEndpoints();
-            app.MapSignOutEndpoint();
-        }
 
-        public void MapSignOutEndpoint() =>
+        private void MapSignOutEndpoint() =>
             app.MapGet(IdentityRoutes.SignOut, async (HttpContext context, [FromQuery] string? messageId) =>
                 {
                     await context.SignOutAsync(IdentityConstants.ApplicationScheme);
