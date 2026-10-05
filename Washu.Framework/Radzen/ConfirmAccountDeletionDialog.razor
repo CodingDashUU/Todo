@@ -33,10 +33,9 @@
         Validator = new(Email);
     }
 
-    private Task CloseDialog()
+    private void CloseDialog()
     {
         DialogService.Close(Model);
-        return Task.CompletedTask;
     }
     public class ConfirmAccountDeletionModel
     {

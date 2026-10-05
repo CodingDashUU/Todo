@@ -1,22 +1,35 @@
-﻿@using Washu.Todo.Commands
+﻿@using FluentValidation
+@using Washu.Todo.Commands
 @inject DialogService DialogService
 <AppForm
     Model="_model"
     Validator="_validator"
     HandleValidSubmit="CloseDialog">
     <RadzenFormField Text="List Name">
-        <RadzenTextBox Name="@nameof(CreateList.Model.ListName)" 
+        <RadzenTextBox Name="@nameof(Model.ListName)" 
                        @bind-Value="_model.ListName"
                        MaxLength="TodoRules.ListName.MaximumLength" />
     </RadzenFormField>
 </AppForm>
 @code {
-    private readonly CreateList.Model _model = new();
-    private readonly CreateList.Validator _validator = new();
-
-    private Task CloseDialog()
+    private readonly Model _model = new();
+    private readonly Validator _validator = new();
+    
+    [Parameter] public Guid UserId { get; set; }
+    private void CloseDialog()
     {
-        DialogService.Close(_model);
-        return Task.CompletedTask;
+        var command = new CreateListCommand(UserId, _model.ListName);
+        DialogService.Close(command);
+    }
+
+    private class Model
+    {
+        public string ListName { get; set; } = string.Empty;
+    }
+    private class Validator : AbstractValidator<Model>
+    {
+        public Validator() =>
+            RuleFor(m => m.ListName)
+                .SetValidator(new TodoValidators.ListName());
     }
 }

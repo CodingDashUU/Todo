@@ -11,12 +11,12 @@
 @inject NavigationManager NavManager
 @inject DialogService DialogService
 @inject IDbContextFactory<TodoDbContext> DbContextFactory
-@inject CreateList.Command CreateListCommand
-@inject CreateTask.Command CreateTaskCommand
-@inject ToggleTask.Command ToggleTaskCommand
-@inject UpdateTask.Command UpdateTaskCommand
-@inject DeleteTask.Command DeleteTaskCommand
-@inject DeleteList.Command DeleteListCommand
+@inject CreateListHandler CreateListHandler
+@inject CreateTaskHandler CreateTaskHandler
+@inject ToggleTaskHandler ToggleTaskHandler
+@inject UpdateTaskHandler UpdateTaskHandler
+@inject DeleteTaskHandler DeleteTaskHandler
+@inject DeleteListHandler DeleteListHandler
 @inject MessageStore MessageStore
 @inject ApplicationUserStore<TodoDbContext> UserStore
 @implements IDisposable
@@ -24,27 +24,27 @@
 <RadzenStack Orientation="Orientation.Horizontal">
     <RadzenCard>
         <RadzenDropDown TValue="Todo.TodoList" 
-                        Value="SelectedList" 
-                        Data="ListNames" 
+                        Value="_selectedList" 
+                        Data="_listNames" 
                         TextProperty="Name"
                         PageSize="10" 
                         ValueChanged="OnListSelected" />
     
         <RadzenButton class="big-icon-button"
-                      ButtonStyle="@(IsEditing ? ButtonStyle.Success : ButtonStyle.Danger)"
+                      ButtonStyle="@(_isEditing ? ButtonStyle.Success : ButtonStyle.Danger)"
                       Variant="Variant.Text"
-                      Click="() => IsEditing = !IsEditing"
+                      Click="() => _isEditing = !_isEditing"
                       Disabled="IsNoListSelected"
-                      Text="@($"Edit Mode: {(IsEditing ? "ON" : "OFF")}")" />
+                      Text="@($"Edit Mode: {(_isEditing ? "ON" : "OFF")}")" />
 
         <RadzenButton class="big-icon-button"
-                      ButtonStyle="@(IsDeleting ? ButtonStyle.Success : ButtonStyle.Danger)"
+                      ButtonStyle="@(_isDeleting ? ButtonStyle.Success : ButtonStyle.Danger)"
                       Variant="Variant.Text"
-                      Click="() => IsDeleting = !IsDeleting"
+                      Click="() => _isDeleting = !_isDeleting"
                       Disabled="IsNoListSelected"
-                      Text="@($"Delete Mode: {(IsDeleting ? "ON" : "OFF")}")" />
+                      Text="@($"Delete Mode: {(_isDeleting ? "ON" : "OFF")}")" />
                   
-        <RadzenButton Click="AddTaskAsync" Disabled="IsNoListSelected">Add Task</RadzenButton>
+        <RadzenButton Click="CreateTaskAsync" Disabled="IsNoListSelected">Add Task</RadzenButton>
         <RadzenButton Click="CreateListAsync">Add List</RadzenButton>
         <RadzenButton Click="DeleteListAsync" Disabled="IsNoListSelected">Delete List</RadzenButton>
     </RadzenCard>
@@ -55,12 +55,12 @@
     }
     else
     {
-        @foreach (var item in SelectedList.Tasks)
+        @foreach (var item in _selectedList.Tasks)
         {
             <TaskCard Entry="item" 
                       OnTaskCompleted="async () => await OnToggleTask(item)" 
-                      IsEditing="IsEditing" 
-                      IsDeleting="IsDeleting"
+                      IsEditing="_isEditing" 
+                      IsDeleting="_isDeleting"
                       OnDeleteClicked="async () => await DeleteTaskAsync(item)"
                       OnSettingsClicked="async () => await OnSettingsClicked(item)" />
         }
@@ -69,16 +69,15 @@
 
 @code {
     private ApplicationUser _currentUser = null!;
-
-    public bool IsEditing { get; set; }
-    public bool IsDeleting { get; set; }
+    private bool _isEditing;
+    private bool _isDeleting;
+    private bool IsNoListSelected => _selectedList.Id == Todo.TodoList.None.Id;
+    
+    private Todo.TodoList _selectedList = Todo.TodoList.None;
+    private List<Todo.TodoList> _listNames= [];
+    
     [CascadingParameter] public required Task<AuthenticationState> Context { get; set; }
     
-    public Todo.TodoList SelectedList { get; set; } = Todo.TodoList.None;
-    public List<Todo.TodoList> ListNames { get; set; } = [];
-
-    private bool IsNoListSelected => SelectedList.Id == Todo.TodoList.None.Id;
-
     protected override async Task OnInitializedAsync()
     {
         var principal = await Context;
@@ -114,9 +113,10 @@
             });
         if (!confirmData.HasValue || !confirmData.Value) return;
         await using var dbContext = await DbContextFactory.CreateDbContextAsync();
-        var (message, newList) = await DeleteTaskCommand.ExecuteAsync(entry.Id, SelectedList);
+        var command = new DeleteTaskCommand(entry.Id, _selectedList.Id, _selectedList.VersionId);
+        var (message, newList) = await DeleteTaskHandler.HandleAsync(command);
         NotificationService.Show(message);
-        await LoadListsAsync(preferredSelectedId: newList?.Id ?? SelectedList.Id);
+        await LoadListsAsync(preferredSelectedId: newList?.Id ?? _selectedList.Id);
     }
     private async Task RefreshUserAsync()
     {
@@ -130,15 +130,15 @@
         
         var fetchedLists = await dbContext.GetListsByUserIdAsync(_currentUser.Id);
         
-        ListNames = [Todo.TodoList.None, ..fetchedLists];
+        _listNames = [Todo.TodoList.None, ..fetchedLists];
 
         if (preferredSelectedId.HasValue)
         {
-            SelectedList = ListNames.FirstOrDefault(l => l.Id == preferredSelectedId.Value) ?? Todo.TodoList.None;
+            _selectedList = _listNames.FirstOrDefault(l => l.Id == preferredSelectedId.Value) ?? Todo.TodoList.None;
         }
         else if (selectDefault)
         {
-            SelectedList = ListNames.Where(l => l.Id != Todo.TodoList.None.Id)
+            _selectedList = _listNames.Where(l => l.Id != Todo.TodoList.None.Id)
                                     .OrderByDescending(l => l.LastModified)
                                     .FirstOrDefault() ?? Todo.TodoList.None;
         }
@@ -147,7 +147,7 @@
 
     private void OnListSelected(Todo.TodoList newList)
     {
-        SelectedList = newList;
+        _selectedList = newList;
         StateHasChanged();
     }
 
@@ -164,52 +164,63 @@
                 CancelButtonText = "No" 
             });
         if (!confirmData.HasValue || !confirmData.Value) return;
-
-        var message = await DeleteListCommand.ExecuteAsync(SelectedList.Id, _currentUser.Id);
+        var command = new DeleteListCommand(_selectedList.Id, _currentUser.Id);
+        var message = await DeleteListHandler.HandleAsync(command);
         NotificationService.Show(message);
 
         await LoadListsAsync(selectDefault: true);
     }
     private async Task CreateListAsync()
     {
-        var result = await DialogService.OpenAsync<ListCreationDialog>("Create List");
-        if (result is not CreateList.Model model) return;
+        var parameters = new Dictionary<string, object?> { [nameof(ListCreationDialog.UserId)] = _currentUser.Id };
+        var result = await DialogService.OpenAsync<ListCreationDialog>("Create List", parameters);
+        if (result is not CreateListCommand command) return;
 
-        var message = await CreateListCommand.ExecuteAsync(_currentUser.Id, model);
+        var message = await CreateListHandler.HandleAsync(command);
         NotificationService.Show(message);
 
         await LoadListsAsync(selectDefault: true);
     }
-    private async Task AddTaskAsync()
+    private async Task CreateTaskAsync()
     {
-        var parameters = new Dictionary<string, object?> { { nameof(TaskCreationDialog.List), SelectedList } };
+        var parameters = new Dictionary<string, object?>
+        {
+            [nameof(TaskCreationDialog.ListId)] = _selectedList.Id, 
+            [nameof(TaskCreationDialog.ListVersionId)] = _selectedList.VersionId
+        };
         var result = await DialogService.OpenAsync<TaskCreationDialog>("Create Task", parameters);
-        if (result is not CreateTask.Model model) return;
+        if (result is not CreateTaskCommand command) return;
 
-        var (message, newList) = await CreateTaskCommand.ExecuteAsync(SelectedList, model);
+        var (message, newList) = await CreateTaskHandler.HandleAsync(command);
         NotificationService.Show(message);
 
-        await LoadListsAsync(preferredSelectedId: newList?.Id ?? SelectedList.Id);
+        await LoadListsAsync(preferredSelectedId: newList?.Id ?? _selectedList.Id);
     }
 
     private async Task OnToggleTask(TaskEntry entry)
     {
-        var (message, newList) = await ToggleTaskCommand.ExecuteAsync(SelectedList, entry, _currentUser);
+        var command = new ToggleTaskCommand(entry.Id, _selectedList.Id, _selectedList.VersionId);
+        var (message, newList) = await ToggleTaskHandler.HandleAsync(command);
         NotificationService.Show(message, duration: RadzenNotificationConstants.ShortDuration);
 
-        await LoadListsAsync(preferredSelectedId: newList?.Id ?? SelectedList.Id);
+        await LoadListsAsync(preferredSelectedId: newList?.Id ?? _selectedList.Id);
     }
 
     private async Task OnSettingsClicked(TaskEntry entry)
     {
-        var parameters = new Dictionary<string, object?> {  [nameof(TaskUpdateDialog.OldEntry)] = entry };
+        var parameters = new Dictionary<string, object?>
+        {
+            [nameof(TaskUpdateDialog.OldEntry)] = entry,
+            [nameof(TaskUpdateDialog.ListId)] = _selectedList.Id,
+            [nameof(TaskUpdateDialog.ListVersionId)] = _selectedList.VersionId
+        };
         var result = await DialogService.OpenAsync<TaskUpdateDialog>("Update Task", parameters);
-        if (result is not UpdateTask.Model model) return;
+        if (result is not UpdateTaskCommand command) return;
 
-        var (message, newList) = await UpdateTaskCommand.ExecuteAsync(model, SelectedList, entry);
+        var (message, newList) = await UpdateTaskHandler.HandleAsync(command);
         NotificationService.Show(message);
 
-        await LoadListsAsync(preferredSelectedId: newList?.Id ?? SelectedList.Id);
+        await LoadListsAsync(preferredSelectedId: newList?.Id ?? _selectedList.Id);
     }
 
     public void Dispose()

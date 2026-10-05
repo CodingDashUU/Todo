@@ -5,12 +5,12 @@ using Framework.Identity;
 using Framework.Identity.Entities;
 using Identity;
 
-public class TodoList(Guid userId, CreateList.Model model)
+public class TodoList(Guid userId, string listName)
 {
     public Guid Id { get; init; } = Guid.CreateVersion7();
     public Guid UserId { get; init; } = userId;
     public ApplicationUser User { get; init; } = null!;
-    public string Name { get; init; } = model.ListName;
+    public string Name { get; init; } = listName;
     public List<TaskEntry> Tasks { get; init; } = [];
     public DateTimeOffset CreationDate { get; init; } = DateTimeOffset.UtcNow;
     public DateTimeOffset LastModified { get; set; } = DateTimeOffset.UtcNow;
@@ -18,13 +18,13 @@ public class TodoList(Guid userId, CreateList.Model model)
     public uint RowVersion { get; init; }
 
     public override string ToString() => Name;
-    public TodoList() : this(Guid.Empty, new CreateList.Model()) {}
+    public TodoList() : this(Guid.Empty, string.Empty) { }
     public static readonly TodoList None = new()
     {
         Id = Guid.Empty,
         Name = "None",
         VersionId = Guid.Empty,
         Tasks = []
-    }; 
+    };
     public void ChangeVersionId() => VersionId = Guid.CreateVersion7();
 }

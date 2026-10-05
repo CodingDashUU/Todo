@@ -1,20 +1,21 @@
-﻿@using Washu.Framework.Extensions
+﻿@using FluentValidation
+@using Washu.Framework.Extensions
 @using Washu.Framework.Identity
 @using Washu.Todo.Commands
 @inject DialogService DialogService
 @inject UserTimeZoneProvider TimeZoneProvider
 <AppForm
-    Model="Model"
-    Validator="Validator"
+    Model="_model"
+    Validator="_validator"
     HandleValidSubmit="CloseDialog"
     >
     <RadzenFormField Text="Task Name">
-        <RadzenTextBox @bind-Value="Model.TaskName"/>
+        <RadzenTextBox @bind-Value="_model.TaskName"/>
     </RadzenFormField>
     <RadzenFormField Text="Goal Date">
         <RadzenDatePicker
             TValue="DateTimeOffset"
-            @bind-Value="Model.GoalDate"
+            @bind-Value="_model.GoalDate"
             ShowTime
             Min="DateTimeOffset.UtcNow.AddMinutes(5).ToTimeZone(TimeZoneProvider.TimeZoneInfo).DateTime"
             Max="DateTimeOffset.UtcNow.AddYears(50).ToTimeZone(TimeZoneProvider.TimeZoneInfo).DateTime"/>
@@ -23,18 +24,32 @@
 
 
 @code {
-    private CreateTask.Model Model { get; } = new();
-    [Parameter] public required Todo.TodoList List { get; set; }
-    private CreateTask.Validator Validator { get; set; } = null!;
-
+    private readonly Model _model = new();
+    private readonly Validator _validator = new();
+    [Parameter] public required Guid ListId { get; set; }
+    [Parameter] public required Guid ListVersionId { get; set; }
     protected override void OnInitialized()
     {
-        Model.GoalDate = DateTimeOffset.UtcNow.AddHours(1).ToTimeZone(TimeZoneProvider.TimeZoneInfo);
-        Validator = new CreateTask.Validator(List);
+        _model.GoalDate = DateTimeOffset.UtcNow.AddHours(1).ToTimeZone(TimeZoneProvider.TimeZoneInfo);
     }
-    private Task CloseDialog()
+    private void CloseDialog()
     {
-        DialogService.Close(Model);
-        return Task.CompletedTask;
+        var command = new CreateTaskCommand(ListId, ListVersionId, _model.TaskName, _model.GoalDate);
+        DialogService.Close(command);
+    }
+    private class Model
+    {
+        public string TaskName { get; set; } = string.Empty;
+        public DateTimeOffset GoalDate { get; set; }
+    }
+    private class Validator : AbstractValidator<Model>
+    {
+        public Validator()
+        {
+            RuleFor(x => x.TaskName)
+                .SetValidator(new TodoValidators.TaskName());
+            RuleFor(x => x.GoalDate)
+                .SetValidator(new TodoValidators.GoalDate());
+        }
     }
 }

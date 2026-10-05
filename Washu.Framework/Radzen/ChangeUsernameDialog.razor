@@ -34,10 +34,9 @@
         Validator = new(OldUsername);
     }
 
-    private Task CloseDialog()
+    private void CloseDialog()
     {
         DialogService.Close(Model);
-        return Task.CompletedTask;
     }
     public class ChangeUsernameModel
     {

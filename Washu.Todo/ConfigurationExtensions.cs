@@ -6,14 +6,14 @@ public static class ConfigurationExtensions
 {
     extension(IServiceCollection services)
     {
-        public IServiceCollection AddTodoCommands() 
+        public IServiceCollection AddTodoCommands()
         {
-            services.AddScoped<CreateList.Command>();
-            services.AddScoped<CreateTask.Command>();
-            services.AddScoped<ToggleTask.Command>();
-            services.AddScoped<UpdateTask.Command>();
-            services.AddScoped<DeleteTask.Command>();
-            services.AddScoped<DeleteList.Command>();
+            services.AddScoped<CreateListHandler>();
+            services.AddScoped<CreateTaskHandler>();
+            services.AddScoped<ToggleTaskHandler>();
+            services.AddScoped<UpdateTaskHandler>();
+            services.AddScoped<DeleteTaskHandler>();
+            services.AddScoped<DeleteListHandler>();
             return services;
         }
     }

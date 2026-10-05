@@ -1,44 +1,66 @@
-﻿@using Washu.Framework.Extensions
+﻿@using FluentValidation
+@using Washu.Framework.Extensions
 @using Washu.Framework.Identity
 @using Washu.Todo.Commands
 @inject UserTimeZoneProvider TimeZoneProvider
 @inject DialogService DialogService
 <AppForm
-    Model="Model"
-    Validator="Validator"
-    SubmitButtonConfig="SubmitButtonConfig"
+    Model="_model"
+    Validator="_validator"
+    SubmitButtonConfig="_submitButtonConfig"
     HandleValidSubmit="CloseDialog"
     >
     <RadzenFormField Text="New Task Name">
-        <RadzenTextBox @bind-Value="Model.NewTaskName"/>
+        <RadzenTextBox @bind-Value="_model.NewTaskName"/>
     </RadzenFormField>
     <RadzenFormField Text="New Goal Date">
         <RadzenDatePicker
             TValue="DateTimeOffset"
-            @bind-Value="Model.NewGoalDate"
+            @bind-Value="_model.NewGoalDate"
             ShowTime
             Min="DateTimeOffset.UtcNow.AddMinutes(5).ToTimeZone(TimeZoneProvider.TimeZoneInfo).DateTime"
             Max="DateTimeOffset.UtcNow.AddYears(50).ToTimeZone(TimeZoneProvider.TimeZoneInfo).DateTime"/>
     </RadzenFormField>
 </AppForm>
 @code {
-    public UpdateTask.Model Model { get; } = new();
-    [Parameter] public required TaskEntry OldEntry { get; set; }
-    public UpdateTask.Validator Validator { get; set; }= null!;
-
-    public SubmitButtonConfig SubmitButtonConfig { get; set; } = new()
+    private readonly Model _model = new();
+    private Validator _validator = null!;
+    private readonly SubmitButtonConfig _submitButtonConfig = new()
     {
         ButtonText = "Update Task"
     };
+    [Parameter] public required TaskEntry OldEntry { get; set; }
+    [Parameter] public required Guid ListId { get; set; }
+    [Parameter] public required Guid ListVersionId { get; set; }
+   
     protected override void OnInitialized()
     {
-        Model.NewGoalDate = OldEntry.GoalDate.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
-        Model.NewTaskName = OldEntry.Name;
-        Validator = new UpdateTask.Validator(OldEntry);
+        _model.NewGoalDate = OldEntry.GoalDate.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
+        _model.NewTaskName = OldEntry.Name;
+        _validator = new Validator(OldEntry);
     }
-    private Task CloseDialog()
+    private void CloseDialog()
     {
-        DialogService.Close(Model);
-        return Task.CompletedTask;
+        var command = new UpdateTaskCommand(OldEntry.Id, _model.NewTaskName, _model.NewGoalDate, ListId, ListVersionId);
+        DialogService.Close(command);
+    }
+
+    private class Model
+    {
+        public string NewTaskName { get; set; } = string.Empty;
+        public DateTimeOffset NewGoalDate { get; set; }
+    }
+    private class Validator : AbstractValidator<Model>
+    {
+        public Validator(TaskEntry oldEntry)
+        {
+            RuleFor(m => m.NewTaskName)
+                .SetValidator(new TodoValidators.TaskName())
+                .Unless(m => oldEntry.Name == m.NewTaskName);
+            RuleFor(m => m.NewGoalDate)
+                .SetValidator(new TodoValidators.GoalDate())
+                .Unless(m => oldEntry.GoalDate.ToUniversalTime() == m.NewGoalDate.ToUniversalTime());
+        }
+
     }
 }

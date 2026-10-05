@@ -5,73 +5,56 @@ using Framework.Notifications;
 using Identity;
 using Microsoft.EntityFrameworkCore;
 
-public static class UpdateTask
-{
-    public class Model
-    {
-        public string NewTaskName { get; set; } = string.Empty;
-        public DateTimeOffset NewGoalDate { get; set; }
-    }
+public sealed record UpdateTaskCommand(Guid TaskId, string NewTaskName, DateTimeOffset NewGoalDate, Guid ListId, Guid ListVersionId);
 
-    public class Validator : AbstractValidator<Model>
+public sealed class UpdateTaskHandler(IDbContextFactory<TodoDbContext> factory)
+{
+    public async Task<(Message, TodoList?)> HandleAsync(UpdateTaskCommand command)
     {
-        public Validator(TaskEntry oldEntry)
+        await using var dbContext = await factory.CreateDbContextAsync();
+        var list = await dbContext.GetListAsync(command.ListId);
+        if (list is null) return (Message.Error(
+            title: "Task Modification Error",
+            details: "List does not exist"), null);
+        if (list.VersionId != command.ListVersionId)
+            return (Message.Error("Task Update Error", "Your todo list was already modified, please try again"), null);
+        var item = list.Tasks.SingleOrDefault(t => t.Id == command.TaskId);
+        if (item is null) return (Message.Error(
+            title: "Task Modification Error",
+            details: "Task does not exist"), null);
+        var taskNameChanged = command.NewTaskName != item.Name;
+        var goalDateChanged = command.NewGoalDate != item.GoalDate;
+        if (taskNameChanged)
         {
-            RuleFor(m => m.NewTaskName)
-                .SetValidator(new TodoValidators.TaskName())
-                .Unless(m => oldEntry.Name == m.NewTaskName);
-            RuleFor(m => m.NewGoalDate)
-                .SetValidator(new TodoValidators.GoalDate())
-                .Unless(m => oldEntry.GoalDate.ToUniversalTime() == m.NewGoalDate.ToUniversalTime());
+            if (list.Tasks.Any(x => x.Name == command.NewTaskName))
+                return (Message.Error(
+                        title: "Task Modification Error",
+                        details: "Task with the provided task name already exists"),
+                    null);
+            item.Name = command.NewTaskName;
         }
-            
-    }
-        public class Command(IDbContextFactory<TodoDbContext> factory)
-    {
-        public async Task<(Message, TodoList?)> ExecuteAsync(Model model, TodoList selectedList, TaskEntry entry)
+        if (goalDateChanged) item.ChangeGoalDate(command.NewGoalDate);
+        if (taskNameChanged || goalDateChanged)
         {
-            await using var dbContext = await factory.CreateDbContextAsync();
-            var list = await dbContext.GetListAsync(selectedList.Id);
-            if (list is null) return (Message.Error(
-                title: "Task Modification Error", 
-                details: "List does not exist"), null);
-            if (list.VersionId != selectedList.VersionId) 
-                return (Message.Error("Task Update Error", "Your todo list was already modified, please try again"), null);
-            var item = list.Tasks.FirstOrDefault(t => t.Id == entry.Id);
-            if (item is null) return (Message.Error(
-                title: "Task Modification Error", 
-                details: "Task does not exist"), null);
-            var taskNameChanged = model.NewTaskName != entry.Name;
-            var goalDateChanged = model.NewGoalDate != entry.GoalDate;
-            if (taskNameChanged)
-            {
-                if (list.Tasks.Any(x => x.Name == model.NewTaskName))
-                    return (Message.Error(
-                            title: "Task Modification Error", 
-                            details: "Task with the provided task name already exists"), 
-                        null);
-                item.Name = model.NewTaskName;
-            }
-            if (goalDateChanged) item.ChangeGoalDate(model.NewGoalDate);
-            if (taskNameChanged || goalDateChanged) list.LastModified = DateTimeOffset.UtcNow;
-            else return (Message.Info(
-                    title: "Task Modification Info", 
-                    details: "Task has not been modified"), 
-                null);
+            list.LastModified = DateTimeOffset.UtcNow;
             list.ChangeVersionId();
-            dbContext.TodoLists.Update(list);
-            try
-            {
-                await dbContext.SaveChangesAsync();
-                return (Message.Success(
-                        title: "Task Modification",
-                        details: "Successfully modified the task"),
-                    list);
-            }
-            catch (Exception)
-            {
-                return (Message.Error("Task Update Error", "There was an unknown error while updating your task"), null);
-            }
+        }
+        else return (Message.Info(
+                title: "Task Modification Info",
+                details: "Task has not been modified"),
+            null);
+        dbContext.TodoLists.Update(list);
+        try
+        {
+            await dbContext.SaveChangesAsync();
+            return (Message.Success(
+                    title: "Task Modification",
+                    details: "Successfully modified the task"),
+                list);
+        }
+        catch (Exception)
+        {
+            return (Message.Error("Task Update Error", "There was an unknown error while updating your task"), null);
         }
     }
 }

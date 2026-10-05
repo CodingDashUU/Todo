@@ -4,24 +4,25 @@ using Framework.Notifications;
 using Identity;
 using Microsoft.EntityFrameworkCore;
 
-public static class DeleteList
+public sealed record DeleteListCommand(Guid ListId, Guid UserId);
+
+public sealed class DeleteListHandler(IDbContextFactory<TodoDbContext> factory)
 {
-    public class Command(IDbContextFactory<TodoDbContext> factory)
+    public async Task<Message> HandleAsync(DeleteListCommand command)
     {
-        public async Task<Message> ExecuteAsync(Guid listId, Guid userId)
+        await using var dbContext = await factory.CreateDbContextAsync();
+        try
         {
-            await using var dbContext = await factory.CreateDbContextAsync();
-            try
-            {
-                var rowsDeleted = await dbContext.TodoLists.Where(l => l.Id == listId && l.UserId == userId).ExecuteDeleteAsync();
-                if (rowsDeleted == 0) return Message.Error("List Deletion Error", "List was not found");
-            }
-            catch (Exception)
-            {
-                return Message.Error("List Deletion Error", "There was an unknown error while deleting your list");
-            }
-            return Message.Success("List Deletion Success", "Successfully deleted list");
-            
+            var rowsDeleted = await dbContext.TodoLists
+                .Where(l => l.Id == command.ListId && l.UserId == command.UserId)
+                .ExecuteDeleteAsync();
+            return rowsDeleted == 0
+                ? Message.Error("List Deletion Error", "List was not found")
+                : Message.Success("List Deletion Success", "Successfully deleted list");
+        }
+        catch (Exception)
+        {
+            return Message.Error("List Deletion Error", "There was an unknown error while deleting your list");
         }
     }
 }
