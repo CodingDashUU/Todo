@@ -1,7 +1,7 @@
 @using FluentValidation
 @inject DialogService DialogService
 <AppForm
-    Model="Model"
+    Model="_model"
     Validator="Validator"
     HandleValidSubmit="CloseDialog"
     SubmitButtonConfig="DeleteAccountButtonConfig"
@@ -11,14 +11,15 @@
             <RadzenIcon Icon="@MaterialIcons.Email"/>
         </Start>
         <ChildContent>
-            <RadzenTextBox @bind-Value="@Model.Email" MaxLength="255"/>
+            <RadzenTextBox @bind-Value="@_model.Email" MaxLength="255"/>
         </ChildContent>
     </RadzenFormField>
 </AppForm>
 
 @code {
-    ConfirmAccountDeletionModel Model = new();
-    ConfirmAccountDeletionValidator Validator = new(string.Empty);
+    private Model _model = new();
+    ConfirmAccountDeletionValidator Validator => new(Email);
+    [Parameter] public required Guid UserId { get; set; }
     [Parameter] public required string Email { get; set; }
 
     public SubmitButtonConfig DeleteAccountButtonConfig { get; set; } = new()
@@ -27,22 +28,18 @@
         ButtonStyle = ButtonStyle.Danger,
         ButtonIcon = MaterialIcons.Delete
     };
-    protected override void OnInitialized()
-    {
-        base.OnInitialized();
-        Validator = new(Email);
-    }
 
     private void CloseDialog()
     {
-        DialogService.Close(Model);
+        var command = new DeleteUserCommand(UserId);
+        DialogService.Close(command);
     }
-    public class ConfirmAccountDeletionModel
+    private class Model
     {
         public string Email { get; set; } = "";
     }
 
-    class ConfirmAccountDeletionValidator : AbstractValidator<ConfirmAccountDeletionModel>
+    private class ConfirmAccountDeletionValidator : AbstractValidator<Model>
     {
         public ConfirmAccountDeletionValidator(string email)
         {

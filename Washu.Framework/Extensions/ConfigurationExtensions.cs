@@ -43,13 +43,12 @@ public static class ConfigurationExtensions
                 options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
                 options.AddPolicy(RateLimiterPolicy.BlazorHandshakeRateLimiter, context =>
                 {
-
                     if (context.Connection.RemoteIpAddress?.ToString() is { } ipAddress)
                         return RateLimitPartition.GetSlidingWindowLimiter(
                             partitionKey: $"ip:{ipAddress}",
                             factory: _ => new SlidingWindowRateLimiterOptions
                             {
-                                PermitLimit = 45,
+                                PermitLimit = 200,
                                 Window = TimeSpan.FromMinutes(1),
                                 SegmentsPerWindow = 6,
                                 QueueLimit = 0
@@ -58,7 +57,7 @@ public static class ConfigurationExtensions
                         partitionKey: "anonymous",
                         factory: _ => new SlidingWindowRateLimiterOptions
                         {
-                            PermitLimit = 30,
+                            PermitLimit = 50,
                             Window = TimeSpan.FromMinutes(1),
                             SegmentsPerWindow = 4,
                             QueueLimit = 0
@@ -125,6 +124,7 @@ public static class ConfigurationExtensions
             services.AddSingleton<ApplicationUserStore>();
             services.AddScoped<ApplicationRoleManager>();
             services.AddScoped<ChangeUsernameHandler>();
+            services.AddScoped<DeleteUserHandler>();
             services.AddDbContextFactory<ApplicationDbContext, TDbContext>(options =>
                 options.UseNpgsql(
                     connectionString,
