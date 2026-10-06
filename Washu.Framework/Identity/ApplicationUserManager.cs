@@ -18,25 +18,6 @@ public sealed class ApplicationUserManager(IDbContextFactory<ApplicationDbContex
         await using var dbContext = await factory.CreateDbContextAsync(ct);
         return await dbContext.Users.AnyAsync(u => u.Username == username, ct);
     }
-    public async Task<Message> ChangeUsernameAsync(string oldName, string newName, Guid userId, CancellationToken ct = default)
-    {
-        if (newName == oldName) return Message.Info("Identity Info", "Username has not been modified");
-        await using var dbContext = await factory.CreateDbContextAsync(ct);
-        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
-        if (user is null) return Message.Error("Identity Error", "Account was not found");
-        if (await dbContext.Users.AnyAsync(u => u.Username == newName && u.Id != userId, ct))
-            return Message.Error("Identity Error", "Username provided is already taken");
-        user.Username = newName;
-        try
-        {
-            await dbContext.SaveChangesAsync(ct);
-        }
-        catch (DbUpdateException ex) when (ex.InnerException is PostgresException{ SqlState: PostgresErrorCodes.UniqueViolation })
-        {
-            return Message.Error("Identity Error","That username or sign-in identity is already in use.");
-        }
-        return Message.Success("Identity Success", "Successfully updated username");
-    }
     public async Task<Message> DeleteByIdAsync(Guid userId, CancellationToken ct = default)
     {
         await using var dbContext = await factory.CreateDbContextAsync(ct);

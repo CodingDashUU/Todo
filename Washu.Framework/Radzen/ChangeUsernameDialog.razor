@@ -1,7 +1,7 @@
 @using FluentValidation
 @inject DialogService DialogService
 <AppForm
-    Model="Model"
+    Model="_model"
     Validator="Validator"
     SubmitButtonConfig="ChangeUsernameButtonConfig"
     HandleValidSubmit="CloseDialog"
@@ -11,16 +11,17 @@
             <RadzenIcon Icon="@MaterialIcons.AccountCircle"/>
         </Start>
         <ChildContent>
-            <RadzenTextBox @bind-Value="@Model.Username" MaxLength="Username.Rules.MaxUsernameLength"/>
+            <RadzenTextBox @bind-Value="@_model.Username" MaxLength="Username.Rules.MaxUsernameLength"/>
         </ChildContent>
     </RadzenFormField>
 </AppForm>
 
 @code {
-    ChangeUsernameModel Model = new();
-    ChangeUsernameValidator Validator = new(string.Empty);
+    private ChangeUsernameModel _model = new();
+    private ChangeUsernameValidator Validator => new(OldUsername);
     [Parameter] public required string OldUsername { get; set; }
-    private bool UsernameChanged => Model.Username != OldUsername;
+    [Parameter] public required Guid UserId { get; set; }
+    private bool UsernameChanged => _model.Username != OldUsername;
     private SubmitButtonConfig ChangeUsernameButtonConfig => new()
     {
         ButtonDisabled = !UsernameChanged,
@@ -30,20 +31,20 @@
     protected override void OnInitialized()
     {
         base.OnInitialized();
-        Model.Username = OldUsername;
-        Validator = new(OldUsername);
+        _model.Username = OldUsername;
     }
 
     private void CloseDialog()
     {
-        DialogService.Close(Model);
+        var command = new ChangeUsernameCommand(UserId, _model.Username);
+        DialogService.Close(command);
     }
-    public class ChangeUsernameModel
+    private class ChangeUsernameModel
     {
         public string Username { get; set; } = string.Empty;
     }
 
-    class ChangeUsernameValidator : AbstractValidator<ChangeUsernameModel>
+    private class ChangeUsernameValidator : AbstractValidator<ChangeUsernameModel>
     {
         public ChangeUsernameValidator(string username)
         {

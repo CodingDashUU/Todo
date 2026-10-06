@@ -2,6 +2,7 @@
 @using Washu.Framework.Extensions
 @using Washu.Framework.Identity.Entities
 @inject ApplicationUserManager UserManager
+@inject ChangeUsernameHandler ChangeUsernameHandler
 @inject NotificationService NotificationService
 @inject NavigationManager NavManager
 @inject ApplicationUserStore UserStore
@@ -39,11 +40,12 @@
     {
         var parameters = new Dictionary<string, object?>
         {
-            ["OldUsername"] = User.Username
+            [nameof(ChangeUsernameDialog.OldUsername)] = User.Username,
+            [nameof(ChangeUsernameDialog.UserId)] = User.Id
         };
         var data = await DialogService.OpenAsync<ChangeUsernameDialog>("Change Username", parameters);
-        if (data is not ChangeUsernameDialog.ChangeUsernameModel model) return;
-        var message = await UserManager.ChangeUsernameAsync(User.Username, model.Username, User.Id);
+        if (data is not ChangeUsernameCommand command) return;
+        var message = await ChangeUsernameHandler.HandleAsync(command);
         NotificationService.Show(message);
         UserStore.RemoveUser(User.Id);
         await RefreshUserAsync();

@@ -124,6 +124,7 @@ public static class ConfigurationExtensions
             services.AddScoped<ApplicationUserManager>();
             services.AddSingleton<ApplicationUserStore>();
             services.AddScoped<ApplicationRoleManager>();
+            services.AddScoped<ChangeUsernameHandler>();
             services.AddDbContextFactory<ApplicationDbContext, TDbContext>(options =>
                 options.UseNpgsql(
                     connectionString,
