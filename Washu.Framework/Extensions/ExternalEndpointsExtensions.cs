@@ -31,14 +31,14 @@ public static class ExternalEndpointsExtensions
 
     private static async Task<IResult> ChallengeExternal(
         HttpContext context, 
-        ApplicationUserManager userManager,
+        FindUserHandler handler,
         ApplicationSignInManager signInManager,
         [FromQuery] bool persistCookie, 
         [FromQuery] string returnUrl = "/")
     {
         if (context.User.Identity is { IsAuthenticated: true }
             && context.User.FindUserId() is { } userGuid
-            && await userManager.FindByIdAsync(userGuid) is not null)
+            && await handler.HandleAsync(new FindUserQuery(userGuid)) is not null)
             return TypedResults.Redirect(SafeReturnUrl(returnUrl));
         var callbackUrl = QueryHelpers.AddQueryString(
             IdentityRoutes.ExternalCallback,
@@ -59,7 +59,6 @@ public static class ExternalEndpointsExtensions
 
     private static async Task<IResult> ExternalCallback (
         ApplicationSignInManager signInManager,
-        ApplicationUserManager userManager,
         IDbContextFactory<ApplicationDbContext> dbContextFactory,
         [FromQuery] bool persistCookie, 
         MessageStore store,
@@ -112,7 +111,7 @@ public static class ExternalEndpointsExtensions
             return TypedResults.Redirect(url);
         }
 
-        var username = await GenerateValidUsernameAsync(userManager, email);
+        var username = await GenerateValidUsernameAsync(dbContextFactory, email);
         var user = new ApplicationUser(username, email, info.ProviderKey);
         await dbContext.Users.AddAsync(user);
         var role = await dbContext.Roles
@@ -172,7 +171,7 @@ public static class ExternalEndpointsExtensions
             : ApplicationRoutes.Home;
     
     private static async Task<string> GenerateValidUsernameAsync(
-        ApplicationUserManager userManager, 
+        IDbContextFactory<ApplicationDbContext> dbContextFactory,
         string email) 
     {
         var raw = email.Split('@')[0];
@@ -188,7 +187,8 @@ public static class ExternalEndpointsExtensions
         if (clean.Length > maxBaseLength) clean = clean[..maxBaseLength];
 
         var candidate = clean;
-        while (await userManager.DoesUserExists(candidate)) candidate = $"{clean}_{Random.Shared.Next(100, 9999)}";
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        while (await dbContext.Users.AnyAsync(u => u.Username == candidate)) candidate = $"{clean}_{Random.Shared.Next(100, 9999)}";
 
         return candidate;
     }

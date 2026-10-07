@@ -4,17 +4,14 @@ using Entities;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 
-public sealed class ApplicationUserStore(IMemoryCache cache, IServiceScopeFactory scopeFactory)
+public sealed class ApplicationUserStore(IMemoryCache cache, FindUserHandler handler)
 {
     public event Func<Task>? OnUserChanged;
     public async Task<ApplicationUser?> GetOrAddUserAsync(Guid userId) =>
         await cache.GetOrCreateAsync(userId, async entry =>
         {
-            await using var scope = scopeFactory.CreateAsyncScope();
-            var manager = scope.ServiceProvider.GetRequiredService<ApplicationUserManager>();
-            var user = await manager.FindByIdAsync(userId);
             entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5);
-            return user;
+            return await handler.HandleAsync(new FindUserQuery(userId));
         });
 
     public void RemoveUser(Guid userId) => cache.Remove(userId);

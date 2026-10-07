@@ -120,11 +120,11 @@ public static class ConfigurationExtensions
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
             services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, ApplicationClaimsPrincipalFactory>();
             services.AddScoped<ApplicationSignInManager>();
-            services.AddScoped<ApplicationUserManager>();
-            services.AddSingleton<ApplicationUserStore>();
+            services.AddScoped<ApplicationUserStore>();
             services.AddScoped<ApplicationRoleManager>();
             services.AddScoped<ChangeUsernameHandler>();
             services.AddScoped<DeleteUserHandler>();
+            services.AddScoped<FindUserHandler>();
             services.AddDbContextFactory<ApplicationDbContext, TDbContext>(options =>
                 options.UseNpgsql(
                     connectionString,
