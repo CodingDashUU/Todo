@@ -121,7 +121,7 @@ public static class ConfigurationExtensions
             services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, ApplicationClaimsPrincipalFactory>();
             services.AddScoped<ApplicationSignInManager>();
             services.AddScoped<ApplicationUserStore>();
-            services.AddScoped<ApplicationRoleManager>();
+            services.AddScoped<AddRolesHandler>();
             services.AddScoped<ChangeUsernameHandler>();
             services.AddScoped<DeleteUserHandler>();
             services.AddScoped<FindUserHandler>();
@@ -282,8 +282,8 @@ public static class ConfigurationExtensions
         public async Task SeedRolesAsync(List<string> roles)
         {
             await using var serviceScope = app.Services.CreateAsyncScope();
-            var roleManager = serviceScope.ServiceProvider.GetRequiredService<ApplicationRoleManager>();
-            await roleManager.AddRolesAsync(roles);
+            var addRolesHandler = serviceScope.ServiceProvider.GetRequiredService<AddRolesHandler>();
+            await addRolesHandler.HandleAsync(new AddRolesCommand(roles));
         }
         public void UseWashuFramework()
         {
