@@ -180,15 +180,15 @@ public static class ExternalEndpointsExtensions
         string email) 
     {
         var raw = email.Split('@')[0];
-        var clean = new string(raw.Where(Username.Rules.ValidCharacters.Contains).ToArray());
+        var clean = new string(raw.Where(UsernameRules.ValidCharacters.Contains).ToArray());
         clean = clean.TrimStart('_', '-');
         
         if (string.IsNullOrEmpty(clean) || !char.IsAsciiLetter(clean[0])) clean = $"u_{clean}".TrimEnd('_', '-');
         
-        if (clean.Length < Username.Rules.MinUsernameLength)
+        if (clean.Length < UsernameRules.MinUsernameLength)
             clean = $"{clean}_{Random.Shared.Next(100, 999)}";
         
-        const int maxBaseLength = Username.Rules.MaxUsernameLength - 5;
+        const int maxBaseLength = UsernameRules.MaxUsernameLength - 5;
         if (clean.Length > maxBaseLength) clean = clean[..maxBaseLength];
 
         var candidate = clean;

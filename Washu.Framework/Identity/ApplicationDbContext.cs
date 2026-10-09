@@ -36,7 +36,7 @@ public class ApplicationDbContext(DbContextOptions options)
             entity.ToTable(t =>
             {
                 t.HasMaxLengthCheckConstraint(p => p.Username, 128);
-                t.HasAllowedCharactersCheckConstraint(p => p.Username, Username.Rules.ValidCharacters);
+                t.HasAllowedCharactersCheckConstraint(p => p.Username, UsernameRules.ValidCharacters);
                 t.HasAllowedFirstCharacterCheckConstraint(p => p.Username, Characters.Letters);
                 t.HasMaxLengthCheckConstraint(p => p.Email, 255);
                 t.HasEmailCheckConstraint(p => p.Email);

@@ -11,7 +11,7 @@
             <RadzenIcon Icon="@MaterialIcons.AccountCircle"/>
         </Start>
         <ChildContent>
-            <RadzenTextBox @bind-Value="@_model.Username" MaxLength="Username.Rules.MaxUsernameLength"/>
+            <RadzenTextBox @bind-Value="@_model.Username" MaxLength="UsernameRules.MaxUsernameLength"/>
         </ChildContent>
     </RadzenFormField>
 </AppForm>
@@ -49,7 +49,7 @@
         public ChangeUsernameValidator(string username)
         {
             RuleFor(x => x.Username)
-                .SetValidator(new Username.Validator())
+                .SetValidator(new UsernameValidator())
                 .Must(x => !x.Equals(username, StringComparison.InvariantCultureIgnoreCase)).WithMessage("New username cannot be equivalent to the old one");
         }
     }
