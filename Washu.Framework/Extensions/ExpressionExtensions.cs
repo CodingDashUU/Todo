@@ -7,13 +7,16 @@ public static class ExpressionExtensions
 {
     extension<TIn, TOut>(Expression<Func<TIn, TOut>> property)
     {
-        public PropertyInfo GetPropertyInfo() 
+        public PropertyInfo PropertyInfo
         {
-            var body = property.Body;
-            if (body is UnaryExpression { NodeType: ExpressionType.Convert } unary) body = unary.Operand;
-            return body is not MemberExpression { Member: PropertyInfo propertyInfo } 
-                ? throw new ArgumentException("The expression must resolve directly to a property", nameof(property)) 
-                : propertyInfo;   
-        }
+            get
+            {
+                var body = property.Body;
+                if (body is UnaryExpression { NodeType: ExpressionType.Convert } unary) body = unary.Operand;
+                return body is not MemberExpression { Member: PropertyInfo propertyInfo } 
+                    ? throw new ArgumentException("The expression must resolve directly to a property", nameof(property)) 
+                    : propertyInfo;
+            }
+        } 
     }
 }

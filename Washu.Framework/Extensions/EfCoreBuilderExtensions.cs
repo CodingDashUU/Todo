@@ -14,7 +14,7 @@ public static class EfCoreBuilderExtensions
     {
         public void HasMaxLengthCheckConstraint(Expression<Func<TEntity, string>> property, ushort maxLength)
         {
-            var propertyName = property.GetPropertyInfo().Name;
+            var propertyName = property.PropertyInfo.Name;
             var entityName = typeof(TEntity).Name;
             entity.HasCheckConstraint(
                 $"CK_{entityName}_{propertyName}_MaxLength",
@@ -25,7 +25,7 @@ public static class EfCoreBuilderExtensions
             Expression<Func<TEntity, string>> property, 
             string allowedCharacters)
         {
-            var propertyName = property.GetPropertyInfo().Name;
+            var propertyName = property.PropertyInfo.Name;
             var entityName = typeof(TEntity).Name;
             var escapedChars = allowedCharacters.Replace("'", "''");
             entity.HasCheckConstraint(
@@ -38,7 +38,7 @@ public static class EfCoreBuilderExtensions
             Expression<Func<TEntity, string>> property,
             string allowedCharacters)
         {
-            var propertyName = property.GetPropertyInfo().Name;
+            var propertyName = property.PropertyInfo.Name;
             var entityName = typeof(TEntity).Name;
             var escapedChars = allowedCharacters.Replace("'", "''");
             entity.HasCheckConstraint(
@@ -48,7 +48,7 @@ public static class EfCoreBuilderExtensions
         }
         public void HasEmailCheckConstraint(Expression<Func<TEntity, string>> property)
         {
-            var propertyName = property.GetPropertyInfo().Name;
+            var propertyName = property.PropertyInfo.Name;
             var entityName = typeof(TEntity).Name;
             entity.HasCheckConstraint(
                 $"CK_{entityName}_{propertyName}_ValidEmail",
@@ -59,8 +59,8 @@ public static class EfCoreBuilderExtensions
         public void HasDateLessThanOrEqualToOtherDateCheckConstraint(Expression<Func<TEntity, DateTimeOffset>> firstDate,
             Expression<Func<TEntity, DateTimeOffset>> secondDate)
         {
-            var firstDateName = firstDate.GetPropertyInfo().Name;
-            var secondDateName = secondDate.GetPropertyInfo().Name;
+            var firstDateName = firstDate.PropertyInfo.Name;
+            var secondDateName = secondDate.PropertyInfo.Name;
             var entityName = typeof(TEntity).Name;
             entity.HasCheckConstraint(
                 $"CK_{entityName}_{firstDateName}_LTE_{secondDateName}", // LTE - Less Than or Equal To
@@ -70,8 +70,8 @@ public static class EfCoreBuilderExtensions
         public void HasDateLessThanOrEqualToNullableDateCheckConstraint(Expression<Func<TEntity, DateTimeOffset>> firstDate,
             Expression<Func<TEntity, DateTimeOffset?>> secondDate)
         {
-            var firstDateName = firstDate.GetPropertyInfo().Name;
-            var secondDateName = secondDate.GetPropertyInfo().Name;
+            var firstDateName = firstDate.PropertyInfo.Name;
+            var secondDateName = secondDate.PropertyInfo.Name;
             var entityName = typeof(TEntity).Name;
             entity.HasCheckConstraint(
                 $"CK_{entityName}_{firstDateName}_LTE_N_{secondDateName}", // LTE - Less Than or Equal To; N - Nullable
