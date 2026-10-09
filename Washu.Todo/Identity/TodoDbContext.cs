@@ -8,6 +8,8 @@ using Microsoft.EntityFrameworkCore;
 public class TodoDbContext(DbContextOptions<TodoDbContext> options) : ApplicationDbContext(options)
 {
     public DbSet<TodoList> TodoLists => Set<TodoList>();
+    
+    public DbSet<TaskEntry> Tasks => Set<TaskEntry>();
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);

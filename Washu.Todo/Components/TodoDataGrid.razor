@@ -207,7 +207,7 @@
 
             await using var context = await DbContextFactory.CreateDbContextAsync();
             
-            var query = context.Set<TaskEntry>()
+            var query = context.Tasks
                 .Where(e => e.TodoListId == _selectedList.Id)
                 .OrderBy(e => e.DateCreated)
                 .AsQueryable();

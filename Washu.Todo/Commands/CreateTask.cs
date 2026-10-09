@@ -17,7 +17,7 @@ public sealed class CreateTaskHandler(IDbContextFactory<TodoDbContext> dbContext
         if (list.Tasks.Any(x => x.Name == command.TaskName))
             return Message.Error("Task Creation Error", "Task with the given task name already exists");
         if (list.VersionId != command.ListVersionId) return Message.Error("Task Creation Error", "Your todo list was already modified, please try again");
-        dbContext.Set<TaskEntry>().Add(new TaskEntry(command.TaskName, command.GoalDate, Guid.CreateVersion7(), list.Id));
+        dbContext.Tasks.Add(new TaskEntry(command.TaskName, command.GoalDate, Guid.CreateVersion7(), list.Id));
         list.LastModified = DateTimeOffset.UtcNow;
         list.ChangeVersionId();
         try

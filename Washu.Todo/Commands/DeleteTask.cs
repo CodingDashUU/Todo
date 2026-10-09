@@ -16,7 +16,7 @@ public sealed class DeleteTaskHandler(IDbContextFactory<TodoDbContext> factory)
         if (list.VersionId != command.ListVersionId) return Message.Error("Task Deletion Error", "Your todo list was already modified, please try again");
         var task = list.Tasks.SingleOrDefault(t => t.Id == command.TaskId);
         if (task is null) return Message.Error("Task Deletion Error", "Task was not found");
-        dbContext.Set<TaskEntry>().Remove(task);
+        dbContext.Tasks.Remove(task);
         list.LastModified = DateTimeOffset.UtcNow;
         list.ChangeVersionId();
         try
