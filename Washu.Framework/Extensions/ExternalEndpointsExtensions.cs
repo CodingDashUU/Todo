@@ -1,20 +1,20 @@
-namespace Washu.Framework.Identity;
+namespace Washu.Framework.Extensions;
 
-using AspNetCore;
-using Blazor;
-using Entities;
-using Extensions;
+using Identity;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
-using Notifications;
 using Npgsql;
 using System.Security.Claims;
+using AspNetCore;
+using Blazor;
+using Identity.Entities;
+using Notifications;
 
 public static class ExternalEndpointsExtensions
 {
@@ -28,11 +28,9 @@ public static class ExternalEndpointsExtensions
             group.MapGet(IdentityRoutes.ExternalCallback, ExternalCallback);
         }
     }
-
     private static async Task<IResult> ChallengeExternal(
         HttpContext context, 
         FindUserHandler handler,
-        ApplicationSignInManager signInManager,
         [FromQuery] bool persistCookie, 
         [FromQuery] string returnUrl = "/")
     {
@@ -47,10 +45,10 @@ public static class ExternalEndpointsExtensions
                 ["PersistCookie"] = persistCookie.ToString(),
                 ["ReturnUrl"] = returnUrl
             });
-        var properties =
-            signInManager.ConfigureExternalAuthenticationProperties(
-                GoogleDefaults.AuthenticationScheme,
-                callbackUrl);
+        var properties = new AuthenticationProperties { RedirectUri = callbackUrl, Items =
+        {
+            ["LoginProvider"] = GoogleDefaults.AuthenticationScheme
+        } };
 
         return TypedResults.Challenge(
             properties,
@@ -58,13 +56,14 @@ public static class ExternalEndpointsExtensions
     }
 
     private static async Task<IResult> ExternalCallback (
-        ApplicationSignInManager signInManager,
+        SignInHandler signInHandler,
+        GetExternalLoginInfoHandler getExternalLoginInfoHandler,
         IDbContextFactory<ApplicationDbContext> dbContextFactory,
         [FromQuery] bool persistCookie, 
         MessageStore store,
         [FromQuery] string returnUrl)
     {
-        var info = await signInManager.GetExternalLoginInfoAsync();
+        var info = await getExternalLoginInfoHandler.HandleAsync();
         if (info is null)
         {
             var errorUrl = QueryHelpers.AddQueryString(
@@ -76,11 +75,18 @@ public static class ExternalEndpointsExtensions
                 });
             return Results.Redirect(errorUrl);
         }
-        var result = await signInManager.ExternalLoginSignInAsync(
-            info.LoginProvider,
-            info.ProviderKey, 
-            isPersistent: persistCookie);
-        if (result.Succeeded) return TypedResults.Redirect(SafeReturnUrl(returnUrl));
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+
+        var existingUser = await dbContext.Users
+            .AsNoTracking()
+            .SingleOrDefaultAsync(l => l.GoogleSubject == info.ProviderKey);
+
+        if (existingUser is not null)
+        {
+            await signInHandler.HandleAsync(new SignInCommand(existingUser, persistCookie, info.LoginProvider));
+            return TypedResults.Redirect(SafeReturnUrl(returnUrl));
+        }
+        
         var email = info.Principal.FindFirstValue(ClaimTypes.Email);
         if (email is null)
         {
@@ -96,7 +102,6 @@ public static class ExternalEndpointsExtensions
                 });
             return TypedResults.Redirect(url);
         }
-        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         if (await dbContext.Users.AnyAsync(u => u.GoogleSubject == info.ProviderKey || u.Email == email))
         {
             var id = store.Store(Message.Error("Registration Error", "This account or email is already registered. Please sign in."));
@@ -158,7 +163,7 @@ public static class ExternalEndpointsExtensions
                 });
             return TypedResults.Redirect(url);
         }
-        await signInManager.SignInAsync(user, isPersistent: persistCookie);
+        await signInHandler.HandleAsync(new SignInCommand(user, persistCookie));
             
         return TypedResults.Redirect(SafeReturnUrl(returnUrl));  
     }
