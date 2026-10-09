@@ -162,7 +162,7 @@
     private async Task FetchTargetListIdAsync()
     {
         var authState = await Provider.GetAuthenticationStateAsync();
-        if (authState.User.FindUserId() is not { } userId)
+        if (authState.User.UserId is not { } userId)
         {
             var id = Store.Store(Message.Error("Identity Error", "Please sign in before continuing"));
             var url = QueryHelpers.AddQueryString(ApplicationRoutes.SignIn, new Dictionary<string, string?>

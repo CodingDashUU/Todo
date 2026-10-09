@@ -58,7 +58,7 @@
     protected override async Task OnInitializedAsync()
     {
         var state = await Context;
-        if (state.User.FindUserId() is not {} userGuid) return;
+        if (state.User.UserId is not {} userGuid) return;
         UserId = userGuid;
         Username = (await UserStore.GetOrAddUserAsync(userGuid))?.Username ?? "User";
         SessionManager.AddSession(userGuid, SessionState.Id, () =>

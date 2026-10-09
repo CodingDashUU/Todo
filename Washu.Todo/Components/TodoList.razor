@@ -80,7 +80,7 @@
     protected override async Task OnInitializedAsync()
     {
         var principal = await Context;
-        if (principal.User.Identity is null || principal.User.FindUserId() is not { } userId)
+        if (principal.User.Identity is null || principal.User.UserId is not { } userId)
         {
             NavManager.NavigateTo(ApplicationRoutes.SignIn, forceLoad: true);
             return;

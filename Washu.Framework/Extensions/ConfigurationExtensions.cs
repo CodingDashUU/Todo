@@ -65,7 +65,7 @@ public static class ConfigurationExtensions
                 });
                 options.AddPolicy(RateLimiterPolicy.StandardRateLimiter, httpContext =>
                 {
-                    if (httpContext.User.FindUserId() is { } userId)
+                    if (httpContext.User.UserId is { } userId)
                         return RateLimitPartition.GetSlidingWindowLimiter(
                             partitionKey: $"user:{userId}",
                             factory: _ => new SlidingWindowRateLimiterOptions
@@ -184,7 +184,7 @@ public static class ConfigurationExtensions
                     options.Cookie.Name = ".Washu.Application";
                     options.Events.OnValidatePrincipal = async context =>
                     {
-                        var userId = context.Principal?.FindUserId();
+                        var userId = context.Principal?.UserId;
 
                         if (!userId.HasValue)
                         {

@@ -34,8 +34,7 @@ public static class ExternalEndpointsExtensions
         [FromQuery] bool persistCookie, 
         [FromQuery] string returnUrl = "/")
     {
-        if (context.User.Identity is { IsAuthenticated: true }
-            && context.User.FindUserId() is { } userGuid
+        if (context.User is { Identity.IsAuthenticated: true, UserId: {} userGuid}
             && await handler.HandleAsync(new FindUserQuery(userGuid)) is not null)
             return TypedResults.Redirect(SafeReturnUrl(returnUrl));
         var callbackUrl = QueryHelpers.AddQueryString(

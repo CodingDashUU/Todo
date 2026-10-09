@@ -56,7 +56,7 @@
     private async Task RefreshUserAsync()
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        if (authState.User.FindUserId() is not { } userId)
+        if (authState.User.UserId is not { } userId)
         {
             NavManager.NavigateTo(ApplicationRoutes.SignIn);
             return;
@@ -72,7 +72,7 @@
     private async Task SignOutAsync()
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        if (authState.User.FindUserId() is { } userId)
+        if (authState.User.UserId is { } userId)
         {
             await SessionManager.OnRefreshSessionAsync(userId, SessionState.Id);
         }

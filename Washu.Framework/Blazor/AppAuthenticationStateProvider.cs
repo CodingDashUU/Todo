@@ -24,7 +24,7 @@ public sealed class AppAuthenticationStateProvider(
         AuthenticationState authenticationState, CancellationToken cancellationToken)
     {
         var principal = authenticationState.User;
-        var userId = principal.FindUserId();
+        var userId = principal.UserId;
         if (!userId.HasValue) return false;
         var principalStamp = principal.FindFirstValue(_options.ClaimsIdentity.SecurityStampClaimType);
         if (!Guid.TryParse(principalStamp, out var principalStampGuid)) return false;
