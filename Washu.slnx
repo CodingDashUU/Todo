@@ -1,4 +1,5 @@
 <Solution>
+<Project Path="Washu.Framework.IntegrationTests/Washu.Framework.IntegrationTests.csproj" />
 <Project Path="Washu.Framework/Washu.Framework.csproj" />
 <Project Path="Washu.Todo/Washu.Todo.csproj" />
 </Solution>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
