@@ -15,7 +15,7 @@ public sealed class PostgreSqlFixture : IAsyncLifetime
         .WithPassword("postgres")
         .Build();
 
-    private string ConnectionString => _dbContainer.GetConnectionString();
+    public string ConnectionString => _dbContainer.GetConnectionString();
 
     private DbContextOptions<ApplicationDbContext> CreateOptions() =>
         new DbContextOptionsBuilder<ApplicationDbContext>()
