@@ -51,7 +51,12 @@
 	<s:String x:Key="/Default/Environment/Hierarchy/Build/BuildTool/CustomBuildToolPath/@EntryValue">C:\Users\washu\AppData\Local\Programs\Rider\tools\MSBuild\Current\Bin\amd64\MSBuild.exe</s:String>
 	<s:Int64 x:Key="/Default/Environment/Hierarchy/Build/BuildTool/MsbuildVersion/@EntryValue">1179648</s:Int64>
 	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=3087a333_002D1078_002D4afc_002Daeb2_002D6986f277edc7/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="CanInsertAndRetrieveApplicationUser" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
-  &lt;Project Location="/home/washu/Downloads/Washu/Washu.Framework.IntegrationTests" Presentation="&amp;lt;Washu.Framework.IntegrationTests&amp;gt;" /&gt;
+  &lt;Or&gt;
+    &lt;Project Location="/home/washu/Downloads/Washu/Washu.Framework.IntegrationTests" Presentation="&amp;lt;Washu.Framework.IntegrationTests&amp;gt;" /&gt;
+    &lt;TestAncestor&gt;
+      &lt;TestId&gt;xUnit::47775659-B4E5-B823-4414-79BF40FA4916::net10.0::Washu.Framework.UnitTests.ClaimsFactoryTests.CreateAsync_AddsCustomClaims_ToClaimsPrincipal&lt;/TestId&gt;
+    &lt;/TestAncestor&gt;
+  &lt;/Or&gt;
 &lt;/SessionState&gt;</s:String>
 	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=58c56b00_002Df81e_002D48fd_002Da74f_002Dc8e84271fcf4/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="Continuous Testing" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
   &lt;Solution /&gt;
