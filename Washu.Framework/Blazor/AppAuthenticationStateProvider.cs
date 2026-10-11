@@ -26,13 +26,12 @@ public sealed class AppAuthenticationStateProvider(
         var principal = authenticationState.User;
         var userId = principal.UserId;
         if (!userId.HasValue) return false;
-        var principalStamp = principal.FindFirstValue(_options.ClaimsIdentity.SecurityStampClaimType);
-        if (!Guid.TryParse(principalStamp, out var principalStampGuid)) return false;
+        if (principal.SecurityStamp is not { } securityStamp) return false;
         await using var scope = scopeFactory.CreateAsyncScope();
         var userStore = scope.ServiceProvider.GetRequiredService<ApplicationUserStore>();
         var user = await userStore.GetOrAddUserAsync(userId.Value);
         if (user is null) return false;
-        return principalStampGuid == user.SecurityStamp;
+        return securityStamp == user.SecurityStamp;
     }
     
 }

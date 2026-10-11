@@ -13,8 +13,7 @@ public class ClaimsFactoryTests
     [Fact]
     public async Task CreateAsync_AddsCustomClaims_ToClaimsPrincipal()
     {
-        var options = Options.Create(new IdentityOptions());
-        var factory = new ApplicationClaimsPrincipalFactory(options);
+        var factory = new ApplicationClaimsPrincipalFactory();
 
         var user = new ApplicationUser(
             $"User_{Guid.CreateVersion7():N}", 
@@ -25,7 +24,6 @@ public class ClaimsFactoryTests
         
         principal.Should().NotBeNull();
         principal.UserId.Should().Be(user.Id);
-        principal.FindFirst(
-            options.Value.ClaimsIdentity.SecurityStampClaimType)?.Value.Should().Be(user.SecurityStamp.ToString());
+        principal.SecurityStamp.Should().Be(user.SecurityStamp.ToString());
     }
 }

@@ -195,17 +195,11 @@ public static class ConfigurationExtensions
                         }
                         var userStore = context.HttpContext.RequestServices
                             .GetRequiredService<ApplicationUserStore>();
-                        var optionsAccessor = context.HttpContext.RequestServices.GetRequiredService<IOptions<IdentityOptions>>();
                         var user = await userStore.GetOrAddUserAsync(userId.Value);
-                        var stampType = optionsAccessor.Value.ClaimsIdentity.SecurityStampClaimType;
                         if (context.Principal is null)
                             throw new InvalidOperationException("Claims Principal cannot be null");
-                        var ticketStamp = context.Principal
-                            .FindFirstValue(stampType);
-
                         if (user is null ||
-                            !Guid.TryParse(ticketStamp, out var stamp) ||
-                            stamp != user.SecurityStamp)
+                            context.Principal.SecurityStamp is null)
                         {
                             context.RejectPrincipal();
                             await context.HttpContext.SignOutAsync(

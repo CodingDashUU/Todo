@@ -6,8 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.Security.Claims;
 
-public sealed class ApplicationClaimsPrincipalFactory(
-    IOptions<IdentityOptions> optionsAccessor) 
+public sealed class ApplicationClaimsPrincipalFactory 
     : IUserClaimsPrincipalFactory<ApplicationUser>
 {
     public Task<ClaimsPrincipal> CreateAsync(ApplicationUser user)
@@ -16,7 +15,7 @@ public sealed class ApplicationClaimsPrincipalFactory(
 
         identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()));
         identity.AddClaim(new Claim(
-            optionsAccessor.Value.ClaimsIdentity.SecurityStampClaimType, 
+            "SecurityStamp", 
             user.SecurityStamp.ToString()));
         return Task.FromResult(new ClaimsPrincipal(identity));
     }

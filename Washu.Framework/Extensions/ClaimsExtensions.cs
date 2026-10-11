@@ -14,5 +14,13 @@ public static class ClaimsExtensions
                 return userGuid;
             }
         }
+        public Guid? SecurityStamp {
+            get
+            {
+                if (claimsPrincipal.FindFirstValue("SecurityStamp") is not { } securityStamp
+                    || !Guid.TryParse(securityStamp, out var securityStampGuid)) return null;
+                return securityStampGuid;
+            }
+        }
     }
 }
