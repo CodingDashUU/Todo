@@ -24,10 +24,10 @@ public sealed class ApplicationUserTests(PostgreSqlFixture fixture)
         await context.SaveChangesAsync();
 
         var retrieved = await context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == user.Id);
-        retrieved.Should().NotBeNull();
-        retrieved.Username.Should().Be(username);
-        retrieved.Email.Should().Be(email);
-        retrieved.GoogleSubject.Should().Be(googleSubject);
+        retrieved.Should().NotBeNull($"The user, {user.Username} should be in the database at this point");
+        retrieved.Username.Should().Be(username, "The name of the user received should match the name of the user created");
+        retrieved.Email.Should().Be(email, "The email of the user received should match the email of the user created");
+        retrieved.GoogleSubject.Should().Be(googleSubject,  "The googleSubject of the user received should match the googleSubject of the user created");
     }
     [Fact]
     public async Task CitextUniqueConstraint_RejectsInsensitiveDuplicateEmail()
@@ -52,10 +52,10 @@ public sealed class ApplicationUserTests(PostgreSqlFixture fixture)
         context.Users.Add(user2);
         
         var saveAction = async () => await context.SaveChangesAsync();
-        (await saveAction.Should().ThrowAsync<DbUpdateException>())
-            .WithInnerException<PostgresException>()
+        (await saveAction.Should().ThrowAsync<DbUpdateException>("The database should fail to update"))
+            .WithInnerException<PostgresException>("The reason should be a Postgres error specifically")
             .And
-            .SqlState.Should().Be(PostgresErrorCodes.UniqueViolation);
+            .SqlState.Should().Be(PostgresErrorCodes.UniqueViolation, "The email should already exist in the database, even with different casing");
     }
     [Fact]
     public async Task CitextUniqueConstraint_RejectsInsensitiveDuplicateUsername()
@@ -79,10 +79,10 @@ public sealed class ApplicationUserTests(PostgreSqlFixture fixture)
         context.Users.Add(user2);
         var saveAction = async () => await context.SaveChangesAsync();
 
-        (await saveAction.Should().ThrowAsync<DbUpdateException>())
-            .WithInnerException<PostgresException>()
+        (await saveAction.Should().ThrowAsync<DbUpdateException>("The database should fail to update"))
+            .WithInnerException<PostgresException>("The reason should be a Postgres error specifically")
             .And
-            .SqlState.Should().Be(PostgresErrorCodes.UniqueViolation);
+            .SqlState.Should().Be(PostgresErrorCodes.UniqueViolation, "The username should already exist in the database, even with different casing");
     }
         [Fact]
     public async Task CitextUniqueConstraint_RejectsInsensitiveDuplicateGoogleSubject()
@@ -109,10 +109,10 @@ public sealed class ApplicationUserTests(PostgreSqlFixture fixture)
         context.Users.Add(user2);
         
         var saveAction = async () => await context.SaveChangesAsync();
-        (await saveAction.Should().ThrowAsync<DbUpdateException>())
-            .WithInnerException<PostgresException>()
+        (await saveAction.Should().ThrowAsync<DbUpdateException>("The database should fail to update"))
+            .WithInnerException<PostgresException>("The reason should be a Postgres error specifically")
             .And
-            .SqlState.Should().Be(PostgresErrorCodes.UniqueViolation);
+            .SqlState.Should().Be(PostgresErrorCodes.UniqueViolation, "The googleSubject should already exist in the database, even with different casing");
     }
     [Fact]
     public async Task EmailCheckConstraint_RejectsInvalidEmailFormat()
@@ -127,10 +127,10 @@ public sealed class ApplicationUserTests(PostgreSqlFixture fixture)
         context.Users.Add(invalidUser);
 
         var saveAction = async () => await context.SaveChangesAsync();
-        (await saveAction.Should().ThrowAsync<DbUpdateException>())
-            .WithInnerException<PostgresException>()
+        (await saveAction.Should().ThrowAsync<DbUpdateException>("The database should fail to update"))
+            .WithInnerException<PostgresException>("The reason should be a Postgres error specifically")
             .And
-            .SqlState.Should().Be(PostgresErrorCodes.CheckViolation);
+            .SqlState.Should().Be(PostgresErrorCodes.CheckViolation, "The email violates the ValidEmailCheckConstraint");
     }
     
     [Fact]
@@ -146,10 +146,10 @@ public sealed class ApplicationUserTests(PostgreSqlFixture fixture)
         context.Users.Add(user);
 
         var saveAction = async () => await context.SaveChangesAsync();
-        (await saveAction.Should().ThrowAsync<DbUpdateException>())
-            .WithInnerException<PostgresException>()
+        (await saveAction.Should().ThrowAsync<DbUpdateException>("The database should fail to update"))
+            .WithInnerException<PostgresException>("The reason should be a Postgres error specifically")
             .And
-            .SqlState.Should().Be(PostgresErrorCodes.CheckViolation);
+            .SqlState.Should().Be(PostgresErrorCodes.CheckViolation, "The username violates the ValidCharacterCheckConstraint");
     }
     
     [Fact]
@@ -165,9 +165,9 @@ public sealed class ApplicationUserTests(PostgreSqlFixture fixture)
         context.Users.Add(user);
 
         var saveAction = async () => await context.SaveChangesAsync();
-        (await saveAction.Should().ThrowAsync<DbUpdateException>())
-            .WithInnerException<PostgresException>()
+        (await saveAction.Should().ThrowAsync<DbUpdateException>("The database should fail to update"))
+            .WithInnerException<PostgresException>("The reason should be a Postgres error specifically")
             .And
-            .SqlState.Should().Be(PostgresErrorCodes.CheckViolation);
+            .SqlState.Should().Be(PostgresErrorCodes.CheckViolation, "The username violates the ValidFirstCharacterCheckConstraint");
     }
 }

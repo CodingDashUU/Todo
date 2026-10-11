@@ -34,7 +34,7 @@ public class UserRoleTests(PostgreSqlFixture fixture)
 
         var exists = await context.UserRoles
             .AnyAsync(ur => ur.UserId == user.Id && ur.RoleId == role.Id);
-        exists.Should().BeTrue();
+        exists.Should().BeTrue("The UserRole should have been added to the database successfully");
     }
 
     [Fact]
@@ -61,7 +61,7 @@ public class UserRoleTests(PostgreSqlFixture fixture)
         
         context.ChangeTracker.Clear();
         var remainingUserRolesWithDeletedRole = await context.UserRoles.CountAsync(ur => ur.RoleId == role1.Id);
-        remainingUserRolesWithDeletedRole.Should().Be(0);
+        remainingUserRolesWithDeletedRole.Should().Be(0, "All UserRole columns with the deleted role id should be deleted");
     }
     [Fact]
     public async Task RemoveUser_CascadesDeleteToUserRoles()
@@ -88,7 +88,7 @@ public class UserRoleTests(PostgreSqlFixture fixture)
         
         context.ChangeTracker.Clear();
         var remainingUserRolesWithDeletedUser = await context.UserRoles.CountAsync(ur => ur.UserId == user1.Id);
-        remainingUserRolesWithDeletedUser.Should().Be(0);
+        remainingUserRolesWithDeletedUser.Should().Be(0, "All UserRole columns with the deleted user id should be deleted");
     }
     [Fact]
     public async Task UniqueConstraint_RejectDuplicateRole()
@@ -122,9 +122,9 @@ public class UserRoleTests(PostgreSqlFixture fixture)
         context.UserRoles.Add(sameUserRole);
 
         var saveAction = async () => await context.SaveChangesAsync();
-        (await saveAction.Should().ThrowAsync<DbUpdateException>())
-            .WithInnerException<PostgresException>()
+        (await saveAction.Should().ThrowAsync<DbUpdateException>("The database should fail to update"))
+            .WithInnerException<PostgresException>("The reason should be a Postgres error specifically")
             .And
-            .SqlState.Should().Be(PostgresErrorCodes.UniqueViolation);
+            .SqlState.Should().Be(PostgresErrorCodes.UniqueViolation, "The user id with the given role id already exists");
     }
 }

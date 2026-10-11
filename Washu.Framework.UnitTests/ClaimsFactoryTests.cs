@@ -22,8 +22,8 @@ public class ClaimsFactoryTests
         
         var principal = await factory.CreateAsync(user);
         
-        principal.Should().NotBeNull();
-        principal.UserId.Should().Be(user.Id);
-        principal.SecurityStamp.Should().Be(user.SecurityStamp.ToString());
+        principal.Should().NotBeNull("The factory should never return null");
+        principal.UserId.Should().Be(user.Id, "The NameIdentifier value should match the userid of the user passed in");
+        principal.SecurityStamp.Should().Be(user.SecurityStamp.ToString(), "The SecurityStamp value should match the SecurityStamp of the user passed in");
     }
 }

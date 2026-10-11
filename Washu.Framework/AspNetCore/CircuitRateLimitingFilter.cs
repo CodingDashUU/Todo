@@ -29,8 +29,8 @@ public sealed class CircuitRateLimitingFilter : IHubFilter
         Tracking.TryRemove(context.Context.ConnectionId, out _);
         await next(context, exception);
     }
-
-    private static bool CheckAndUpdateTokens(string connectionId, DateTimeOffset now)
+    
+    internal static bool CheckAndUpdateTokens(string connectionId, DateTimeOffset now)
     {
         var state = Tracking.GetOrAdd(connectionId, _ => new ConnectionTokenState(MaxTokens, now));
 

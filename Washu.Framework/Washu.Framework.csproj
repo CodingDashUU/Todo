@@ -19,5 +19,7 @@
     <ItemGroup>
       <None Include="wwwroot\styles.css" />
     </ItemGroup>
-
+    <ItemGroup>
+        <InternalsVisibleTo Include="Washu.Framework.UnitTests" />
+    </ItemGroup>
 </Project>

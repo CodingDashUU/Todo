@@ -31,9 +31,9 @@ public class ApplicationUserStoreTests(PostgreSqlFixture fixture)
         var user2 = await userStore.GetOrAddUserAsync(existingUser.Id);
         watch2.Stop();
         
-        watch2.ElapsedMilliseconds.Should().BeLessThan(watch.ElapsedMilliseconds);
-        user1.Should().NotBeNull();
-        user2.Should().NotBeNull();
-        user2.Id.Should().Be(existingUser.Id);
+        watch2.ElapsedMilliseconds.Should().BeLessThan(watch.ElapsedMilliseconds, "The time to takes to access data from a cache should be faster than the time it takes to access data from a database");
+        user1.Should().NotBeNull($"The user, {existingUser.Id} exists");
+        user2.Should().NotBeNull($"The user, {existingUser.Id} exists");
+        user2.Id.Should().Be(existingUser.Id, "The Id of the user received should be the same as the user created");
     }
 }

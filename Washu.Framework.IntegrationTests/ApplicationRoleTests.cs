@@ -18,8 +18,8 @@ public class ApplicationRoleTests(PostgreSqlFixture fixture)
         await context.SaveChangesAsync();
         
         var received = await context.Roles.FirstOrDefaultAsync(r => r.Id == role.Id);
-        received.Should().NotBeNull();
-        received.Name.Should().Be(role.Name);
+        received.Should().NotBeNull($"The role, {role.Name} should be in the database at this point");
+        received.Name.Should().Be(role.Name, "The name of the role found should match the name of the role we inserted");
     }
     [Fact]
     public async Task CitextUniqueConstraint_RejectsInsensitiveDuplicateName()
@@ -34,10 +34,10 @@ public class ApplicationRoleTests(PostgreSqlFixture fixture)
         context.Roles.Add(sameRole);
 
         var saveAction = async () => await context.SaveChangesAsync();
-        (await saveAction.Should().ThrowAsync<DbUpdateException>())
-            .WithInnerException<PostgresException>()
+        (await saveAction.Should().ThrowAsync<DbUpdateException>("The database should fail to update"))
+            .WithInnerException<PostgresException>("The reason should be a Postgres error specifically")
             .And
-            .SqlState.Should().Be(PostgresErrorCodes.UniqueViolation);
+            .SqlState.Should().Be(PostgresErrorCodes.UniqueViolation, "The role with the given name already exists");
     }
     
 }

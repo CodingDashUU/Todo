@@ -30,8 +30,8 @@ public sealed class IdentityHandlersTests(PostgreSqlFixture fixture)
         var countRole1 = await context.Roles.CountAsync(r => r.Name == role1);
         var countRole2 = await context.Roles.CountAsync(r => r.Name == role2);
 
-        countRole1.Should().Be(1);
-        countRole2.Should().Be(1);
+        countRole1.Should().Be(1, $"There obviously should not be a duplicate role for {role1}");
+        countRole2.Should().Be(1, $"There obviously should not be a duplicate role for {role2}");
     }
 
     [Fact]
@@ -50,8 +50,8 @@ public sealed class IdentityHandlersTests(PostgreSqlFixture fixture)
         }
 
         var foundUser = await handler.HandleAsync(new FindUserQuery(user.Id));
-        foundUser.Should().NotBeNull();
-        foundUser.Id.Should().Be(user.Id);
+        foundUser.Should().NotBeNull($"The user, {foundUser.Username} should be in the database at this point");
+        foundUser.Id.Should().Be(user.Id, "The Id of the user received should be the same as the user in the database");
         foundUser.Username.Should().Be(username);
 
         var nonExistent = await handler.HandleAsync(new FindUserQuery(Guid.NewGuid()));
@@ -99,8 +99,8 @@ public sealed class IdentityHandlersTests(PostgreSqlFixture fixture)
         }
 
         var result = await handler.HandleAsync(new ChangeUsernameCommand(user2.Id, existingUsername));
-        result.Type.Should().Be(MessageType.Error);
-        result.Details.Should().Be("Username provided is already taken");
+        result.Type.Should().Be(MessageType.Error, "The handler should fail");
+        result.Details.Should().Be("Username provided is already taken", "The reason of the handler failing should be because the user is taken");
     }
     
     [Fact]
@@ -122,8 +122,8 @@ public sealed class IdentityHandlersTests(PostgreSqlFixture fixture)
             await context.SaveChangesAsync();
         }
         var result = await handler.HandleAsync(new ChangeUsernameCommand(user.Id, $"NewName_{Guid.NewGuid():N}"));
-        result.Type.Should().Be(MessageType.Error);
-        result.Details.Should().Be("Account was not found");
+        result.Type.Should().Be(MessageType.Error, "The handler should fail");
+        result.Details.Should().Be("Account was not found", "The reason of the handler failing should be because the user does not exist");
     }
 
     [Fact]
@@ -140,12 +140,12 @@ public sealed class IdentityHandlersTests(PostgreSqlFixture fixture)
         }
 
         var result = await handler.HandleAsync(new DeleteUserCommand(user.Id));
-        result.Type.Should().Be(MessageType.Success);
+        result.Type.Should().Be(MessageType.Success, $"The handler should succeed");
 
         await using (var context = fixture.CreateDbContext())
         {
             var exists = await context.Users.AnyAsync(u => u.Id == user.Id);
-            exists.Should().BeFalse();
+            exists.Should().BeFalse($"The user, {user.Username} should be deleted");
         }
     }
 }
