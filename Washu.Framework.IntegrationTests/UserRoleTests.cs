@@ -88,7 +88,7 @@ public class UserRoleTests(PostgreSqlFixture fixture)
         
         context.ChangeTracker.Clear();
         var remainingUserRolesWithDeletedUser = await context.UserRoles.CountAsync(ur => ur.UserId == user1.Id);
-        remainingUserRolesWithDeletedUser.Should().Be(0, "All UserRole columns with the deleted user id should be deleted");
+        remainingUserRolesWithDeletedUser.Should().Be(0, "All UserRole records with the deleted user id should be deleted");
     }
     [Fact]
     public async Task UniqueConstraint_RejectDuplicateRole()
@@ -126,5 +126,56 @@ public class UserRoleTests(PostgreSqlFixture fixture)
             .WithInnerException<PostgresException>("The reason should be a Postgres error specifically")
             .And
             .SqlState.Should().Be(PostgresErrorCodes.UniqueViolation, "The user id with the given role id already exists");
+    }
+
+    [Fact]
+    public async Task ForeignKeyConstraint_RejectsNonExistentUserId()
+    {
+        await using var context = fixture.CreateDbContext();
+
+        var role = new ApplicationRole($"Role_{Guid.CreateVersion7():N}");
+        context.Roles.Add(role);
+        await context.SaveChangesAsync();
+
+        var nonExistentUserId = Guid.CreateVersion7();
+        var userRole = new UserRole
+        {
+            UserId = nonExistentUserId,
+            RoleId = role.Id
+        };
+        context.UserRoles.Add(userRole);
+
+        var saveAction = async () => await context.SaveChangesAsync();
+        (await saveAction.Should().ThrowAsync<DbUpdateException>("The database should fail to update due to foreign key violation"))
+            .WithInnerException<PostgresException>("The reason should be a Postgres error specifically")
+            .And
+            .SqlState.Should().Be(PostgresErrorCodes.ForeignKeyViolation, "The user does not exist in the Users table");
+    }
+
+    [Fact]
+    public async Task ForeignKeyConstraint_RejectsNonExistentRoleId()
+    {
+        await using var context = fixture.CreateDbContext();
+
+        var user = new ApplicationUser(
+            $"User_{Guid.CreateVersion7():N}",
+            $"{Guid.CreateVersion7():N}@example.com",
+            $"{Guid.CreateVersion7():N}");
+        context.Users.Add(user);
+        await context.SaveChangesAsync();
+
+        var nonExistentRoleId = Guid.CreateVersion7();
+        var userRole = new UserRole
+        {
+            UserId = user.Id,
+            RoleId = nonExistentRoleId
+        };
+        context.UserRoles.Add(userRole);
+
+        var saveAction = async () => await context.SaveChangesAsync();
+        (await saveAction.Should().ThrowAsync<DbUpdateException>("The database should fail to update due to foreign key violation"))
+            .WithInnerException<PostgresException>("The reason should be a Postgres error specifically")
+            .And
+            .SqlState.Should().Be(PostgresErrorCodes.ForeignKeyViolation, "The role does not exist in the Roles table");
     }
 }

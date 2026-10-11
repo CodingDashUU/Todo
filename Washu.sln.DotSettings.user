@@ -57,6 +57,7 @@
       &lt;TestId&gt;xUnit::47775659-B4E5-B823-4414-79BF40FA4916::net10.0::Washu.Framework.UnitTests.ClaimsFactoryTests.CreateAsync_AddsCustomClaims_ToClaimsPrincipal&lt;/TestId&gt;
       &lt;TestId&gt;xUnit::47775659-B4E5-B823-4414-79BF40FA4916::net10.0::Washu.Framework.UnitTests.CircuitRateLimiterTests.CheckAndUpdateTokens_ThrottlesWhenMaxTokensExceeded_AndReplenishesOnTime&lt;/TestId&gt;
     &lt;/TestAncestor&gt;
+    &lt;Project Location="/home/washu/Downloads/Washu/Washu.Framework.UnitTests" Presentation="&amp;lt;Washu.Framework.UnitTests&amp;gt;" /&gt;
   &lt;/Or&gt;
 &lt;/SessionState&gt;</s:String>
 	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=58c56b00_002Df81e_002D48fd_002Da74f_002Dc8e84271fcf4/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" Name="Continuous Testing" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;

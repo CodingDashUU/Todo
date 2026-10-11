@@ -148,4 +148,49 @@ public sealed class IdentityHandlersTests(PostgreSqlFixture fixture)
             exists.Should().BeFalse($"The user, {user.Username} should be deleted");
         }
     }
+
+    [Fact]
+    public async Task DeleteUserHandler_ShouldReturnError_WhenUserDoesNotExist()
+    {
+        var factory = fixture.CreateDbContextFactory();
+        var handler = new DeleteUserHandler(factory);
+
+        var nonExistentId = Guid.NewGuid();
+        var result = await handler.HandleAsync(new DeleteUserCommand(nonExistentId));
+
+        result.Type.Should().Be(MessageType.Error, "The handler should report error when account does not exist");
+        result.Details.Should().Be("Account was not found", "The error details should indicate account was not found");
+    }
+
+    [Fact]
+    public async Task DeleteUserHandler_ShouldCascadeDeleteUserRoles_WhenUserHasRoles()
+    {
+        var factory = fixture.CreateDbContextFactory();
+        var handler = new DeleteUserHandler(factory);
+
+        var user = new ApplicationUser($"CascadeDelUser_{Guid.NewGuid():N}", $"{Guid.NewGuid():N}@example.com", $"sub-{Guid.NewGuid():N}");
+        var role = new ApplicationRole($"CascadeRole_{Guid.NewGuid():N}");
+
+        await using (var context = fixture.CreateDbContext())
+        {
+            context.Users.Add(user);
+            context.Roles.Add(role);
+            await context.SaveChangesAsync();
+
+            context.UserRoles.Add(new UserRole { UserId = user.Id, RoleId = role.Id });
+            await context.SaveChangesAsync();
+        }
+
+        var result = await handler.HandleAsync(new DeleteUserCommand(user.Id));
+        result.Type.Should().Be(MessageType.Success, "The handler should succeed in deleting user with roles");
+
+        await using (var context = fixture.CreateDbContext())
+        {
+            var userExists = await context.Users.AnyAsync(u => u.Id == user.Id);
+            userExists.Should().BeFalse("The user should be deleted from the database");
+
+            var userRoleExists = await context.UserRoles.AnyAsync(ur => ur.UserId == user.Id);
+            userRoleExists.Should().BeFalse("Associated UserRoles should be cascade deleted");
+        }
+    }
 }

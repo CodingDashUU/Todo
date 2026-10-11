@@ -170,4 +170,64 @@ public sealed class ApplicationUserTests(PostgreSqlFixture fixture)
             .And
             .SqlState.Should().Be(PostgresErrorCodes.CheckViolation, "The username violates the ValidFirstCharacterCheckConstraint");
     }
+
+    [Fact]
+    public async Task UsernameMaxLengthCheckConstraint_RejectExceedingMaxLength()
+    {
+        await using var context = fixture.CreateDbContext();
+
+        var tooLongUsername = $"U{new string('a', 128)}";
+        var user = new ApplicationUser(
+            tooLongUsername,
+            $"{Guid.CreateVersion7():N}@example.com",
+            $"{Guid.CreateVersion7():N}");
+
+        context.Users.Add(user);
+
+        var saveAction = async () => await context.SaveChangesAsync();
+        (await saveAction.Should().ThrowAsync<DbUpdateException>("The database should fail to update"))
+            .WithInnerException<PostgresException>("The reason should be a Postgres error specifically")
+            .And
+            .SqlState.Should().Be(PostgresErrorCodes.CheckViolation, "The username violates the 128 character MaxLength check constraint");
+    }
+
+    [Fact]
+    public async Task EmailMaxLengthCheckConstraint_RejectExceedingMaxLength()
+    {
+        await using var context = fixture.CreateDbContext();
+
+        var tooLongEmail = $"a{new string('b', 245)}@example.com";
+        var user = new ApplicationUser(
+            $"User_{Guid.CreateVersion7():N}",
+            tooLongEmail,
+            $"{Guid.CreateVersion7():N}");
+
+        context.Users.Add(user);
+
+        var saveAction = async () => await context.SaveChangesAsync();
+        (await saveAction.Should().ThrowAsync<DbUpdateException>("The database should fail to update"))
+            .WithInnerException<PostgresException>("The reason should be a Postgres error specifically")
+            .And
+            .SqlState.Should().Be(PostgresErrorCodes.CheckViolation, "The email violates the 255 character MaxLength check constraint");
+    }
+
+    [Fact]
+    public async Task GoogleSubjectMaxLengthCheckConstraint_RejectExceedingMaxLength()
+    {
+        await using var context = fixture.CreateDbContext();
+
+        var tooLongSubject = new string('s', 256);
+        var user = new ApplicationUser(
+            $"User_{Guid.CreateVersion7():N}",
+            $"{Guid.CreateVersion7():N}@example.com",
+            tooLongSubject);
+
+        context.Users.Add(user);
+
+        var saveAction = async () => await context.SaveChangesAsync();
+        (await saveAction.Should().ThrowAsync<DbUpdateException>("The database should fail to update"))
+            .WithInnerException<PostgresException>("The reason should be a Postgres error specifically")
+            .And
+            .SqlState.Should().Be(PostgresErrorCodes.CheckViolation, "The GoogleSubject violates the 255 character MaxLength check constraint");
+    }
 }
