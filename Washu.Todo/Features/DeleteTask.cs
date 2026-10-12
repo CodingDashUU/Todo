@@ -1,8 +1,8 @@
-namespace Washu.Todo.Commands;
+namespace Washu.Todo.Features;
 
-using Framework.Notifications;
-using Identity;
 using Microsoft.EntityFrameworkCore;
+using Washu.Framework.Notifications;
+using Washu.Todo.Identity;
 
 public sealed record DeleteTaskCommand(Guid TaskId, Guid ListId, Guid ListVersionId);
 

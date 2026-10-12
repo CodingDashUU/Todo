@@ -1,6 +1,6 @@
 ﻿namespace Washu.Todo;
 
-using Commands;
+using Features;
 
 public static class ConfigurationExtensions
 {
