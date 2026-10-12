@@ -44,7 +44,14 @@
     </RadzenBody>
     <RadzenComponents @rendermode="InteractiveServer" />
     <RadzenFooter>
-        Washu Software
+        <RadzenStack Orientation="Orientation.Horizontal">
+            <RadzenStack JustifyContent="JustifyContent.Center">
+                <SymbolLogo Size="50"/>
+            </RadzenStack>
+            <RadzenStack JustifyContent="JustifyContent.Center">
+                <RadzenText TextStyle="TextStyle.DisplayH6">Washu Software</RadzenText>
+            </RadzenStack>
+        </RadzenStack>
     </RadzenFooter>
 </RadzenLayout>
 @code {
