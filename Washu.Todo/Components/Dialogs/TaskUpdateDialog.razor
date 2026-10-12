@@ -4,7 +4,7 @@
 @using Washu.Todo.Features
 @inject UserTimeZoneProvider TimeZoneProvider
 @inject DialogService DialogService
-<AppForm
+<ApplicationForm
     Model="_model"
     Validator="_validator"
     SubmitButtonConfig="_submitButtonConfig"
@@ -21,7 +21,7 @@
             Min="DateTimeOffset.UtcNow.AddMinutes(5).ToTimeZone(TimeZoneProvider.TimeZoneInfo).DateTime"
             Max="DateTimeOffset.UtcNow.AddYears(50).ToTimeZone(TimeZoneProvider.TimeZoneInfo).DateTime"/>
     </RadzenFormField>
-</AppForm>
+</ApplicationForm>
 @code {
     private readonly Model _model = new();
     private Validator _validator = null!;

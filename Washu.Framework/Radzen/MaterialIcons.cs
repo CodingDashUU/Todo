@@ -18,4 +18,5 @@ public static class MaterialIcons
     public const string Target = "target";
     public const string Grid = "grid_on";
     public const string Description = "description";
+    public const string FileExport = "file_export";
 }

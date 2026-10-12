@@ -1,6 +1,6 @@
 @using FluentValidation
 @inject DialogService DialogService
-<AppForm
+<ApplicationForm
     Model="_model"
     Validator="Validator"
     HandleValidSubmit="CloseDialog"
@@ -14,7 +14,7 @@
             <RadzenTextBox @bind-Value="@_model.Email" MaxLength="255"/>
         </ChildContent>
     </RadzenFormField>
-</AppForm>
+</ApplicationForm>
 
 @code {
     private Model _model = new();

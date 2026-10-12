@@ -1,7 +1,7 @@
 ﻿@using FluentValidation
 @using Washu.Todo.Features
 @inject DialogService DialogService
-<AppForm
+<ApplicationForm
     Model="_model"
     Validator="_validator"
     HandleValidSubmit="CloseDialog">
@@ -10,7 +10,7 @@
                        @bind-Value="_model.ListName"
                        MaxLength="TodoRules.ListName.MaximumLength" />
     </RadzenFormField>
-</AppForm>
+</ApplicationForm>
 @code {
     private readonly Model _model = new();
     private readonly Validator _validator = new();

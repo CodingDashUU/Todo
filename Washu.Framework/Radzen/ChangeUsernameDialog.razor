@@ -1,6 +1,6 @@
 @using FluentValidation
 @inject DialogService DialogService
-<AppForm
+<ApplicationForm
     Model="_model"
     Validator="Validator"
     SubmitButtonConfig="ChangeUsernameButtonConfig"
@@ -14,7 +14,7 @@
             <RadzenTextBox @bind-Value="@_model.Username" MaxLength="UsernameRules.MaxUsernameLength"/>
         </ChildContent>
     </RadzenFormField>
-</AppForm>
+</ApplicationForm>
 
 @code {
     private ChangeUsernameModel _model = new();

@@ -36,7 +36,7 @@
                 IsNullText="Is N/A" 
                 IsNotNullText="Is not N/A">
     <HeaderTemplate>
-        <RadzenStack Orientation="Orientation.Horizontal">
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
             <RadzenFormField Text="Selected Todo List">
                 <RadzenDropDown TValue="Todo.TodoList"
                                 Value="_selectedList"
@@ -45,7 +45,7 @@
                                 PageSize="10"
                                 ValueChanged="OnListSelected"/>
             </RadzenFormField>
-            <TableExport DataGrid="_grid" ExcelTitle="@_selectedList.Name" FileName="todo"/>
+            <DataGridExportButton DataGrid="_grid" ExcelTitle="@_selectedList.Name" FileName="todo"/>
         </RadzenStack>
     </HeaderTemplate>
     <Columns>
@@ -95,6 +95,16 @@
     
 </RadzenDataGrid>
 
+<style>
+    .container {
+        display: flex;
+        align-items: center;
+    }
+
+    .item-right {
+        margin-left: auto; /* Pushes this item as far right as physics allows */
+    }
+</style>
 @code {
     RadzenDataGrid<TaskEntry> _grid = null!;
     bool _isLoading;

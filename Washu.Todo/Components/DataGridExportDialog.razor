@@ -1,0 +1,64 @@
+@using Humanizer
+@inject DialogService DialogService
+<RadzenStack>
+    <RadzenStack Orientation="Orientation.Horizontal">
+        <RadzenText Text="Rows:"/>
+        <RadzenSelectBar @bind-Value="@_model.Scope" TValue="DataGridExportScope" Size="ButtonSize.Small">
+            <Items>
+                <RadzenSelectBarItem Text="Current page" Value="DataGridExportScope.CurrentPage"/>
+                <RadzenSelectBarItem Text="All" Value="DataGridExportScope.All"/>
+            </Items>
+        </RadzenSelectBar>
+    </RadzenStack>
+    <RadzenStack Orientation="Orientation.Horizontal">
+        <RadzenLabel Text="Use theme" Component="useTheme"/>
+        <RadzenCheckBox @bind-Value="@_model.UseTheme" Name="useTheme"/>
+    </RadzenStack>
+    <RadzenStack Orientation="Orientation.Horizontal">
+        <RadzenText Text="Export As:"/>
+        <RadzenRadioButtonList @bind-Value="@_model.ExportMode" TValue="DataGridExportMode">
+            <Items>
+                <RadzenRadioButtonListItem Text="Excel" Value="DataGridExportMode.Excel"/>
+                <RadzenRadioButtonListItem Text="CSV" Value="DataGridExportMode.Csv"/>
+            </Items>
+        </RadzenRadioButtonList>
+    </RadzenStack>
+    <RadzenButton Icon="@(_model.ExportMode switch
+                        {
+                            DataGridExportMode.Csv => MaterialIcons.Description,
+                            DataGridExportMode.Excel => MaterialIcons.Grid,
+                            _ => string.Empty
+                        })"
+                  ButtonStyle="@(_model.ExportMode switch
+                               {
+                                   DataGridExportMode.Csv => ButtonStyle.Info,
+                                   DataGridExportMode.Excel => ButtonStyle.Success,
+                                   _ => ButtonStyle.Warning
+                               })"
+                  Text="@($"Export as {_model.ExportMode.Humanize()}")"
+                  Click="OnDialogClose"/>
+</RadzenStack>
+
+@code {
+    private readonly Model _model = new();
+    [Parameter] public required RadzenDataGrid<TaskEntry> DataGrid { get; set; }
+    [Parameter] public required string FileName { get; set; }
+    [Parameter] public required string ExcelTitle { get; set; }
+    private void OnDialogClose()
+    {
+        DialogService.Close(new DataGridExportCommand(
+            DataGrid: DataGrid,
+            ExportMode: _model.ExportMode,
+            Scope:  _model.Scope,
+            FileName: FileName,
+            ExcelTitle: ExcelTitle,
+            UseTheme: _model.UseTheme
+            ));
+    }
+    private class Model
+    {
+        public DataGridExportScope Scope { get; set; }
+        public bool UseTheme { get; set; }
+        public DataGridExportMode ExportMode { get; set; }
+    }
+}

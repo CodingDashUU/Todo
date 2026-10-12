@@ -1,0 +1,38 @@
+@inject DialogService DialogService
+<RadzenButton Click="OnDialogOpen" Text="Export Data" Icon="@MaterialIcons.FileExport" ButtonStyle="ButtonStyle.Success"/>
+
+@code {
+    [Parameter] public required RadzenDataGrid<TaskEntry> DataGrid { get; set; }
+    [Parameter] public string? ExcelTitle { get; set; }
+    [Parameter] public required string FileName { get; set; }
+
+    private async Task OnDialogOpen()
+    {
+        var parameters = new Dictionary<string, object?>
+        {
+            [nameof(DataGridExportDialog.FileName)] = FileName,
+            [nameof(DataGridExportDialog.ExcelTitle)] = ExcelTitle,
+            [nameof(DataGridExportDialog.DataGrid)] = DataGrid
+        };
+        var data = await DialogService.OpenAsync<DataGridExportDialog>("Table Export", parameters);
+        if (data is not DataGridExportCommand command) return;
+        await HandleExportAsync(command);
+    }
+    private static async Task HandleExportAsync(DataGridExportCommand command)
+    {
+        switch (command.ExportMode)
+        {
+            case DataGridExportMode.Excel:
+                await command.DataGrid.ExportToExcelAsync($"{command.FileName}.xlsx", 
+                    new DataGridExcelExportOptions
+                    {
+                        Scope = command.Scope, Title = command.ExcelTitle, UseTheme = command.UseTheme
+                    });
+                break;
+            case DataGridExportMode.Csv:
+                await command.DataGrid.ExportToCsvAsync($"{command.FileName}.csv", 
+                    new DataGridCsvExportOptions { Scope = command.Scope });
+                break;
+        }
+    }
+}
