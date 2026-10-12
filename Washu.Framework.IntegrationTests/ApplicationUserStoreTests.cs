@@ -72,26 +72,6 @@ public class ApplicationUserStoreTests(PostgreSqlFixture fixture)
     }
 
     [Fact]
-    public async Task UserHasChangedAsync_TriggersOnUserChangedCallback()
-    {
-        using var cache = new MemoryCache(new MemoryCacheOptions());
-        var factory = fixture.CreateDbContextFactory();
-        var handler = new FindUserHandler(factory);
-        var userStore = new ApplicationUserStore(cache, handler);
-
-        var callbackCalled = false;
-        userStore.OnUserChanged += () =>
-        {
-            callbackCalled = true;
-            return Task.CompletedTask;
-        };
-
-        await userStore.UserHasChangedAsync();
-
-        callbackCalled.Should().BeTrue("invoking UserHasChangedAsync should trigger the registered OnUserChanged callback");
-    }
-
-    [Fact]
     public async Task GetOrAddUserAsync_ReturnsNull_WhenUserDoesNotExist()
     {
         using var cache = new MemoryCache(new MemoryCacheOptions());

@@ -18,7 +18,6 @@
 @inject DeleteListHandler DeleteListHandler
 @inject MessageStore MessageStore
 @inject ApplicationUserStore UserStore
-@implements IDisposable
 
 <RadzenStack Orientation="Orientation.Horizontal">
     <RadzenCard>
@@ -94,7 +93,6 @@
             return;
         }
         _currentUser = user;
-        UserStore.OnUserChanged += RefreshUserAsync;
         await LoadListsAsync(selectDefault: true);
     }
 
@@ -116,12 +114,6 @@
         var message = await DeleteTaskHandler.HandleAsync(command);
         NotificationService.Show(message);
         await LoadListsAsync(preferredSelectedId: _selectedList.Id);
-    }
-    private async Task RefreshUserAsync()
-    {
-        var user = await UserStore.GetOrAddUserAsync(_currentUser.Id);
-        if (user is not null) _currentUser = user;
-        await InvokeAsync(StateHasChanged);
     }
     private async Task LoadListsAsync(Guid? preferredSelectedId = null, bool selectDefault = false)
     {
@@ -221,10 +213,4 @@
 
         await LoadListsAsync(preferredSelectedId: _selectedList.Id);
     }
-
-    public void Dispose()
-    {
-        UserStore.OnUserChanged -= RefreshUserAsync;
-    }
-
 }

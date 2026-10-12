@@ -6,7 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 public sealed class ApplicationUserStore(IMemoryCache cache, FindUserHandler handler)
 {
-    public event Func<Task>? OnUserChanged;
     public async Task<ApplicationUser?> GetOrAddUserAsync(Guid userId) =>
         await cache.GetOrCreateAsync(userId, async entry =>
         {
@@ -15,10 +14,4 @@ public sealed class ApplicationUserStore(IMemoryCache cache, FindUserHandler han
         });
 
     public void RemoveUser(Guid userId) => cache.Remove(userId);
-    
-    public async Task UserHasChangedAsync()
-    {
-        var op = OnUserChanged?.Invoke();
-        if (op is not null) await op;
-    }
 }

@@ -6,7 +6,6 @@
 @inject UserSessionManager SessionManager
 @inject ApplicationSessionState SessionState
 @inject ApplicationUserStore UserStore
-@implements IDisposable
 <QueryNotificationHandler />
 <RadzenLayout>
     <RadzenHeader>
@@ -19,12 +18,10 @@
                 <Authorized>
                     <RadzenProfileMenu>
                         <Template>
-                            <RadzenStack AlignItems="AlignItems.Center" Orientation="Orientation.Horizontal">
-                                <RadzenText
-                                    class="rz-display-flex rz-align-items-center rz-justify-content-center"
-                                    style="flex-shrink: 0; width: 40px; left: 10px; height: 40px; border-radius: 50%; font-weight: bold; font-size: 20px; background-color: var(--rz-secondary); color: var(--rz-white);"
-                                >@Username.First()</RadzenText>
-                            </RadzenStack>
+                            <RadzenGravatar Email="@Email" 
+                                            Size="64" 
+                                            class="rz-border-radius-circle" 
+                                            Style="border: 2px solid var(--rz-primary-light);" />
                         </Template>
                         <ChildContent>
                             <RadzenProfileMenuItem Text="Manage Account" Icon="@MaterialIcons.AccountCircle" Path="@ApplicationRoutes.ManageAccount"></RadzenProfileMenuItem>
@@ -52,34 +49,17 @@
 </RadzenLayout>
 @code {
     bool sidebarExpanded = true;
-    string Username = "User";
+    string Email = "";
     [CascadingParameter] public required Task<AuthenticationState> Context { get; set; }
-    Guid? UserId;
     protected override async Task OnInitializedAsync()
     {
         var state = await Context;
         if (state.User.UserId is not {} userGuid) return;
-        UserId = userGuid;
-        Username = (await UserStore.GetOrAddUserAsync(userGuid))?.Username ?? "User";
+        Email = (await UserStore.GetOrAddUserAsync(userGuid))?.Email ?? "";
         SessionManager.AddSession(userGuid, SessionState.Id, () =>
         {
             NavManager.Refresh(forceReload: true);
             return Task.CompletedTask;
         });
-        UserStore.OnUserChanged += RefreshAsync;
     }
-
-    public async Task RefreshAsync()
-    {
-        if (UserId.HasValue)
-            Username = (await UserStore.GetOrAddUserAsync(UserId.Value))?.Username ?? "User";
-        await InvokeAsync(StateHasChanged);
-    }
-    public void Dispose()
-    {
-        if (UserId.HasValue)
-            SessionManager.RemoveSession(UserId.Value, SessionState.Id);
-        UserStore.OnUserChanged -= RefreshAsync;
-    }
-
 }
