@@ -2,7 +2,7 @@
 @inject ThemeService ThemeService
 @inject IJSRuntime JS
 <RadzenButton 
-    Icon="@(_isDarkMode ? "light_mode" : "dark_mode")" 
+    Icon="@(_isDarkMode ? MaterialIcons.LightMode : MaterialIcons.DarkMode)" 
     Click="@ToggleThemeAsync" 
     Variant="Variant.Text" 
     ButtonStyle="ButtonStyle.Base"
