@@ -53,7 +53,7 @@
         <RadzenDataGridColumn Property="@nameof(TaskEntry.DateCreated)" Title="Date Created" Width="160px" FilterValue="DateCreatedFilterValue">
             <FilterValueTemplate>
                 <RadzenDatePicker TValue="DateTimeOffset?"
-                                  ShowTime="true"
+                                  ShowTime
                                   DateFormat="d MMMM yyyy HH:mm:ss"
                                   @bind-Value="DateCreatedFilterValue"/>
             </FilterValueTemplate>
@@ -64,7 +64,7 @@
         <RadzenDataGridColumn Property="@nameof(TaskEntry.GoalDate)" Title="Goal Date" Width="160px" FilterMode="FilterMode.SimpleWithMenu" FilterValue="GoalDateFilterValue">
             <FilterValueTemplate>
                 <RadzenDatePicker TValue="DateTimeOffset?"
-                                  ShowTime="true"
+                                  ShowTime
                                   DateFormat="d MMMM yyyy HH:mm:ss"
                                   @bind-Value="GoalDateFilterValue"/>
             </FilterValueTemplate>
@@ -78,7 +78,7 @@
         <RadzenDataGridColumn Property="@nameof(TaskEntry.DateCompleted)" Title="Date Completed" Width="160px" FilterMode="FilterMode.SimpleWithMenu" FilterValue="DateCompletedFilterValue">
             <FilterValueTemplate>
                 <RadzenDatePicker TValue="DateTimeOffset?"
-                                  ShowTime="true"
+                                  ShowTime
                                   DateFormat="d MMMM yyyy HH:mm:ss"
                                   @bind-Value="DateCompletedFilterValue"/>
             </FilterValueTemplate>
@@ -95,16 +95,6 @@
     
 </RadzenDataGrid>
 
-<style>
-    .container {
-        display: flex;
-        align-items: center;
-    }
-
-    .item-right {
-        margin-left: auto; /* Pushes this item as far right as physics allows */
-    }
-</style>
 @code {
     RadzenDataGrid<TaskEntry> _grid = null!;
     bool _isLoading;
