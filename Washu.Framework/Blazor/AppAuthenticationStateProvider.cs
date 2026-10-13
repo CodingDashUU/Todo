@@ -12,24 +12,21 @@ using Identity;
 
 public sealed class AppAuthenticationStateProvider(
     ILoggerFactory loggerFactory,
-    IServiceScopeFactory scopeFactory,
-    IOptions<IdentityOptions> optionsAccessor)
+    IServiceScopeFactory scopeFactory)
     : RevalidatingServerAuthenticationStateProvider(loggerFactory)
 {
-    private readonly IdentityOptions _options = optionsAccessor.Value;
 
-    protected override TimeSpan RevalidationInterval => TimeSpan.FromMinutes(10);
+    protected override TimeSpan RevalidationInterval => TimeSpan.FromMinutes(20);
 
     protected override async Task<bool> ValidateAuthenticationStateAsync(
         AuthenticationState authenticationState, CancellationToken cancellationToken)
     {
         var principal = authenticationState.User;
-        var userId = principal.UserId;
-        if (!userId.HasValue) return false;
+        if (principal.UserId is not {} userId) return false;
         if (principal.SecurityStamp is not { } securityStamp) return false;
         await using var scope = scopeFactory.CreateAsyncScope();
-        var userStore = scope.ServiceProvider.GetRequiredService<ApplicationUserStore>();
-        var user = await userStore.GetOrAddUserAsync(userId.Value);
+        var findUserHandler = scope.ServiceProvider.GetRequiredService<FindUserHandler>();
+        var user = await findUserHandler.HandleAsync(new FindUserQuery(userId), cancellationToken);
         if (user is null) return false;
         return securityStamp == user.SecurityStamp;
     }
