@@ -66,7 +66,7 @@
 
 
 @code {
-    private ApplicationUser _currentUser = null!;
+    private Guid _userId;
     private bool _isEditing;
     private bool _isDeleting;
     private bool IsNoListSelected => _selectedList.Id == Todo.TodoList.None.Id;
@@ -92,7 +92,7 @@
             NavManager.NavigateTo($"{ApplicationRoutes.SignIn}?messageId={id}", forceLoad: true);
             return;
         }
-        _currentUser = user;
+        _userId = user.Id;
         await LoadListsAsync(selectDefault: true);
     }
 
@@ -119,7 +119,7 @@
     {
         await using var dbContext = await DbContextFactory.CreateDbContextAsync();
         
-        var fetchedLists = await dbContext.GetListsByUserIdAsync(_currentUser.Id);
+        var fetchedLists = await dbContext.GetListsByUserIdAsync(_userId);
         
         _listNames = [Todo.TodoList.None, ..fetchedLists];
 
@@ -155,7 +155,7 @@
                 CancelButtonText = "No" 
             });
         if (!confirmData.HasValue || !confirmData.Value) return;
-        var command = new DeleteListCommand(_selectedList.Id, _currentUser.Id);
+        var command = new DeleteListCommand(_selectedList.Id, _userId);
         var message = await DeleteListHandler.HandleAsync(command);
         NotificationService.Show(message);
 
@@ -163,7 +163,7 @@
     }
     private async Task CreateListAsync()
     {
-        var parameters = new Dictionary<string, object?> { [nameof(ListCreationDialog.UserId)] = _currentUser.Id };
+        var parameters = new Dictionary<string, object?> { [nameof(ListCreationDialog.UserId)] = _userId };
         var result = await DialogService.OpenAsync<ListCreationDialog>("Create List", parameters);
         if (result is not CreateListCommand command) return;
 

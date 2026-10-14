@@ -20,9 +20,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Options;
 using Notifications;
-using System.Security.Claims;
 
 public static class ConfigurationExtensions
 {
@@ -34,8 +32,6 @@ public static class ConfigurationExtensions
         {
             builder.Services.AddHttpContextAccessor();
             ValidatorOptions.Global.DefaultRuleLevelCascadeMode = CascadeMode.Stop;
-            builder.Services.AddScoped<ApplicationSessionState>();
-            builder.Services.AddSingleton<UserSessionManager>();
             services.AddAuthorization();
             // Rate limiting
             services.AddRateLimiter(options =>

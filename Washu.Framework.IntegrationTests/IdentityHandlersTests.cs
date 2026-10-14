@@ -72,8 +72,8 @@ public sealed class IdentityHandlersTests(PostgreSqlFixture fixture)
         }
 
         var newUsername = $"NewName_{Guid.NewGuid():N}";
-        var result = await handler.HandleAsync(new ChangeUsernameCommand(user.Id, newUsername));
-        result.Type.Should().Be(MessageType.Success);
+        var result = await handler.HandleAsync(new ChangeUsernameCommand(user.Id, user.VersionId, newUsername));
+        result.Should().Be(ChangeUsernameResult.Success);
         await using (var context = fixture.CreateDbContext())
         {
             var updatedUser = await context.Users.FindAsync(user.Id);
@@ -98,9 +98,8 @@ public sealed class IdentityHandlersTests(PostgreSqlFixture fixture)
             await context.SaveChangesAsync();
         }
 
-        var result = await handler.HandleAsync(new ChangeUsernameCommand(user2.Id, existingUsername));
-        result.Type.Should().Be(MessageType.Error, "The handler should fail");
-        result.Details.Should().Be("Username provided is already taken", "The reason of the handler failing should be because the user is taken");
+        var result = await handler.HandleAsync(new ChangeUsernameCommand(user2.Id, user2.VersionId, existingUsername));
+        result.Should().Be(ChangeUsernameResult.UsernameTaken, "The handler should fail");
     }
     
     [Fact]
@@ -121,11 +120,29 @@ public sealed class IdentityHandlersTests(PostgreSqlFixture fixture)
             context.Users.Remove(user);
             await context.SaveChangesAsync();
         }
-        var result = await handler.HandleAsync(new ChangeUsernameCommand(user.Id, $"NewName_{Guid.NewGuid():N}"));
-        result.Type.Should().Be(MessageType.Error, "The handler should fail");
-        result.Details.Should().Be("Account was not found", "The reason of the handler failing should be because the user does not exist");
+        var result = await handler.HandleAsync(new ChangeUsernameCommand(user.Id, user.VersionId, $"NewName_{Guid.NewGuid():N}"));
+        result.Should().Be(ChangeUsernameResult.AccountNotFound, "The handler should fail");
     }
 
+    [Fact] public async Task ChangeUsernameHandler_ShouldFailWhenUserAlreadyModified()
+    {
+        var factory = fixture.CreateDbContextFactory();
+        var handler = new ChangeUsernameHandler(factory);
+
+        var username1 = $"User_{Guid.NewGuid():N}";
+        var user = new ApplicationUser(username1, $"{Guid.NewGuid():N}@example.com", $"sub-{Guid.NewGuid():N}");
+
+        await using (var context = fixture.CreateDbContext())
+        {
+            context.Users.Add(user);
+            await context.SaveChangesAsync();
+        }
+        var username2 = $"User2_{Guid.NewGuid():N}";
+        await handler.HandleAsync(new ChangeUsernameCommand(user.Id, user.VersionId, username2));
+        var username3 = $"User3_{Guid.NewGuid():N}";
+        var result = await handler.HandleAsync(new ChangeUsernameCommand(user.Id, user.VersionId, username3));
+        result.Should().Be(ChangeUsernameResult.UserAlreadyModified, "The handler should fail");
+    }
     [Fact]
     public async Task DeleteUserHandler_ShouldRemoveUserFromDatabase()
     {

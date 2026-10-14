@@ -1,10 +1,6 @@
 @using Washu.Framework.Extensions
 @using Washu.Framework.Identity
-@using Washu.Todo.Identity
 @inherits LayoutComponentBase
-@inject NavigationManager NavManager
-@inject UserSessionManager SessionManager
-@inject ApplicationSessionState SessionState
 @inject ApplicationUserStore UserStore
 <QueryNotificationHandler />
 <RadzenLayout>
@@ -18,7 +14,7 @@
                 <Authorized>
                     <RadzenProfileMenu>
                         <Template>
-                            <RadzenGravatar Email="@Email" 
+                            <RadzenGravatar Email="@_email" 
                                             Size="64" 
                                             class="rz-border-radius-circle" 
                                             Style="border: 2px solid var(--rz-primary-light);" />
@@ -55,18 +51,13 @@
     </RadzenFooter>
 </RadzenLayout>
 @code {
-    bool sidebarExpanded = true;
-    string Email = "";
+    private bool sidebarExpanded = true;
+    private string _email = "";
     [CascadingParameter] public required Task<AuthenticationState> Context { get; set; }
     protected override async Task OnInitializedAsync()
     {
         var state = await Context;
         if (state.User.UserId is not {} userGuid) return;
-        Email = (await UserStore.GetOrAddUserAsync(userGuid))?.Email ?? "";
-        SessionManager.AddSession(userGuid, SessionState.Id, () =>
-        {
-            NavManager.Refresh(forceReload: true);
-            return Task.CompletedTask;
-        });
+        _email = (await UserStore.GetOrAddUserAsync(userGuid))?.Email ?? "";
     }
 }

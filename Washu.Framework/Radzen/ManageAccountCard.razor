@@ -1,3 +1,4 @@
+@using Microsoft.AspNetCore.WebUtilities
 @using Washu.Framework.Extensions
 @using Washu.Framework.Identity.Entities
 @inject ChangeUsernameHandler ChangeUsernameHandler
@@ -5,9 +6,7 @@
 @inject NotificationService NotificationService
 @inject NavigationManager NavManager
 @inject ApplicationUserStore UserStore
-@inject UserSessionManager SessionManager
 @inject AuthenticationStateProvider AuthStateProvider
-@inject ApplicationSessionState SessionState
 @inject MessageStore Store
 @inject DialogService DialogService
 
@@ -41,7 +40,7 @@
                       ButtonStyle="ButtonStyle.Base" 
                       Variant="Variant.Outlined" 
                       Size="ButtonSize.Small" 
-                      Click="@SignOutAsync" />
+                      Click="@SignOut" />
 
         <!-- Divider using Radzen CSS utility -->
         <hr class="rz-my-0 rz-border-top rz-border-base-300" />
@@ -121,15 +120,41 @@
         var parameters = new Dictionary<string, object?>
         {
             [nameof(ChangeUsernameDialog.OldUsername)] = User.Username,
-            [nameof(ChangeUsernameDialog.UserId)] = User.Id
+            [nameof(ChangeUsernameDialog.UserId)] = User.Id,
+            [nameof(ChangeUsernameDialog.UserVersionId)] = User.VersionId
         };
         var data = await DialogService.OpenAsync<ChangeUsernameDialog>("Change Username", parameters);
         if (data is not ChangeUsernameCommand command) return;
-        var message = await ChangeUsernameHandler.HandleAsync(command);
+        var result = await ChangeUsernameHandler.HandleAsync(command);
+        if (result is ChangeUsernameResult.AccountNotFound)
+        {
+            var id = Store.Store(Message.Error("Identity Error", "Account not found"));
+            var url = QueryHelpers.AddQueryString(IdentityRoutes.SignOut, new Dictionary<string, string?>
+            {
+                ["messageId"] = id
+            });
+            UserStore.RemoveUser(User.Id);
+            NavManager.NavigateTo(url, forceLoad: true);
+            return;
+        }
+        if (result is ChangeUsernameResult.UserAlreadyModified)
+        {
+            NotificationService.Show(Message.Error("Identity Error", "Account already modified"));
+            await RefreshUserAsync();
+            return;
+        }
+        var message = result switch
+        {
+            ChangeUsernameResult.UsernameTaken => Message.Error("Identity Error", "Username taken"),
+            ChangeUsernameResult.Success => Message.Success("Identity Success", "Successfully changed username"),
+            _ => throw new ArgumentOutOfRangeException()
+        };
         NotificationService.Show(message);
-        UserStore.RemoveUser(User.Id);
-        await RefreshUserAsync();
-        await SessionManager.OnRefreshSessionAsync(User.Id, SessionState.Id);
+        if (message.Type is MessageType.Success)
+        {
+            UserStore.RemoveUser(User.Id);
+            await RefreshUserAsync();
+        }
         StateHasChanged();
     }
 
@@ -149,15 +174,7 @@
         }
         User = user;
     }
-    private async Task SignOutAsync()
-    {
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        if (authState.User.UserId is { } userId)
-        {
-            await SessionManager.OnRefreshSessionAsync(userId, SessionState.Id);
-        }
-        NavManager.NavigateTo(IdentityRoutes.SignOut, forceLoad: true);
-    }
+    private void SignOut() => NavManager.NavigateTo(IdentityRoutes.SignOut, forceLoad: true);
     private async Task DeleteAccountAsync()
     {
         var parameters = new Dictionary<string, object?>
@@ -185,8 +202,7 @@
             NotificationService.Show(message);
             return;
         }
-
-        await SessionManager.OnRefreshSessionAsync(User.Id, SessionState.Id);
+        UserStore.RemoveUser(User.Id);
         var id = Store.Store(message);
         NavManager.NavigateTo($"{IdentityRoutes.SignOut}?messageId={id}", forceLoad: true);
     }

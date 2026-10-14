@@ -7,8 +7,18 @@ public sealed class ApplicationUser(string userName, string email, string google
     private ApplicationUser() : this(string.Empty, string.Empty, string.Empty) {}
     public Guid Id { get; private init; } = Guid.CreateVersion7();
 
-    public string Username { get; set; } = userName;
+    public string Username
+    {
+        get;
+        set
+        {
+            field = value;
+            VersionId = Guid.CreateVersion7();
+        }
+    } = userName;
+
     public string Email { get; private init; } = email;
+    public Guid VersionId { get; private set; } = Guid.CreateVersion7();
     public Guid SecurityStamp { get; private set; } = Guid.CreateVersion7();
     public string GoogleSubject { get; private init; } = googleSubject;
     public uint RowVersion { get; }

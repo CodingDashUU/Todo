@@ -4,17 +4,18 @@ using Microsoft.EntityFrameworkCore;
 using Notifications;
 using Npgsql;
 
-public sealed record ChangeUsernameCommand(Guid UserId, string NewName);
+public sealed record ChangeUsernameCommand(Guid UserId, Guid UserVersionId, string NewName);
 
 public sealed class ChangeUsernameHandler(IDbContextFactory<ApplicationDbContext> factory)
 {
-    public async Task<Message> HandleAsync(ChangeUsernameCommand command, CancellationToken ct = default)
+    public async Task<ChangeUsernameResult> HandleAsync(ChangeUsernameCommand command, CancellationToken ct = default)
     {
         await using var dbContext = await factory.CreateDbContextAsync(ct);
         var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == command.UserId, ct);
-        if (user is null) return Message.Error("Identity Error", "Account was not found");
+        if (user is null) return ChangeUsernameResult.AccountNotFound;
+        if (user.VersionId != command.UserVersionId) return ChangeUsernameResult.UserAlreadyModified;
         if (await dbContext.Users.AnyAsync(u => u.Username == command.NewName && u.Id != command.UserId, ct))
-            return Message.Error("Identity Error", "Username provided is already taken");
+            return ChangeUsernameResult.UsernameTaken;
         user.Username = command.NewName;
         try
         {
@@ -22,8 +23,11 @@ public sealed class ChangeUsernameHandler(IDbContextFactory<ApplicationDbContext
         }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException{ SqlState: PostgresErrorCodes.UniqueViolation })
         {
-            return Message.Error("Identity Error","That username or sign-in identity is already in use.");
+            return ChangeUsernameResult.UsernameTaken;
         }
-        return Message.Success("Identity Success", "Successfully updated username");
+
+        return ChangeUsernameResult.Success;
     }
 }
+
+public enum ChangeUsernameResult : byte { Success, UsernameTaken, UserAlreadyModified, AccountNotFound }
