@@ -103,7 +103,9 @@ public static class ConfigurationExtensions
             builder.Services.AddServerSideBlazor(options =>
                 {
                     options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(3);
+                    options.DisconnectedCircuitMaxRetained = 100;
                     options.MaxBufferedUnacknowledgedRenderBatches = 10;
+                    options.JSInteropDefaultCallTimeout = TimeSpan.FromMinutes(1);
                 })
                 .AddHubOptions(options =>
                 {
@@ -111,6 +113,8 @@ public static class ConfigurationExtensions
                     options.AddFilter<CircuitRateLimitingFilter>();
                     options.MaximumReceiveMessageSize = 32 * 1024;
                     options.HandshakeTimeout = TimeSpan.FromSeconds(5);
+                    options.ClientTimeoutInterval = TimeSpan.FromSeconds(30);
+                    options.KeepAliveInterval = TimeSpan.FromSeconds(15);
                 });
             // Identity
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
