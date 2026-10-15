@@ -10,6 +10,6 @@ public sealed class FindUserHandler(IDbContextFactory<ApplicationDbContext> fact
     public async Task<ApplicationUser?> HandleAsync(FindUserQuery query, CancellationToken ct = default)
     {
         await using var dbContext = await factory.CreateDbContextAsync(ct);
-        return await dbContext.Users.SingleOrDefaultAsync(u => u.Id == query.UserId, ct);
+        return await dbContext.Users.AsNoTracking().SingleOrDefaultAsync(u => u.Id == query.UserId, ct);
     }
 }
