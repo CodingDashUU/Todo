@@ -195,13 +195,13 @@
         if (!confirmData.HasValue || !confirmData.Value) return;
         var data = await DialogService.OpenAsync<ConfirmAccountDeletionDialog>("Confirm Account Deletion", parameters);
         if (data is not DeleteUserCommand command) return;
-        var message = await DeleteUserHandler.HandleAsync(command);
-
-        if (message.Type is not MessageType.Success)
+        var result = await DeleteUserHandler.HandleAsync(command);
+        var message = result switch
         {
-            NotificationService.Show(message);
-            return;
-        }
+            DeleteUserResult.AccountNotFound => Message.Error("Identity Error", "Account not found"),
+            DeleteUserResult.Success => Message.Success("Identity Success", "Successfully deleted account"),
+            _ => throw new ArgumentOutOfRangeException()
+        };
         UserStore.RemoveUser(User.Id);
         var id = Store.Store(message);
         NavManager.NavigateTo($"{IdentityRoutes.SignOut}?messageId={id}", forceLoad: true);

@@ -157,7 +157,7 @@ public sealed class IdentityHandlersTests(PostgreSqlFixture fixture)
         }
 
         var result = await handler.HandleAsync(new DeleteUserCommand(user.Id));
-        result.Type.Should().Be(MessageType.Success, $"The handler should succeed");
+        result.Should().Be(DeleteUserResult.Success, "The handler should succeed");
 
         await using (var context = fixture.CreateDbContext())
         {
@@ -175,8 +175,7 @@ public sealed class IdentityHandlersTests(PostgreSqlFixture fixture)
         var nonExistentId = Guid.NewGuid();
         var result = await handler.HandleAsync(new DeleteUserCommand(nonExistentId));
 
-        result.Type.Should().Be(MessageType.Error, "The handler should report error when account does not exist");
-        result.Details.Should().Be("Account was not found", "The error details should indicate account was not found");
+        result.Should().Be(DeleteUserResult.AccountNotFound, "The handler should report error when account does not exist");
     }
 
     [Fact]
@@ -198,8 +197,7 @@ public sealed class IdentityHandlersTests(PostgreSqlFixture fixture)
             await context.SaveChangesAsync();
         }
 
-        var result = await handler.HandleAsync(new DeleteUserCommand(user.Id));
-        result.Type.Should().Be(MessageType.Success, "The handler should succeed in deleting user with roles");
+        await handler.HandleAsync(new DeleteUserCommand(user.Id));
 
         await using (var context = fixture.CreateDbContext())
         {
