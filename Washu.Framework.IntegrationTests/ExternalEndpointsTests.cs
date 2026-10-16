@@ -23,6 +23,7 @@ using System.Threading.RateLimiting;
 using Xunit;
 using Extensions;
 using Microsoft.Extensions.Primitives;
+using ZiggyCreatures.Caching.Fusion;
 
 [Collection(PostgreSqlTestCollection.Name)]
 public sealed class ExternalEndpointsTests(PostgreSqlFixture fixture) : IAsyncLifetime
@@ -36,8 +37,8 @@ public sealed class ExternalEndpointsTests(PostgreSqlFixture fixture) : IAsyncLi
 
     public async Task InitializeAsync()
     {
-        var messageStore = new MessageStore(new Microsoft.Extensions.Caching.Memory.MemoryCache(
-            new Microsoft.Extensions.Caching.Memory.MemoryCacheOptions()));
+        var messageStore = new MessageStore(new FusionCache(
+            new FusionCacheOptions()));
         _messageStore = messageStore;
 
         var builder = WebApplication.CreateBuilder();

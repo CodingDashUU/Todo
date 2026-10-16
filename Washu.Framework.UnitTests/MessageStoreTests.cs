@@ -3,13 +3,14 @@ namespace Washu.Framework.UnitTests;
 using FluentAssertions;
 using Microsoft.Extensions.Caching.Memory;
 using Washu.Framework.Notifications;
+using ZiggyCreatures.Caching.Fusion;
 
 public class MessageStoreTests
 {
     [Fact]
     public void StoreAndTake_RetrievesMessagesAndEvictsFromStore()
     {
-        using var cache = new MemoryCache(new MemoryCacheOptions());
+        using var cache = new FusionCache(new FusionCacheOptions());
         var store = new MessageStore(cache);
 
         var msg1 = Message.Success("Success", "Operation completed");
@@ -33,7 +34,7 @@ public class MessageStoreTests
     [Fact]
     public void Take_WithUnknownId_ReturnsEmptyArray()
     {
-        using var cache = new MemoryCache(new MemoryCacheOptions());
+        using var cache = new FusionCache(new FusionCacheOptions());
         var store = new MessageStore(cache);
 
         var retrieved = store.Take(Guid.NewGuid().ToString());

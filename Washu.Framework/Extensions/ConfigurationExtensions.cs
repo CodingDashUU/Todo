@@ -135,6 +135,7 @@ public static class ConfigurationExtensions
                             errorCodesToAdd: null
                         )));
             services.AddMemoryCache();
+            services.AddFusionCache();
             services.AddSingleton<MessageStore>();
             // Time zone
             services.AddScoped<UserTimeZoneProvider>(sp =>
