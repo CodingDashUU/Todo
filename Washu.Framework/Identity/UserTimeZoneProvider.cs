@@ -1,7 +1,7 @@
-﻿namespace Washu.Framework.Identity;
+namespace Washu.Framework.Identity;
 
 public sealed class UserTimeZoneProvider
 {
     public string TimeZoneId { get; init; } = "UTC";
-    public TimeZoneInfo TimeZoneInfo => TimeZoneInfo.FindSystemTimeZoneById(TimeZoneId);
+    public TimeZoneInfo TimeZoneInfo => field ??= TimeZoneInfo.FindSystemTimeZoneById(TimeZoneId);
 }
