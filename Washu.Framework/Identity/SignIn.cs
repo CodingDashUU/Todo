@@ -17,15 +17,13 @@ public sealed class SignInHandler(
     {
         var context = httpContextAccessor.HttpContext ??
                       throw new InvalidOperationException("An active HttpContext is required");
-        var additionalClaims = new List<Claim>();
-        if (command.AuthenticationMethod is not null) additionalClaims.Add(new Claim(ClaimTypes.AuthenticationMethod, command.AuthenticationMethod));
 
         var authenticationProperties = new AuthenticationProperties { IsPersistent = command.IsPersistent };
         var userPrincipal = await claimsFactory.CreateAsync(command.User);
 
-        if (userPrincipal.Identity is ClaimsIdentity identity)
-            foreach (var claim in additionalClaims)
-                identity.AddClaim(claim);
+        if (command.AuthenticationMethod is not null
+            && userPrincipal.Identity is ClaimsIdentity identity)
+            identity.AddClaim(new Claim(ClaimTypes.AuthenticationMethod, command.AuthenticationMethod));
         
         await context.SignInAsync(
             IdentityConstants.ApplicationScheme,
