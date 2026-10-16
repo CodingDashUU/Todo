@@ -115,7 +115,7 @@ public static class ExternalEndpointsExtensions
             return TypedResults.Redirect(url);
         }
 
-        var username = await GenerateValidUsernameAsync(dbContextFactory, email);
+        var username = await GenerateValidUsernameAsync(dbContext, email);
         var user = new ApplicationUser(username, email, info.ProviderKey);
         await dbContext.Users.AddAsync(user);
         var role = await dbContext.Roles
@@ -175,11 +175,23 @@ public static class ExternalEndpointsExtensions
             : ApplicationRoutes.Home;
     
     private static async Task<string> GenerateValidUsernameAsync(
-        IDbContextFactory<ApplicationDbContext> dbContextFactory,
+        ApplicationDbContext dbContext,
         string email) 
     {
-        var raw = email.Split('@')[0];
-        var clean = new string(raw.Where(UsernameRules.ValidCharacters.Contains).ToArray());
+        var atIndex = email.IndexOf('@');
+        var localPart = email.AsSpan(0, atIndex < 0 ? email.Length : atIndex);
+
+        var validCount = 0;
+        foreach (var ch in localPart)
+            if (UsernameRules.ValidCharacters.Contains(ch)) validCount++;
+
+        var clean = string.Create(validCount, localPart.ToString(), static (dest, src) =>
+        {
+            var i = 0;
+            foreach (var ch in src)
+                if (UsernameRules.ValidCharacters.Contains(ch))
+                    dest[i++] = ch;
+        });
         clean = clean.TrimStart('_', '-');
         
         if (string.IsNullOrEmpty(clean) || !char.IsAsciiLetter(clean[0])) clean = $"u_{clean}".TrimEnd('_', '-');
@@ -191,7 +203,6 @@ public static class ExternalEndpointsExtensions
         if (clean.Length > maxBaseLength) clean = clean[..maxBaseLength];
 
         var candidate = clean;
-        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         while (await dbContext.Users.AnyAsync(u => u.Username == candidate)) candidate = $"{clean}_{Random.Shared.Next(100, 9999)}";
 
         return candidate;
