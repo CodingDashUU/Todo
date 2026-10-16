@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using System.Security.Claims;
 
-public sealed class ApplicationClaimsPrincipalFactory 
+internal sealed class ApplicationClaimsPrincipalFactory 
     : IUserClaimsPrincipalFactory<ApplicationUser>
 {
     public Task<ClaimsPrincipal> CreateAsync(ApplicationUser user)

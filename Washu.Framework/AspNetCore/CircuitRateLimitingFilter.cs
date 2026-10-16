@@ -3,7 +3,7 @@ namespace Washu.Framework.AspNetCore;
 using Microsoft.AspNetCore.SignalR;
 using System.Collections.Concurrent;
 
-public sealed class CircuitRateLimitingFilter : IHubFilter
+internal sealed class CircuitRateLimitingFilter : IHubFilter
 {
     private static readonly ConcurrentDictionary<string, ConnectionTokenState> Tracking = new();
 
@@ -31,7 +31,7 @@ public sealed class CircuitRateLimitingFilter : IHubFilter
         await next(context, exception);
     }
     
-    internal static bool CheckAndUpdateTokens(string connectionId, DateTimeOffset now)
+    public static bool CheckAndUpdateTokens(string connectionId, DateTimeOffset now)
     {
         var state = Tracking.GetOrAdd(connectionId, _ => new ConnectionTokenState(MaxTokens, now));
 

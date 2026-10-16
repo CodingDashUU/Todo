@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
 
-public sealed class GetExternalLoginInfoHandler(
+internal sealed class GetExternalLoginInfoHandler(
     IHttpContextAccessor httpContextAccessor,
     IAuthenticationSchemeProvider schemeProvider
     )

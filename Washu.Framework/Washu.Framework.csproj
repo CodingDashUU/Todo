@@ -13,5 +13,6 @@
     </ItemGroup>
     <ItemGroup>
         <InternalsVisibleTo Include="Washu.Framework.UnitTests" />
+        <InternalsVisibleTo Include="Washu.Framework.IntegrationTests" />
     </ItemGroup>
 </Project>
