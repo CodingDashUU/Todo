@@ -102,9 +102,9 @@ public static class ConfigurationExtensions
             });
             builder.Services.AddServerSideBlazor(options =>
                 {
-                    options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(3);
-                    options.DisconnectedCircuitMaxRetained = 100;
-                    options.MaxBufferedUnacknowledgedRenderBatches = 10;
+                    options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(1);
+                    options.DisconnectedCircuitMaxRetained = 50;
+                    options.MaxBufferedUnacknowledgedRenderBatches = 5;
                     options.JSInteropDefaultCallTimeout = TimeSpan.FromMinutes(1);
                 })
                 .AddHubOptions(options =>
@@ -116,16 +116,15 @@ public static class ConfigurationExtensions
                     options.ClientTimeoutInterval = TimeSpan.FromSeconds(30);
                     options.KeepAliveInterval = TimeSpan.FromSeconds(15);
                 });
-            // Identity
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-            services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, ApplicationClaimsPrincipalFactory>();
-            services.AddScoped<ApplicationUserStore>();
-            services.AddScoped<AddRolesHandler>();
-            services.AddScoped<ChangeUsernameHandler>();
-            services.AddScoped<DeleteUserHandler>();
-            services.AddScoped<FindUserHandler>();
-            services.AddScoped<SignInHandler>();
-            services.AddScoped<GetExternalLoginInfoHandler>();
+            services.AddSingleton<IUserClaimsPrincipalFactory<ApplicationUser>, ApplicationClaimsPrincipalFactory>();
+            services.AddSingleton<ApplicationUserStore>();
+            services.AddSingleton<AddRolesHandler>();
+            services.AddSingleton<ChangeUsernameHandler>();
+            services.AddSingleton<DeleteUserHandler>();
+            services.AddSingleton<FindUserHandler>();
+            services.AddSingleton<SignInHandler>();
+            services.AddSingleton<GetExternalLoginInfoHandler>();
             services.AddDbContextFactory<ApplicationDbContext, TDbContext>(options =>
                 options.UseNpgsql(
                     connectionString,
@@ -347,4 +346,7 @@ file sealed class DbContextFactoryAdapter<TBaseContext, TDerivedContext>(
     
     public TBaseContext CreateDbContext() =>
         _innerFactory.CreateDbContext();
+
+    public async Task<TBaseContext> CreateDbContextAsync(CancellationToken cancellationToken = default) =>
+        await _innerFactory.CreateDbContextAsync(cancellationToken);
 }
