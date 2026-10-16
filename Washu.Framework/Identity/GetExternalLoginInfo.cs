@@ -23,8 +23,8 @@ public sealed class GetExternalLoginInfoHandler(
 
         if (providerKey is null || provider is null) return null;
 
-        var schemes = await schemeProvider.GetAllSchemesAsync();
-        var providerDisplayName = schemes.FirstOrDefault(p => p.Name == provider)?.DisplayName ?? provider;
+        var schemes = await schemeProvider.GetSchemeAsync(provider);
+        var providerDisplayName = schemes?.DisplayName ?? provider;
 
         return new ExternalLoginInfo(auth.Principal, provider, providerKey, providerDisplayName)
         {
