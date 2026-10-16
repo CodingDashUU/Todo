@@ -17,8 +17,9 @@ public sealed class CircuitRateLimitingFilter : IHubFilter
         var connectionId = invocationContext.Context.ConnectionId;
         var now = DateTimeOffset.UtcNow;
         var isAllowed = CheckAndUpdateTokens(connectionId, now);
-        if (!isAllowed) invocationContext.Context.Abort();
-        return await next(invocationContext);
+        if (isAllowed) return await next(invocationContext);
+        invocationContext.Context.Abort();
+        return null;
     }
 
     public async Task OnDisconnectedAsync(
