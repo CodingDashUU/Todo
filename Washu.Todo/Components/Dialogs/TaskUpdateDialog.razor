@@ -55,10 +55,10 @@
         public Validator(TaskEntry oldEntry)
         {
             RuleFor(m => m.NewTaskName)
-                .SetValidator(new TodoValidators.TaskName())
+                .SetValidator(new TaskNameValidator())
                 .Unless(m => oldEntry.Name == m.NewTaskName);
             RuleFor(m => m.NewGoalDate)
-                .SetValidator(new TodoValidators.GoalDate())
+                .SetValidator(new GoalDateValidator())
                 .Unless(m => oldEntry.GoalDate.ToUniversalTime() == m.NewGoalDate.ToUniversalTime());
         }
 

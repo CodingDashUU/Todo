@@ -30,6 +30,6 @@
     {
         public Validator() =>
             RuleFor(m => m.ListName)
-                .SetValidator(new TodoValidators.ListName());
+                .SetValidator(new ListNameValidator());
     }
 }

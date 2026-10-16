@@ -47,9 +47,9 @@
         public Validator()
         {
             RuleFor(x => x.TaskName)
-                .SetValidator(new TodoValidators.TaskName());
+                .SetValidator(new TaskNameValidator());
             RuleFor(x => x.GoalDate)
-                .SetValidator(new TodoValidators.GoalDate());
+                .SetValidator(new GoalDateValidator());
         }
     }
 }
