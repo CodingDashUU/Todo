@@ -1,4 +1,4 @@
-﻿namespace Washu.Todo;
+namespace Washu.Todo;
 
 using Features;
 
@@ -8,12 +8,12 @@ public static class ConfigurationExtensions
     {
         public IServiceCollection AddTodoCommands()
         {
-            services.AddScoped<CreateListHandler>();
-            services.AddScoped<CreateTaskHandler>();
-            services.AddScoped<ToggleTaskHandler>();
-            services.AddScoped<UpdateTaskHandler>();
-            services.AddScoped<DeleteTaskHandler>();
-            services.AddScoped<DeleteListHandler>();
+            services.AddSingleton<CreateListHandler>();
+            services.AddSingleton<CreateTaskHandler>();
+            services.AddSingleton<ToggleTaskHandler>();
+            services.AddSingleton<UpdateTaskHandler>();
+            services.AddSingleton<DeleteTaskHandler>();
+            services.AddSingleton<DeleteListHandler>();
             return services;
         }
     }
