@@ -11,7 +11,7 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(16px);
     border-radius: 20px;
-">
+" class="rz-datalist-item">
     <div style="
         display: flex;
         align-items: center;
@@ -90,7 +90,11 @@
         </div>
     </div>
 </RadzenCard>
-
+<style>
+    .rz-datalist-item {
+        margin-bottom: 1px !important; /* Adjust down to 4px or 6px for tighter spacing */
+    }
+</style>
 @code {
 
     [Parameter] public TaskEntry Entry { get; set; } = null!;
