@@ -23,7 +23,7 @@ internal sealed class AppAuthenticationStateProvider(
         if (principal.SecurityStamp is not { } securityStamp) return false;
         await using var scope = scopeFactory.CreateAsyncScope();
         var userStore = scope.ServiceProvider.GetRequiredService<ApplicationUserStore>();
-        var user = await userStore.GetOrAddUserAsync(userId);
+        var user = await userStore.GetOrSetUserAsync(userId);
         if (user is null) return false;
         return securityStamp == user.SecurityStamp;
     }

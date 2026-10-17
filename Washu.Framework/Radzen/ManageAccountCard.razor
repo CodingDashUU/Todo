@@ -140,7 +140,7 @@ else
             case ChangeUsernameResult.AccountNotFound:
             {
                 var id = Store.Store(Message.Error("Identity Error", "Account not found"));
-                UserStore.RemoveUser(User.Id);
+                await UserStore.RemoveUserAsync(User.Id);
                 NavManager.NavigateTo($"{IdentityRoutes.SignOut}?messageId={id}", forceLoad: true);
                 return;
             }
@@ -159,7 +159,7 @@ else
         NotificationService.Show(message);
         if (message.Type is MessageType.Success)
         {
-            UserStore.RemoveUser(User.Id);
+            await UserStore.RemoveUserAsync(User.Id);
             await RefreshUserAsync();
         }
         StateHasChanged();
@@ -173,7 +173,7 @@ else
             NavManager.NavigateTo(ApplicationRoutes.SignIn);
             return;
         }
-        var user = await UserStore.GetOrAddUserAsync(userId);
+        var user = await UserStore.GetOrSetUserAsync(userId);
         if (user is null)
         {
             NavManager.NavigateTo(ApplicationRoutes.SignIn);
@@ -203,7 +203,7 @@ else
             DeleteUserResult.Success => Message.Success("Identity Success", "Successfully deleted account"),
             _ => throw new ArgumentOutOfRangeException()
         };
-        UserStore.RemoveUser(User.Id);
+        await UserStore.RemoveUserAsync(User.Id);
         var id = Store.Store(message);
         NavManager.NavigateTo($"{IdentityRoutes.SignOut}?messageId={id}", forceLoad: true);
     }

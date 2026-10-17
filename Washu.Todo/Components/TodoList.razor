@@ -93,7 +93,7 @@
             return;
         }
 
-        var user = await UserStore.GetOrAddUserAsync(userId);
+        var user = await UserStore.GetOrSetUserAsync(userId);
         if (user is null)
         {
             var id = MessageStore.Store(Message.Error("Identity Error", "User couldn't be found, doesn't exist, or the session is invalid"));

@@ -58,6 +58,6 @@
     {
         var state = await Context;
         if (state.User.UserId is not {} userGuid) return;
-        _email = (await UserStore.GetOrAddUserAsync(userGuid))?.Email ?? "";
+        _email = (await UserStore.GetOrSetUserAsync(userGuid))?.Email ?? "";
     }
 }

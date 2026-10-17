@@ -4,7 +4,6 @@ using Fixtures;
 using FluentAssertions;
 using Identity;
 using Identity.Entities;
-using Microsoft.Extensions.Caching.Memory;
 using ZiggyCreatures.Caching.Fusion;
 
 [Collection(PostgreSqlTestCollection.Name)]
@@ -24,7 +23,7 @@ public class ApplicationUserStoreTests(PostgreSqlFixture fixture)
         dbContext.Users.Add(existingUser);
         await dbContext.SaveChangesAsync();
 
-        var user1 = await userStore.GetOrAddUserAsync(existingUser.Id);
+        var user1 = await userStore.GetOrSetUserAsync(existingUser.Id);
         user1.Should().NotBeNull($"the user, {existingUser.Id} exists in the database");
 
         // Verify user is in cache
@@ -36,10 +35,10 @@ public class ApplicationUserStoreTests(PostgreSqlFixture fixture)
         dbContext.Users.Remove(existingUser);
         await dbContext.SaveChangesAsync();
 
-        var user2 = await userStore.GetOrAddUserAsync(existingUser.Id);
+        var user2 = await userStore.GetOrSetUserAsync(existingUser.Id);
         user2.Should().NotBeNull("the user should still be served from cache even if removed from the database");
         user2.Should().BeSameAs(user1, "the second retrieval should return the exact cached instance from memory without querying database");
-        user2!.Id.Should().Be(existingUser.Id, "the Id of the cached user should match the original user Id");
+        user2.Id.Should().Be(existingUser.Id, "the Id of the cached user should match the original user Id");
     }
 
     [Fact]
@@ -56,7 +55,7 @@ public class ApplicationUserStoreTests(PostgreSqlFixture fixture)
         dbContext.Users.Add(existingUser);
         await dbContext.SaveChangesAsync();
 
-        var user = await userStore.GetOrAddUserAsync(existingUser.Id);
+        var user = await userStore.GetOrSetUserAsync(existingUser.Id);
         user.Should().NotBeNull();
         cache.TryGet<ApplicationUser>($"user:{existingUser.Id}").HasValue.Should().BeTrue("user should be cached");
 
@@ -64,11 +63,11 @@ public class ApplicationUserStoreTests(PostgreSqlFixture fixture)
         dbContext.Users.Remove(existingUser);
         await dbContext.SaveChangesAsync();
 
-        userStore.RemoveUser(existingUser.Id);
+        await userStore.RemoveUserAsync(existingUser.Id);
 
         cache.TryGet<ApplicationUser>($"user:{existingUser.Id}").HasValue.Should().BeFalse("user should be evicted from cache after RemoveUser call");
 
-        var userAfterEviction = await userStore.GetOrAddUserAsync(existingUser.Id);
+        var userAfterEviction = await userStore.GetOrSetUserAsync(existingUser.Id);
         userAfterEviction.Should().BeNull("querying user after eviction and database deletion should return null");
     }
 
@@ -81,7 +80,7 @@ public class ApplicationUserStoreTests(PostgreSqlFixture fixture)
         var userStore = new ApplicationUserStore(cache, handler);
 
         var nonExistentId = Guid.NewGuid();
-        var user = await userStore.GetOrAddUserAsync(nonExistentId);
+        var user = await userStore.GetOrSetUserAsync(nonExistentId);
 
         user.Should().BeNull("a non-existent user Id should return null");
     }

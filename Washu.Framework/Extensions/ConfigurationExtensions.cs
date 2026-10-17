@@ -195,7 +195,7 @@ public static class ConfigurationExtensions
                         }
                         var userStore = context.HttpContext.RequestServices
                             .GetRequiredService<ApplicationUserStore>();
-                        var user = await userStore.GetOrAddUserAsync(userId.Value);
+                        var user = await userStore.GetOrSetUserAsync(userId.Value);
                         if (context.Principal is null)
                             throw new InvalidOperationException("Claims Principal cannot be null");
                         if (user is null ||
