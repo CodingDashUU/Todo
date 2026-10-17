@@ -11,27 +11,24 @@ public sealed class UpdateTaskHandler(IDbContextFactory<TodoDbContext> factory)
     public async Task<Message> HandleAsync(UpdateTaskCommand command)
     {
         await using var dbContext = await factory.CreateDbContextAsync();
-        var list = await dbContext.GetListAsync(command.ListId);
-        if (list is null) return Message.Error(
-            title: "Task Modification Error",
-            details: "List does not exist");
+        var list = await dbContext.TodoLists.FirstOrDefaultAsync(l => l.Id == command.ListId);
+        var task = await dbContext.Tasks.FirstOrDefaultAsync(t => t.Id == command.TaskId && t.TodoListId == command.ListId);
+        if (list is null)
+            return Message.Error("Toggle Task Error", "Todo list does not exist");
         if (list.VersionId != command.ListVersionId)
-            return Message.Error("Task Update Error", "Your todo list was already modified, please try again");
-        var item = list.Tasks.SingleOrDefault(t => t.Id == command.TaskId);
-        if (item is null) return Message.Error(
-            title: "Task Modification Error",
-            details: "Task does not exist");
-        var taskNameChanged = command.NewTaskName != item.Name;
-        var goalDateChanged = command.NewGoalDate != item.GoalDate;
+            return Message.Error("Toggle Task Error", "Your todo list was already modified, please try again");
+        if (task is null) return Message.Error(title: "Toggle Task Error", details: "Task does not exist");
+        var taskNameChanged = command.NewTaskName != task.Name;
+        var goalDateChanged = command.NewGoalDate != task.GoalDate;
         if (taskNameChanged)
         {
-            if (list.Tasks.Any(x => x.Name == command.NewTaskName))
+            if (await dbContext.Tasks.AnyAsync(t => t.Name == command.NewTaskName && t.TodoListId == command.ListId))
                 return Message.Error(
                         title: "Task Modification Error",
                         details: "Task with the provided task name already exists");
-            item.Name = command.NewTaskName;
+            task.Name = command.NewTaskName;
         }
-        if (goalDateChanged) item.ChangeGoalDate(command.NewGoalDate);
+        if (goalDateChanged) task.ChangeGoalDate(command.NewGoalDate);
         if (taskNameChanged || goalDateChanged)
         {
             list.LastModified = DateTimeOffset.UtcNow;

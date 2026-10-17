@@ -44,6 +44,4 @@ public class TodoDbContext(DbContextOptions<TodoDbContext> options) : Applicatio
             });
         });
     }
-    public async Task<TodoList?> GetListAsync(Guid id) => await TodoLists.Include(l => l.Tasks.OrderBy(t => t.DateCreated)).FirstOrDefaultAsync(l => l.Id == id);
-    public async Task<List<TodoList>> GetListsByUserIdAsync(Guid userId) => await TodoLists.Where(l => l.UserId == userId).Include(l => l.Tasks.OrderBy(t => t.DateCreated)).ToListAsync();
 }

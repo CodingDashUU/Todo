@@ -11,11 +11,13 @@ public sealed class DeleteTaskHandler(IDbContextFactory<TodoDbContext> factory)
     public async Task<Message> HandleAsync(DeleteTaskCommand command)
     {
         await using var dbContext = await factory.CreateDbContextAsync();
-        var list = await dbContext.GetListAsync(command.ListId);
-        if (list is null) return Message.Error("Task Deletion Error", "Todo list was not found");
-        if (list.VersionId != command.ListVersionId) return Message.Error("Task Deletion Error", "Your todo list was already modified, please try again");
-        var task = list.Tasks.SingleOrDefault(t => t.Id == command.TaskId);
-        if (task is null) return Message.Error("Task Deletion Error", "Task was not found");
+        var list = await dbContext.TodoLists.FirstOrDefaultAsync(l => l.Id == command.ListId);
+        var task = await dbContext.Tasks.FirstOrDefaultAsync(t => t.Id == command.TaskId && t.TodoListId == command.ListId);
+        if (list is null)
+            return Message.Error("Toggle Task Error", "Todo list does not exist");
+        if (list.VersionId != command.ListVersionId)
+            return Message.Error("Toggle Task Error", "Your todo list was already modified, please try again");
+        if (task is null) return Message.Error(title: "Toggle Task Error", details: "Task does not exist");
         dbContext.Tasks.Remove(task);
         list.LastModified = DateTimeOffset.UtcNow;
         list.ChangeVersionId();

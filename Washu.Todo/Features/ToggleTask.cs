@@ -11,17 +11,16 @@ public sealed class ToggleTaskHandler(IDbContextFactory<TodoDbContext> factory)
     public async Task<Message> HandleAsync(ToggleTaskCommand command)
     {
         await using var dbContext = await factory.CreateDbContextAsync();
-        var list = await dbContext.GetListAsync(command.ListId);
+        var list = await dbContext.TodoLists.FirstOrDefaultAsync(l => l.Id == command.ListId);
+        var task = await dbContext.Tasks.FirstOrDefaultAsync(t => t.Id == command.TaskId && t.TodoListId == command.ListId);
         if (list is null)
             return Message.Error("Toggle Task Error", "Todo list does not exist");
         if (list.VersionId != command.ListVersionId)
             return Message.Error("Toggle Task Error", "Your todo list was already modified, please try again");
-        var item = list.Tasks.FirstOrDefault(t => t.Id == command.TaskId);
-        if (item is null) return Message.Error(title: "Toggle Task Error", details: "Task does not exist");
-        item.Toggle();
+        if (task is null) return Message.Error(title: "Toggle Task Error", details: "Task does not exist");
+        task.Toggle();
         list.LastModified = DateTimeOffset.UtcNow;
         list.ChangeVersionId();
-        dbContext.TodoLists.Update(list);
         try
         {
             await dbContext.SaveChangesAsync();

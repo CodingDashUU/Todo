@@ -11,12 +11,12 @@ public sealed class CreateTaskHandler(IDbContextFactory<TodoDbContext> dbContext
     public async Task<Message> HandleAsync(CreateTaskCommand command)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-        var list = await dbContext.GetListAsync(command.ListId);
+        var list = await dbContext.TodoLists.FirstOrDefaultAsync(l => l.Id == command.ListId);
         if (list is null)
             return Message.Error("Task Creation Error", "List does not exist");
-        if (list.Tasks.Any(x => x.Name == command.TaskName))
-            return Message.Error("Task Creation Error", "Task with the given task name already exists");
         if (list.VersionId != command.ListVersionId) return Message.Error("Task Creation Error", "Your todo list was already modified, please try again");
+        if (await dbContext.Tasks.AnyAsync(t => t.Name == command.TaskName && t.TodoListId == command.ListId))
+            return Message.Error("Task Creation Error", "Task with the given task name already exists");
         dbContext.Tasks.Add(new TaskEntry(command.TaskName, command.GoalDate, Guid.CreateVersion7(), list.Id));
         list.LastModified = DateTimeOffset.UtcNow;
         list.ChangeVersionId();
