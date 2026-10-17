@@ -117,7 +117,6 @@ public static class ConfigurationExtensions
                     options.KeepAliveInterval = TimeSpan.FromSeconds(15);
                 });
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-            services.AddSingleton<IUserClaimsPrincipalFactory<ApplicationUser>, ApplicationClaimsPrincipalFactory>();
             services.AddSingleton<ApplicationUserStore>();
             services.AddSingleton<AddRolesHandler>();
             services.AddSingleton<ChangeUsernameHandler>();

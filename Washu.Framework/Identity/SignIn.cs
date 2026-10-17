@@ -9,7 +9,6 @@ using System.Security.Claims;
 public sealed record SignInCommand(ApplicationUser User, bool IsPersistent, string? AuthenticationMethod = null);
 
 public sealed class SignInHandler(
-    IUserClaimsPrincipalFactory<ApplicationUser> claimsFactory,
     IHttpContextAccessor httpContextAccessor
     )
 {
@@ -19,7 +18,7 @@ public sealed class SignInHandler(
                       throw new InvalidOperationException("An active HttpContext is required");
 
         var authenticationProperties = new AuthenticationProperties { IsPersistent = command.IsPersistent };
-        var userPrincipal = await claimsFactory.CreateAsync(command.User);
+        var userPrincipal = ApplicationClaimsPrincipalFactory.Create(command.User);
 
         if (command.AuthenticationMethod is not null
             && userPrincipal.Identity is ClaimsIdentity identity)

@@ -49,7 +49,6 @@ public sealed class ExternalEndpointsTests(PostgreSqlFixture fixture) : IAsyncLi
         builder.Services.AddMemoryCache();
         builder.Services.AddSingleton(_messageStore);
         builder.Services.AddHttpContextAccessor();
-        builder.Services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, ApplicationClaimsPrincipalFactory>();
         builder.Services.AddScoped<SignInHandler>();
         builder.Services.AddScoped<GetExternalLoginInfoHandler>();
         builder.Services.AddScoped<FindUserHandler>();

@@ -36,7 +36,6 @@ public class SignInHandlerTests(PostgreSqlFixture fixture)
         });
 
         services.AddHttpContextAccessor();
-        services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, ApplicationClaimsPrincipalFactory>();
         services.AddScoped<SignInHandler>();
 
         var serviceProvider = services.BuildServiceProvider();
@@ -58,7 +57,6 @@ public class SignInHandlerTests(PostgreSqlFixture fixture)
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddHttpContextAccessor();
-        services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, ApplicationClaimsPrincipalFactory>();
         services.AddScoped<SignInHandler>();
 
         var serviceProvider = services.BuildServiceProvider();
