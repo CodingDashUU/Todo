@@ -12,4 +12,4 @@ public sealed record Message(MessageType Type, string Title, string Details)
         => new(MessageType.Success, title, details);
 }
 
-public enum MessageType { Error, Info, Success }
+public enum MessageType : byte { Error, Info, Success }

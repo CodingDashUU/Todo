@@ -10,4 +10,4 @@ public sealed record DataGridExportCommand(
     string FileName, 
     string ExcelTitle, 
     bool UseTheme);
-public enum DataGridExportMode { Excel, Csv }
+public enum DataGridExportMode : byte { Excel, Csv }
