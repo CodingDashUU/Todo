@@ -1,5 +1,4 @@
-using Microsoft.EntityFrameworkCore;
-using Washu.Framework.AspNetCore;
+using FluentValidation;
 using Washu.Framework.Identity;
 using Washu.Todo;
 using Washu.Todo.Components;
@@ -7,16 +6,28 @@ using Washu.Todo.Identity;
 using Washu.Framework.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddWashuFramework<TodoDbContext>(builder);
+ValidatorOptions.Global.DefaultRuleLevelCascadeMode = CascadeMode.Stop;
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddWfRateLimiting();
+builder.Services.AddHealthChecks().AddDbContextCheck<TodoDbContext>(name: "DB");
+builder.Services.AddWfRadzenBlazorServer();
+builder.Services.AddWfIdentityServices();
+builder.Services.AddFusionCaching();
+builder.Services.AddWfDbContextFactory<TodoDbContext>(builder.Configuration);
+builder.Services.AddUserTimeZoneProvider();
+builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddAppAuthenticationStateProvider();
+builder.Services.AddNoOpAntiforgeryProvider();
+builder.Services
+    .AddDefaultAuthentication()
+    .AddExternalCookie()
+    .AddApplicationCookie()
+    .AddWfGoogle(builder.Configuration);
+builder.Services.AddAuthorization();
 builder.Services.AddTodoCommands();
 var app = builder.Build();
-await using var scope = app.Services.CreateAsyncScope();
-var dbContext = scope.ServiceProvider.GetRequiredService<TodoDbContext>();
-await dbContext.Database.MigrateAsync();
-app.UseWashuFramework();
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode()
-    .RequireRateLimiting(RateLimiterPolicy.BlazorHandshakeRateLimiter)
-    .DisableAntiforgery();
+await app.MigrateAsync<TodoDbContext>();
+app.UseWfPipeline();
+app.MapWfRazorComponents<App>();
 await app.SeedRolesAsync([.. InitialUserRoles.Roles]);
 await app.RunAsync();
