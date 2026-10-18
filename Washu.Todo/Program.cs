@@ -24,7 +24,7 @@ builder.Services
     .AddApplicationCookie()
     .AddWfGoogle(builder.Configuration);
 builder.Services.AddAuthorization();
-builder.Services.AddTodoCommands();
+builder.Services.AddTodoHandlers();
 var app = builder.Build();
 await app.MigrateAsync<TodoDbContext>();
 app.UseWfPipeline();

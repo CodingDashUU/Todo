@@ -6,7 +6,7 @@ public static class ConfigurationExtensions
 {
     extension(IServiceCollection services)
     {
-        public IServiceCollection AddTodoCommands()
+        public IServiceCollection AddTodoHandlers()
         {
             services.AddSingleton<CreateListHandler>();
             services.AddSingleton<CreateTaskHandler>();
@@ -14,6 +14,7 @@ public static class ConfigurationExtensions
             services.AddSingleton<UpdateTaskHandler>();
             services.AddSingleton<DeleteTaskHandler>();
             services.AddSingleton<DeleteListHandler>();
+            services.AddSingleton<UpdateListHandler>();
             return services;
         }
     }

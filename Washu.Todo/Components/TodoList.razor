@@ -13,6 +13,7 @@
 @inject CreateTaskHandler CreateTaskHandler
 @inject ToggleTaskHandler ToggleTaskHandler
 @inject UpdateTaskHandler UpdateTaskHandler
+@inject UpdateListHandler UpdateListHandler
 @inject DeleteTaskHandler DeleteTaskHandler
 @inject DeleteListHandler DeleteListHandler
 
@@ -42,6 +43,7 @@
         <RadzenButton Click="CreateTaskAsync" Disabled="IsNoListSelected">Add Task</RadzenButton>
         <RadzenButton Click="CreateListAsync">Add List</RadzenButton>
         <RadzenButton Click="DeleteListAsync" Disabled="IsNoListSelected">Delete List</RadzenButton>
+        <RadzenButton Click="UpdateListAsync" Disabled="IsNoListSelected">Update List</RadzenButton>
     </RadzenCard>
 </RadzenStack>
 
@@ -228,6 +230,21 @@
 
         await RefreshCurrentListAsync();
     }
+    private async Task UpdateListAsync()
+    {
+        var parameters = new Dictionary<string, object?>(1)
+        {
+            [nameof(ListUpdateDialog.OldList)] = _selectedList
+        };
+        var result = await DialogService.OpenAsync<ListUpdateDialog>("Update List", parameters);
+        if (result is not UpdateListCommand command) return;
+
+        var message = await UpdateListHandler.HandleAsync(command);
+        NotificationService.Show(message);
+
+        await RefreshCurrentListAsync();
+    }
+
 
     private async Task OnToggleTask(TaskEntry entry)
     {

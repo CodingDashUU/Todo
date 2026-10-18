@@ -1,0 +1,44 @@
+@using FluentValidation
+@using Washu.Todo.Features
+@using TodoList = Washu.Todo.TodoList
+@inject DialogService DialogService
+<ApplicationForm
+    Model="_model"
+    Validator="_validator"
+    HandleValidSubmit="CloseDialog">
+    <RadzenFormField Text="New List Name">
+        <RadzenTextBox Name="@nameof(Model.NewListName)" 
+                       @bind-Value="_model.NewListName"
+                       MaxLength="TodoRules.ListName.MaximumLength" />
+    </RadzenFormField>
+</ApplicationForm>
+@code {
+    private readonly Model _model = new();
+    private Validator _validator = null!;
+    
+    [Parameter] public required TodoList OldList { get; set; }
+
+    protected override void OnInitialized()
+    {
+        _model.NewListName = OldList.Name;
+        _validator = new Validator(OldList);
+    }
+
+    private void CloseDialog()
+    {
+        var command = new UpdateListCommand(OldList.Id, OldList.VersionId, OldList.UserId, _model.NewListName);
+        DialogService.Close(command);
+    }
+
+    private class Model
+    {
+        public string NewListName { get; set; } = string.Empty;
+    }
+    private class Validator : AbstractValidator<Model>
+    {
+        public Validator(TodoList oldList) =>
+            RuleFor(m => m.NewListName)
+                .SetValidator(new ListNameValidator())
+                .Unless(m => m.NewListName == oldList.Name);
+    }
+}
