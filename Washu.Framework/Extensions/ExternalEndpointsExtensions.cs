@@ -30,12 +30,13 @@ public static class ExternalEndpointsExtensions
     }
     private static async Task<IResult> ChallengeExternal(
         HttpContext context, 
-        FindUserHandler handler,
+        IDbContextFactory<ApplicationDbContext> factory,
         [FromQuery] bool persistCookie, 
         [FromQuery] string returnUrl = "/")
     {
+        await using var dbContext = await factory.CreateDbContextAsync();
         if (context.User is { Identity.IsAuthenticated: true, UserId: {} userGuid}
-            && await handler.HandleAsync(new FindUserQuery(userGuid)) is not null)
+            && await dbContext.Users.AnyAsync(u => u.Id == userGuid))
             return TypedResults.Redirect(SafeReturnUrl(returnUrl));
         var callbackUrl = QueryHelpers.AddQueryString(
             IdentityRoutes.ExternalCallback,
