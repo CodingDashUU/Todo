@@ -5,7 +5,7 @@ using Identity;
 using Microsoft.EntityFrameworkCore;
 
 public sealed record UpdateListCommand(Guid ListId, Guid ListVersionId, Guid UserId, string NewListName);
-public class UpdateListHandler(IDbContextFactory<TodoDbContext> factory)
+public sealed class UpdateListHandler(IDbContextFactory<TodoDbContext> factory)
 {
     public async Task<Message> HandleAsync(UpdateListCommand command)
     {
@@ -15,7 +15,7 @@ public class UpdateListHandler(IDbContextFactory<TodoDbContext> factory)
             return Message.Error("Update List Error", "Todo list does not exist");
         if (list.VersionId != command.ListVersionId)
             return Message.Error("Toggle Task Error", "Your todo list was already modified, please try again");
-        if (dbContext.TodoLists.Any(l => l.UserId == command.UserId && l.Name == command.NewListName))
+        if (dbContext.TodoLists.Any(l => l.UserId == command.UserId && l.Name == command.NewListName && l.Id != command.ListId))
             return Message.Error("Update List Error", "A todo list with the given name already exists");
         list.Name =  command.NewListName;
         list.LastModified = DateTimeOffset.UtcNow;

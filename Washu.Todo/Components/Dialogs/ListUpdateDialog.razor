@@ -5,6 +5,7 @@
 <ApplicationForm
     Model="_model"
     Validator="_validator"
+    SubmitButtonConfig="ButtonConfig"
     HandleValidSubmit="CloseDialog">
     <RadzenFormField Text="New List Name">
         <RadzenTextBox Name="@nameof(Model.NewListName)" 
@@ -15,7 +16,14 @@
 @code {
     private readonly Model _model = new();
     private Validator _validator = null!;
-    
+    private SubmitButtonConfig ButtonConfig => new()
+    {
+        ButtonDisabled = !NewListNameChanged,
+        ButtonText = "Update List",
+        ButtonIcon = MaterialIcons.Update
+    };
+
+    private bool NewListNameChanged => _model.NewListName != OldList.Name;
     [Parameter] public required TodoList OldList { get; set; }
 
     protected override void OnInitialized()
@@ -39,6 +47,8 @@
         public Validator(TodoList oldList) =>
             RuleFor(m => m.NewListName)
                 .SetValidator(new ListNameValidator())
-                .Unless(m => m.NewListName == oldList.Name);
+                .Must(m => IsDifferent(oldList.Name, m)).WithMessage("New name must be different from the old name");
+        
+        private static bool IsDifferent(string oldName, string newName) => oldName != newName;
     }
 }
