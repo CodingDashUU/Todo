@@ -43,7 +43,7 @@ public class ApplicationDbContext(DbContextOptions options)
         {
             entity.Property(u => u.Username).HasColumnType(Citext);
             entity.Property(u => u.Email).HasColumnType(Citext);
-            entity.Property(u => u.GoogleSubject).HasColumnType(Citext);
+            entity.Property(u => u.GoogleSubject).HasMaxLength(255);
             entity.HasUniqueIndex(u => u.Username);
             entity.HasUniqueIndex(u => u.Email);
             entity.HasUniqueIndex(u => u.GoogleSubject);
@@ -54,7 +54,6 @@ public class ApplicationDbContext(DbContextOptions options)
                 t.HasAllowedFirstCharacterCheckConstraint(p => p.Username, Characters.Letters);
                 t.HasMaxLengthCheckConstraint(p => p.Email, 255);
                 t.HasEmailCheckConstraint(p => p.Email);
-                t.HasMaxLengthCheckConstraint(p => p.GoogleSubject, 255);
             });
             entity.Property(u => u.RowVersion).IsRowVersion();
         });

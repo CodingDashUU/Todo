@@ -85,18 +85,18 @@ public sealed class ApplicationUserTests(PostgreSqlFixture fixture)
             .SqlState.Should().Be(PostgresErrorCodes.UniqueViolation, "The username should already exist in the database, even with different casing");
     }
         [Fact]
-    public async Task CitextUniqueConstraint_RejectsInsensitiveDuplicateGoogleSubject()
+    public async Task CitextUniqueConstraint_RejectsDuplicateGoogleSubject()
     {
         await using var context = fixture.CreateDbContext();
 
         var baseEmail = $"{Guid.CreateVersion7():N}@example.com";
         var baseName = $"User_{Guid.CreateVersion7():N}";
-        var baseSub = $"test_{Guid.CreateVersion7():N}";
+        var sub = $"test_{Guid.CreateVersion7():N}";
         // Email
         var user1 = new ApplicationUser(
             baseName.ToUpperInvariant(), 
             baseEmail.ToUpperInvariant(), 
-            baseSub.ToUpperInvariant());
+            sub);
         context.Users.Add(user1);
         await context.SaveChangesAsync();
         
@@ -104,7 +104,7 @@ public sealed class ApplicationUserTests(PostgreSqlFixture fixture)
         var user2 = new ApplicationUser(
             $"User_{Guid.CreateVersion7():N}", 
             $"{Guid.CreateVersion7():N}@example.com", 
-            baseSub.ToLowerInvariant());
+            sub);
         
         context.Users.Add(user2);
         
