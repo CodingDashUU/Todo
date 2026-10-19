@@ -10,6 +10,7 @@ public class ApplicationDbContext(DbContextOptions options)
 {
     public DbSet<ApplicationUser> Users => Set<ApplicationUser>();
     public DbSet<ApplicationRole> Roles => Set<ApplicationRole>();
+    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<UserRole> UserRoles => Set<UserRole>();
     protected const string Citext = "citext";
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -24,6 +25,19 @@ public class ApplicationDbContext(DbContextOptions options)
                 .WithMany()
                 .HasForeignKey(u => u.RoleId);
             entity.HasKey(u => new { u.UserId, u.RoleId });
+        });
+        modelBuilder.Entity<RolePermission>(entity =>
+        {
+            entity.HasOne(rp => rp.Role)
+                .WithMany(r => r.Permissions)
+                .HasForeignKey(u => u.RoleId);
+            entity.HasKey(u => u.Id);
+            entity.Property(rp => rp.Name).HasColumnType(Citext);
+            entity.HasUniqueIndex(u => u.Name);
+            entity.ToTable(t =>
+            {
+                t.HasMaxLengthCheckConstraint(p => p.Name, 64);
+            });
         });
         modelBuilder.Entity<ApplicationUser>(entity =>
         {

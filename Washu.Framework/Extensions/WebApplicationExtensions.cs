@@ -3,6 +3,7 @@ namespace Washu.Framework.Extensions;
 using AspNetCore;
 using Blazor;
 using Identity;
+using Identity.Entities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components;
@@ -22,6 +23,17 @@ public static class WebApplicationExtensions
             await using var serviceScope = app.Services.CreateAsyncScope();
             var addRolesHandler = serviceScope.ServiceProvider.GetRequiredService<AddRolesHandler>();
             await addRolesHandler.HandleAsync(new AddRolesCommand(roles));
+        }
+        public async Task SeedPermissionsAsync()
+        {
+            await using var serviceScope = app.Services.CreateAsyncScope();
+            await using var dbContext = await serviceScope.ServiceProvider
+                .GetRequiredService<IDbContextFactory<ApplicationDbContext>>()
+                .CreateDbContextAsync();
+            if (await dbContext.RolePermissions.AnyAsync(rp => rp.Name == CorePermissions.CanCheckSystemHealth)) return;
+            var role = dbContext.Roles.First(r  => r.Name == InitialUserRoles.Admin);
+            dbContext.RolePermissions.Add(new RolePermission(CorePermissions.CanCheckSystemHealth, role.Id));
+            await dbContext.SaveChangesAsync();
         }
         public void UseWfPipeline()
         {
@@ -75,6 +87,12 @@ public static class WebApplicationExtensions
 
                     await context.Response.WriteAsJsonAsync(json);
                 }
+            }).AddEndpointFilter(async (context, next) =>
+            {
+                var handler = context.HttpContext.RequestServices.GetRequiredService<HasPermissionHandler>();
+                if (!await handler.HandleAsync(new HasPermissionQuery(CorePermissions.CanCheckSystemHealth)))
+                    return TypedResults.NotFound();
+                return await next(context);
             });
 
         private void MapSignOutEndpoint() =>

@@ -9,7 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 ValidatorOptions.Global.DefaultRuleLevelCascadeMode = CascadeMode.Stop;
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddWfRateLimiting();
-builder.Services.AddHealthChecks().AddDbContextCheck<TodoDbContext>(name: "DB");
+builder.Services.AddHealthChecks().AddDbContextCheck<TodoDbContext>();
 builder.Services.AddWfRadzenBlazorServer();
 builder.Services.AddWfIdentityServices();
 builder.Services.AddFusionCaching();
@@ -23,11 +23,11 @@ builder.Services
     .AddExternalCookie()
     .AddApplicationCookie()
     .AddWfGoogle(builder.Configuration);
-builder.Services.AddAuthorization();
 builder.Services.AddTodoHandlers();
 var app = builder.Build();
 await app.MigrateAsync<TodoDbContext>();
 app.UseWfPipeline();
 app.MapWfRazorComponents<App>();
 await app.SeedRolesAsync([.. InitialUserRoles.Roles]);
+await app.SeedPermissionsAsync();
 await app.RunAsync();

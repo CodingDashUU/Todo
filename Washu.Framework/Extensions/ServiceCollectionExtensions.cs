@@ -2,15 +2,12 @@ namespace Washu.Framework.Extensions;
 
 using AspNetCore;
 using Blazor;
-using FluentValidation;
 using global::Radzen;
 using Identity;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -18,8 +15,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Notifications;
 using System.Threading.RateLimiting;
-using ZiggyCreatures.Caching.Fusion;
-using ZiggyCreatures.Caching.Fusion.MicrosoftHybridCache;
 
 public static class ServiceCollectionExtensions
 {
@@ -66,6 +61,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<DeleteUserHandler>();
         services.AddSingleton<FindUserHandler>();
         services.AddSingleton<SignInHandler>();
+        services.AddSingleton<HasPermissionHandler>();
         services.AddSingleton<GetExternalLoginInfoHandler>();
         services.AddSingleton<ApplicationUserStore>();
         return services;
