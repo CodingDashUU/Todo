@@ -223,11 +223,10 @@ public sealed class ApplicationUserTests(PostgreSqlFixture fixture)
             tooLongSubject);
 
         context.Users.Add(user);
-
         var saveAction = async () => await context.SaveChangesAsync();
         (await saveAction.Should().ThrowAsync<DbUpdateException>("The database should fail to update"))
             .WithInnerException<PostgresException>("The reason should be a Postgres error specifically")
             .And
-            .SqlState.Should().Be(PostgresErrorCodes.CheckViolation, "The GoogleSubject violates the 255 character MaxLength check constraint");
+            .SqlState.Should().Be(PostgresErrorCodes.StringDataRightTruncation, "The GoogleSubject violates the 255 character MaxLength check constraint");
     }
 }
