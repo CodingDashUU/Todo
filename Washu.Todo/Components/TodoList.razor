@@ -23,7 +23,7 @@
                         Value="_selectedList" 
                         Data="_listNames" 
                         TextProperty="Name"
-                        PageSize="10" 
+                        PageSize="10"
                         ValueChanged="OnListSelected" />
     
         <RadzenButton class="big-icon-button"
@@ -50,8 +50,9 @@
 <RadzenDataList @ref="_dataList"
                 WrapItems AllowPaging IsLoading="@_isLoading"
                 LoadData="@LoadTasksAsync"
+                Style="height:580px;overflow:auto"
                 Data="@_tasks" Count="_count" TItem="TaskEntry" 
-                PageSize="10" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary>
+                PageSize="PageCount" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary>
     <Template Context="item">
         <TaskCard Entry="item"
                   OnTaskCompleted="() => OnToggleTask(item)" 
@@ -71,6 +72,7 @@
         CancelButtonText = "No" 
     };
 
+    private const byte PageCount = 10;
     private RadzenDataList<TaskEntry>? _dataList;
     private Guid _userId;
     private bool _isEditing;
@@ -100,7 +102,7 @@
         
         await LoadListsAsync(selectDefault: true);
         
-        await FetchTasksAsync(skip: 0, top: 10);
+        await FetchTasksAsync(skip: 0, top: PageCount);
         
         _hasInitialized = true;
     }
@@ -110,11 +112,8 @@
 
     private async Task OnListSelected(Todo.TodoList newList)
     {
-        if (newList.Id == Todo.TodoList.None.Id)
-            _selectedList = Todo.TodoList.None;
-        else
-            _selectedList = newList;
-        
+        _selectedList = newList.Id == Todo.TodoList.None.Id ? Todo.TodoList.None : newList;
+
         // Changing the Dropdown forces the grid back to page 1 and fetches data
         if (_dataList is not null)
         {
@@ -187,7 +186,7 @@
     {
         if (!_hasInitialized) return;
 
-        await FetchTasksAsync(args.Skip ?? 0, args.Top ?? 10);
+        await FetchTasksAsync(args.Skip ?? 0, args.Top ?? PageCount);
         await InvokeAsync(StateHasChanged);
     }
 
