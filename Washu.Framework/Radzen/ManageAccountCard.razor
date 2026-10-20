@@ -1,5 +1,4 @@
 @using Washu.Framework.Extensions
-@using Washu.Framework.Identity.Entities
 @inject ChangeUsernameHandler ChangeUsernameHandler
 @inject DeleteUserHandler DeleteUserHandler
 @inject NotificationService NotificationService
@@ -8,14 +7,9 @@
 @inject AuthenticationStateProvider AuthStateProvider
 @inject MessageStore Store
 @inject DialogService DialogService
+@inherits AuthenticatedComponent
 
-@if (User is null)
-{
-    <RadzenProgressBar Mode="ProgressBarMode.Indeterminate" />
-}
-else
-{
-    <RadzenCard Variant="Variant.Outlined" class="rz-p-4 rz-p-md-6" Style=" margin: 0 auto;">
+        <RadzenCard Variant="Variant.Outlined" class="rz-p-4 rz-p-md-6" Style=" margin: 0 auto;">
         <RadzenStack Gap="1rem">
             
             <!-- Header & Profile Overview -->
@@ -41,6 +35,12 @@ else
                           Variant="Variant.Outlined" 
                           Size="ButtonSize.Small" 
                           Click="@SignOut" />
+            <RadzenButton Icon="@MaterialIcons.Logout" 
+                          Text="Sign Out From All Sessions" 
+                          ButtonStyle="ButtonStyle.Base" 
+                          Variant="Variant.Outlined" 
+                          Size="ButtonSize.Small" 
+                          Click="@SignOutFromAllSessions" />
 
             <!-- Divider using Radzen CSS utility -->
             <hr class="rz-my-0 rz-border-top rz-border-base-300" />
@@ -107,7 +107,7 @@ else
 
         </RadzenStack>
     </RadzenCard>
-}
+
 @code {
     private static readonly ConfirmOptions ConfirmAccountDeletionOptions = new()
     {
@@ -116,14 +116,6 @@ else
         OkButtonText = "Yes",
         CancelButtonText = "No" 
     };
-
-    private ApplicationUser User { get; set; } = null!;
-    
-    protected override async Task OnInitializedAsync()
-    {
-        await RefreshUserAsync();
-    }
-
     private async Task OnChangeUsernameAsync()
     {
         var parameters = new Dictionary<string, object?>(3)
@@ -182,6 +174,11 @@ else
         User = user;
     }
     private void SignOut() => NavManager.NavigateTo(IdentityRoutes.SignOut, forceLoad: true);
+
+    private void SignOutFromAllSessions()
+    {
+        NavManager.NavigateTo(IdentityRoutes.SignOutFromAllSessions, forceLoad: true);
+    }
     private async Task DeleteAccountAsync()
     {
         var parameters = new Dictionary<string, object?>(2)

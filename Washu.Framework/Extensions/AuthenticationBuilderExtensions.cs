@@ -52,14 +52,12 @@ public static class AuthenticationBuilderExtensions
                         IdentityConstants.ApplicationScheme);
                     return;
                 }
-
                 var userStore = context.HttpContext.RequestServices
                     .GetRequiredService<ApplicationUserStore>();
                 var user = await userStore.GetOrSetUserAsync(userId.Value);
-                if (context.Principal is null)
-                    throw new InvalidOperationException("Claims Principal cannot be null");
-                if (user is null ||
-                    context.Principal.SecurityStamp is null)
+                if (user is null 
+                    || context.Principal?.SecurityStamp is null 
+                    || context.Principal?.SecurityStamp != user.SecurityStamp)
                 {
                     context.RejectPrincipal();
                     await context.HttpContext.SignOutAsync(
@@ -90,7 +88,6 @@ public static class AuthenticationBuilderExtensions
             options.CorrelationCookie.SameSite = SameSiteMode.Lax;
             options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
             options.SignInScheme = IdentityConstants.ExternalScheme;
-                    
             options.Events.OnRemoteFailure = context =>
             {
                 using var scope = context.HttpContext.RequestServices.CreateScope();

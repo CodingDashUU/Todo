@@ -22,4 +22,6 @@ public sealed class ApplicationUser(string userName, string email, string google
     public Guid SecurityStamp { get; private set; } = Guid.CreateVersion7();
     public string GoogleSubject { get; private init; } = googleSubject;
     public uint RowVersion { get; }
+    
+    public void ChangeSecurityStamp() => SecurityStamp = Guid.CreateVersion7();
 }

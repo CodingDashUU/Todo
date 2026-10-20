@@ -1,0 +1,30 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@using Washu.Framework.Extensions
+@using Washu.Framework.Identity
+@using Washu.Framework.Identity.Entities
+@inject NavigationManager NavManager
+@inject ApplicationUserStore UserStore
+
+
+
+@code {
+    [CascadingParameter] public required Task<AuthenticationState> Context { get; set; }
+    protected string RedirectUrl = ApplicationRoutes.SignIn;
+    protected ApplicationUser User = null!;
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await Context;
+        if (state.User.UserId is not { } userId
+            || state.User.SecurityStamp is not { } securityStamp
+            || await UserStore.GetOrSetUserAsync(userId) is not { } user
+            || user.SecurityStamp != securityStamp)
+        {
+            Redirect();
+            return;
+        }
+        User = user;
+    }
+    
+    private void Redirect() => NavManager.NavigateTo(RedirectUrl, forceLoad: true);
+
+}

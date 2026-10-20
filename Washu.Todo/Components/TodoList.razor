@@ -1,12 +1,8 @@
 @using Microsoft.EntityFrameworkCore
-@using Washu.Framework.Identity
-@using Washu.Framework.Notifications
 @using Washu.Todo.Identity
 @using Dialogs
-@using Washu.Framework.Extensions
 @using Washu.Todo.Features
 @inject NotificationService NotificationService
-@inject NavigationManager NavManager
 @inject DialogService DialogService
 @inject IDbContextFactory<TodoDbContext> DbContextFactory
 @inject CreateListHandler CreateListHandler
@@ -16,7 +12,7 @@
 @inject UpdateListHandler UpdateListHandler
 @inject DeleteTaskHandler DeleteTaskHandler
 @inject DeleteListHandler DeleteListHandler
-
+@inherits AuthenticatedComponent
 <RadzenStack Orientation="Orientation.Horizontal">
     <RadzenCard>
         <RadzenDropDown TValue="Todo.TodoList" 
@@ -74,7 +70,6 @@
 
     private const byte PageCount = 10;
     private RadzenDataList<TaskEntry>? _dataList;
-    private Guid _userId;
     private bool _isEditing;
     private bool _isDeleting;
     
@@ -87,18 +82,10 @@
     private List<Todo.TodoList> _listNames = [];
     private bool _isLoading;
     private int _count;
-
-    [CascadingParameter] public required Task<AuthenticationState> Context { get; set; }
     
     protected override async Task OnInitializedAsync()
     {
-        var principal = await Context;
-        if (principal.User.Identity is null || principal.User.UserId is not { } userId)
-        {
-            NavManager.NavigateTo(ApplicationRoutes.SignIn, forceLoad: true);
-            return;
-        }
-        _userId = userId;
+        await base.OnInitializedAsync();
         
         await LoadListsAsync(selectDefault: true);
         
@@ -113,8 +100,6 @@
     private async Task OnListSelected(Todo.TodoList newList)
     {
         _selectedList = newList.Id == Todo.TodoList.None.Id ? Todo.TodoList.None : newList;
-
-        // Changing the Dropdown forces the grid back to page 1 and fetches data
         if (_dataList is not null)
         {
             await _dataList.FirstPage(true);
@@ -127,7 +112,7 @@
         
         var fetchedLists = await dbContext.TodoLists
             .AsNoTracking()
-            .Where(l => l.UserId == _userId)
+            .Where(l => l.UserId == User.Id)
             .OrderByDescending(l => l.LastModified)
             .ToListAsync();
         
@@ -279,7 +264,7 @@
             options: ConfirmDeleteOptions);
         if (!confirmData.HasValue || !confirmData.Value) return;
 
-        var command = new DeleteListCommand(_selectedList.Id, _userId);
+        var command = new DeleteListCommand(_selectedList.Id, User.Id);
         var message = await DeleteListHandler.HandleAsync(command);
         NotificationService.Show(message);
 
@@ -289,7 +274,7 @@
 
     private async Task CreateListAsync()
     {
-        var parameters = new Dictionary<string, object?>(1) { [nameof(ListCreationDialog.UserId)] = _userId };
+        var parameters = new Dictionary<string, object?>(1) { [nameof(ListCreationDialog.UserId)] = User.Id };
         var result = await DialogService.OpenAsync<ListCreationDialog>("Create List", parameters);
         if (result is not CreateListCommand command) return;
 

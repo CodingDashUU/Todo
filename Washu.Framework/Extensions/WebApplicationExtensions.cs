@@ -49,7 +49,7 @@ public static class WebApplicationExtensions
             
             app.MapExternalEndpoints();
             app.MapWfHealthChecks();
-            app.MapSignOutEndpoint();
+            app.MapSignOutEndpoints();
         }
 
         public void MapWfRazorComponents<TApp>()
@@ -95,7 +95,8 @@ public static class WebApplicationExtensions
                 return await next(context);
             });
 
-        private void MapSignOutEndpoint() =>
+        private void MapSignOutEndpoints()
+        {
             app.MapGet(IdentityRoutes.SignOut, async (HttpContext context, [FromQuery] string? messageId) =>
                 {
                     await context.SignOutAsync(IdentityConstants.ApplicationScheme);
@@ -107,5 +108,31 @@ public static class WebApplicationExtensions
                     return TypedResults.Redirect(targetUrl);
                 })
                 .RequireRateLimiting(RateLimiterPolicy.StandardRateLimiter);
+            app.MapGet(IdentityRoutes.SignOutFromAllSessions, async (HttpContext context, ApplicationUserStore userStore, IDbContextFactory<ApplicationDbContext> factory,[FromQuery] string? messageId) =>
+                {
+                    var userId = context.User.UserId;
+
+                    if (userId.HasValue)
+                    {
+                        await using var dbContext = await factory.CreateDbContextAsync();
+                        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId.Value);
+                        if (user is not null)
+                        {
+                            user.ChangeSecurityStamp();
+                            await dbContext.SaveChangesAsync();
+                        }
+
+                        await userStore.RemoveUserAsync(userId.Value);
+                    }
+                    await context.SignOutAsync(IdentityConstants.ApplicationScheme);
+
+                    var targetUrl = string.IsNullOrWhiteSpace(messageId)
+                        ? ApplicationRoutes.SignIn
+                        : $"{ApplicationRoutes.SignIn}?messageId={messageId}";
+
+                    return TypedResults.Redirect(targetUrl);
+                })
+                .RequireRateLimiting(RateLimiterPolicy.StandardRateLimiter);
+        }
     }
 }
