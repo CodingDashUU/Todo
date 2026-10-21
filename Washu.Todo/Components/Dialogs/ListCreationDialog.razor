@@ -14,11 +14,9 @@
 @code {
     private readonly Model _model = new();
     private readonly Validator _validator = new();
-    
-    [Parameter] public Guid UserId { get; set; }
     private void CloseDialog()
     {
-        var command = new CreateListCommand(UserId, _model.ListName);
+        var command = new CreateListCommand(_model.ListName);
         DialogService.Close(command);
     }
 

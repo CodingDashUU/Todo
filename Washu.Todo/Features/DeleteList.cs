@@ -1,12 +1,17 @@
 namespace Washu.Todo.Features;
 
+using Framework.Extensions;
+using Framework.Identity;
 using Microsoft.EntityFrameworkCore;
 using Washu.Framework.Notifications;
 using Washu.Todo.Identity;
 
-public sealed record DeleteListCommand(Guid ListId, Guid UserId);
+public sealed record DeleteListCommand(Guid ListId);
 
-public sealed class DeleteListHandler(IDbContextFactory<TodoDbContext> factory)
+public sealed class DeleteListHandler(
+    IDbContextFactory<TodoDbContext> factory,
+    ICurrentUser user
+    )
 {
     public async Task<Message> HandleAsync(DeleteListCommand command)
     {
@@ -14,7 +19,8 @@ public sealed class DeleteListHandler(IDbContextFactory<TodoDbContext> factory)
         try
         {
             var rowsDeleted = await dbContext.TodoLists
-                .Where(l => l.Id == command.ListId && l.UserId == command.UserId)
+                .ForCurrentUser(user)
+                .ByTodoList(command.ListId)
                 .ExecuteDeleteAsync();
             return rowsDeleted == 0
                 ? Message.Error("List Deletion Error", "List was not found")

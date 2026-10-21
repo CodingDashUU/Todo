@@ -4,7 +4,7 @@ using Framework.Identity;
 using Framework.Identity.Entities;
 using Identity;
 
-public class TodoList(Guid userId, string listName)
+public class TodoList(Guid userId, string listName) : IOwnedByUser
 {
     public Guid Id { get; init; } = Guid.CreateVersion7();
     public Guid UserId { get; init; } = userId;

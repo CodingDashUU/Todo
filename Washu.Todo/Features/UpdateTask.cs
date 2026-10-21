@@ -1,18 +1,24 @@
 ﻿namespace Washu.Todo.Features;
 
+using Framework.Extensions;
+using Framework.Identity;
 using Microsoft.EntityFrameworkCore;
 using Washu.Framework.Notifications;
 using Washu.Todo.Identity;
 
 public sealed record UpdateTaskCommand(Guid TaskId, string NewTaskName, DateTimeOffset NewGoalDate, Guid ListId, Guid ListVersionId);
 
-public sealed class UpdateTaskHandler(IDbContextFactory<TodoDbContext> factory)
+public sealed class UpdateTaskHandler(
+    IDbContextFactory<TodoDbContext> factory,
+    ICurrentUser user
+    )
 {
     public async Task<Message> HandleAsync(UpdateTaskCommand command)
     {
         await using var dbContext = await factory.CreateDbContextAsync();
-        var list = await dbContext.TodoLists.FirstOrDefaultAsync(l => l.Id == command.ListId);
-        var task = await dbContext.Tasks.FirstOrDefaultAsync(t => t.Id == command.TaskId && t.TodoListId == command.ListId);
+        var list = await dbContext.TodoLists.ForCurrentUser(user).ByTodoList(command.ListId).SingleOrDefaultAsync();
+        var taskQuery = dbContext.Tasks.ForTodoList(command.ListId);
+        var task = await taskQuery.ByTask(command.TaskId).SingleOrDefaultAsync();
         if (list is null)
             return Message.Error("Toggle Task Error", "Todo list does not exist");
         if (list.VersionId != command.ListVersionId)
@@ -22,7 +28,7 @@ public sealed class UpdateTaskHandler(IDbContextFactory<TodoDbContext> factory)
         var goalDateChanged = command.NewGoalDate != task.GoalDate;
         if (taskNameChanged)
         {
-            if (await dbContext.Tasks.AnyAsync(t => t.Name == command.NewTaskName && t.TodoListId == command.ListId))
+            if (await taskQuery.AnyAsync(t => t.Name == command.NewTaskName))
                 return Message.Error(
                         title: "Task Modification Error",
                         details: "Task with the provided task name already exists");

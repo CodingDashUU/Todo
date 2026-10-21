@@ -1,18 +1,29 @@
 namespace Washu.Todo.Features;
 
+using Framework.Extensions;
+using Framework.Identity;
 using Microsoft.EntityFrameworkCore;
 using Washu.Framework.Notifications;
 using Washu.Todo.Identity;
 
 public sealed record DeleteTaskCommand(Guid TaskId, Guid ListId, Guid ListVersionId);
 
-public sealed class DeleteTaskHandler(IDbContextFactory<TodoDbContext> factory)
+public sealed class DeleteTaskHandler(
+    IDbContextFactory<TodoDbContext> factory,
+    ICurrentUser user
+    )
 {
     public async Task<Message> HandleAsync(DeleteTaskCommand command)
     {
         await using var dbContext = await factory.CreateDbContextAsync();
-        var list = await dbContext.TodoLists.FirstOrDefaultAsync(l => l.Id == command.ListId);
-        var task = await dbContext.Tasks.FirstOrDefaultAsync(t => t.Id == command.TaskId && t.TodoListId == command.ListId);
+        var list = await dbContext.TodoLists
+            .ForCurrentUser(user)
+            .ByTodoList(command.ListId)
+            .SingleOrDefaultAsync();
+        var task = await dbContext.Tasks
+            .ForTodoList(command.ListId)
+            .ByTask(command.TaskId)
+            .SingleOrDefaultAsync();
         if (list is null)
             return Message.Error("Toggle Task Error", "Todo list does not exist");
         if (list.VersionId != command.ListVersionId)

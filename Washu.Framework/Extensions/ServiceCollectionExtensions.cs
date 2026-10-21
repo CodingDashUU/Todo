@@ -64,6 +64,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<HasPermissionHandler>();
         services.AddSingleton<GetExternalLoginInfoHandler>();
         services.AddSingleton<ApplicationUserStore>();
+        services.AddSingleton<ICurrentUser, CurrentUser>();
         return services;
     }
     public IServiceCollection AddWfDbContextFactory<TDbContext>(ConfigurationManager configuration)

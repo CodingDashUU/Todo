@@ -1,17 +1,25 @@
 ﻿namespace Washu.Todo.Features;
 
+using Framework.Extensions;
+using Framework.Identity;
 using Microsoft.EntityFrameworkCore;
 using Washu.Framework.Notifications;
 using Washu.Todo.Identity;
 
 public sealed record CreateTaskCommand(Guid ListId, Guid ListVersionId, string TaskName, DateTimeOffset GoalDate);
 
-public sealed class CreateTaskHandler(IDbContextFactory<TodoDbContext> dbContextFactory)
+public sealed class CreateTaskHandler(
+    IDbContextFactory<TodoDbContext> dbContextFactory,
+    ICurrentUser user
+    )
 {
     public async Task<Message> HandleAsync(CreateTaskCommand command)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-        var list = await dbContext.TodoLists.FirstOrDefaultAsync(l => l.Id == command.ListId);
+        var list = await dbContext.TodoLists
+            .ForCurrentUser(user)
+            .ByTodoList(command.ListId)
+            .SingleOrDefaultAsync();
         if (list is null)
             return Message.Error("Task Creation Error", "List does not exist");
         if (list.VersionId != command.ListVersionId) return Message.Error("Task Creation Error", "Your todo list was already modified, please try again");

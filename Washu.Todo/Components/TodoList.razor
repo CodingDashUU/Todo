@@ -264,7 +264,7 @@
             options: ConfirmDeleteOptions);
         if (!confirmData.HasValue || !confirmData.Value) return;
 
-        var command = new DeleteListCommand(_selectedList.Id, User.Id);
+        var command = new DeleteListCommand(_selectedList.Id);
         var message = await DeleteListHandler.HandleAsync(command);
         NotificationService.Show(message);
 
@@ -274,8 +274,7 @@
 
     private async Task CreateListAsync()
     {
-        var parameters = new Dictionary<string, object?>(1) { [nameof(ListCreationDialog.UserId)] = User.Id };
-        var result = await DialogService.OpenAsync<ListCreationDialog>("Create List", parameters);
+        var result = await DialogService.OpenAsync<ListCreationDialog>("Create List");
         if (result is not CreateListCommand command) return;
 
         var message = await CreateListHandler.HandleAsync(command);
