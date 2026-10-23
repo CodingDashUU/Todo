@@ -7,7 +7,7 @@ internal sealed class CircuitRateLimitingFilter : IHubFilter
 {
     private static readonly ConcurrentDictionary<string, ConnectionTokenState> Tracking = new();
 
-    private const double MaxTokens = 50.0;
+    private const double MaxTokens = 100.0;
     private const double RefillRatePerSecond = 25.0;
 
     public async ValueTask<object?> InvokeMethodAsync(
