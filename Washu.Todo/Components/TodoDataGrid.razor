@@ -39,12 +39,16 @@
     <HeaderTemplate>
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
             <RadzenFormField Text="Selected Todo List">
-                <RadzenDropDown TValue="Todo.TodoList"
-                                Value="_selectedList"
-                                Data="_lists"
-                                TextProperty="Name"
-                                PageSize="10"
-                                ValueChanged="OnListSelected"/>
+                <RadzenDropDownDataGrid 
+                    TValue="Todo.TodoList"
+                    Value="@_selectedList" 
+                    Count="_listsCount"
+                    IsLoading="_isListsDataLoading"
+                    Data="@_lists"
+                    ValueChanged="OnListSelected"
+                    LoadData="LoadListsAsync"
+                    TextProperty="@nameof(Todo.TodoList.Name)"
+                />
             </RadzenFormField>
             <DataGridExportButton DataGrid="_grid" ExcelTitle="@_selectedList.Name" FileName="todo"/>
         </RadzenStack>
@@ -104,7 +108,9 @@
     IList<TaskEntry> _selectedTasks = [];
     Todo.TodoList _selectedList = Todo.TodoList.None;
     List<Todo.TodoList> _lists = [];
-    Task? _initTask;
+    private int _listsCount;
+    private bool _isListsDataLoading;
+    private Task? _initTask;
     DateTimeOffset? DateCreatedFilterValue
     {
         get;
@@ -120,11 +126,15 @@
         get;
         set => field = value?.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
     }
-
-    protected override void OnInitialized()
+    private static readonly LoadDataArgs DefaultListsLoadDataArgs = new()
     {
-        base.OnInitialized();
-        _initTask = FetchTargetListIdAsync();
+        Skip = 0,
+        Top = 5
+    };
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        _initTask = LoadListsAsync(DefaultListsLoadDataArgs);
     }
 
     static bool IsNullOrEmpty(FilterOperator? value)
@@ -160,7 +170,7 @@
         }
         _grid.Reload();
     }
-    private async Task FetchTargetListIdAsync()
+    private async Task LoadListsAsync(LoadDataArgs args)
     {
         var authState = await Provider.GetAuthenticationStateAsync();
         if (authState.User.UserId is not { } userId)
@@ -169,19 +179,55 @@
             NavManager.NavigateTo($"{ApplicationRoutes.SignIn}?messageid={id}");
             return;
         }
-        await using var context = await DbContextFactory.CreateDbContextAsync();
-        var lists = await context.TodoLists
-            .AsNoTracking()
-            .Where(l => l.UserId == userId)
-            .OrderByDescending(l => l.LastModified)
-            .ToListAsync();
-        _lists = lists;
-        if (lists.IsNotEmpty)
+        try
         {
-            _selectedList = lists[0];
+            _isListsDataLoading = true;
+            await InvokeAsync(StateHasChanged);
+            
+            await using var context = await DbContextFactory.CreateDbContextAsync();
+            var query = context.TodoLists
+                .AsNoTracking()
+                .Where(t => t.UserId == userId)
+                .OrderByDescending(e => e.LastModified)
+                .AsQueryable();
+            
+            if (!string.IsNullOrEmpty(args.Filter))
+            {
+                query = query.Where(t => t.Name.ToLower().Contains(args.Filter.ToLower()));
+            }
+
+            if (!string.IsNullOrEmpty(args.OrderBy))
+            {
+                query = query.OrderBy(args.OrderBy);
+            }
+            _listsCount = await query.CountAsync();
+            if (args.Skip is not null)
+            {
+                query = query.Skip(args.Skip.Value);
+            }
+            if (args.Top is not null)
+            {
+                query = query.Take(args.Top.Value);
+            }
+
+            if (_listsCount == 0)
+            {
+                _lists = [Todo.TodoList.None];
+            }
+
+            _lists = await query.ToListAsync();
+        }
+        catch (Exception)
+        {
+            _lists = [];
+            _listsCount = 0;
+        }
+        finally
+        {
+            _isListsDataLoading = false;
+            await InvokeAsync(StateHasChanged); 
         }
     }
-   
     async Task LoadData(LoadDataArgs args)
     {
         try
@@ -193,8 +239,8 @@
             {
                 await _initTask;
                 _initTask = null;
+                _selectedList = _lists.FirstOrDefault() ?? Todo.TodoList.None;
             }
-            
             if (_selectedList.Id == Todo.TodoList.None.Id)
             {
                 _tasks = [];

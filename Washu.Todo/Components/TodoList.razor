@@ -1,7 +1,9 @@
 @using Microsoft.EntityFrameworkCore
 @using Washu.Todo.Identity
 @using Dialogs
+@using Washu.Framework.Extensions
 @using Washu.Todo.Features
+@using System.Linq.Dynamic.Core
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject IDbContextFactory<TodoDbContext> DbContextFactory
@@ -15,13 +17,16 @@
 @inherits AuthenticatedComponent
 <RadzenStack Orientation="Orientation.Horizontal">
     <RadzenCard>
-        <RadzenDropDown TValue="Todo.TodoList" 
-                        Value="_selectedList" 
-                        Data="_listNames" 
-                        TextProperty="Name"
-                        PageSize="10"
-                        ValueChanged="OnListSelected" />
-    
+        <RadzenDropDownDataGrid 
+            TValue="Todo.TodoList"
+            Value="@_selectedList" 
+            Count="_listsCount"
+            IsLoading="_isListsDataLoading"
+            Data="@_lists"
+            ValueChanged="OnListSelected"
+            LoadData="LoadListsAsync"
+            TextProperty="@nameof(Todo.TodoList.Name)"
+            />
         <RadzenButton class="big-icon-button"
                       ButtonStyle="@(_isEditing ? ButtonStyle.Success : ButtonStyle.Danger)"
                       Variant="Variant.Text"
@@ -44,11 +49,11 @@
 </RadzenStack>
 
 <RadzenDataList @ref="_dataList"
-                WrapItems AllowPaging IsLoading="@_isLoading"
+                WrapItems AllowPaging IsLoading="@_isTasksDataLoading"
                 LoadData="@LoadTasksAsync"
                 Style="height:580px;overflow:auto"
-                Data="@_tasks" Count="_count" TItem="TaskEntry" 
-                PageSize="PageCount" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary>
+                Data="@_tasks" Count="_tasksCount" TItem="TaskEntry" 
+                PageSize="TasksPageCount" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary>
     <Template Context="item">
         <TaskCard Entry="item"
                   OnTaskCompleted="() => OnToggleTask(item)" 
@@ -68,7 +73,7 @@
         CancelButtonText = "No" 
     };
 
-    private const byte PageCount = 10;
+    private const byte TasksPageCount = 10;
     private RadzenDataList<TaskEntry>? _dataList;
     private bool _isEditing;
     private bool _isDeleting;
@@ -79,18 +84,24 @@
     
     private Todo.TodoList _selectedList = Todo.TodoList.None;
     private IList<TaskEntry> _tasks = [];
-    private List<Todo.TodoList> _listNames = [];
-    private bool _isLoading;
-    private int _count;
-    
+    private List<Todo.TodoList> _lists = [];
+    private bool _isTasksDataLoading;
+    private bool _isListsDataLoading;
+    private int _tasksCount;
+    private int _listsCount;
+
+    private static readonly LoadDataArgs DefaultListsLoadDataArgs = new()
+    {
+        Skip = 0,
+        Top = 5
+    };
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        
-        await LoadListsAsync(selectDefault: true);
-        
-        await FetchTasksAsync(skip: 0, top: PageCount);
-        
+
+        await LoadListsAsync(DefaultListsLoadDataArgs);
+        _selectedList = _lists.FirstOrDefault() ?? Todo.TodoList.None;
+        await FetchTasksAsync(skip: 0, top: TasksPageCount);
         _hasInitialized = true;
     }
 
@@ -105,47 +116,69 @@
             await _dataList.FirstPage(true);
         }
     }
-
-    private async Task LoadListsAsync(Guid? preferredSelectedId = null, bool selectDefault = false)
+    private async Task LoadListsAsync(LoadDataArgs args)
     {
-        await using var dbContext = await DbContextFactory.CreateDbContextAsync();
-        
-        var fetchedLists = await dbContext.TodoLists
-            .AsNoTracking()
-            .Where(l => l.UserId == User.Id)
-            .OrderByDescending(l => l.LastModified)
-            .ToListAsync();
-        
-        _listNames = new List<Todo.TodoList>(fetchedLists.Count + 1) { Todo.TodoList.None };
-        _listNames.AddRange(fetchedLists);
+        try
+        {
+            _isListsDataLoading = true;
+            await InvokeAsync(StateHasChanged);
+            
+            await using var context = await DbContextFactory.CreateDbContextAsync();
+            var query = context.TodoLists
+                .AsNoTracking()
+                .Where(t => t.UserId == User.Id)
+                .OrderByDescending(e => e.LastModified)
+                .AsQueryable();
+            
+            if (!string.IsNullOrEmpty(args.Filter))
+            {
+                query = query.Where(t => t.Name.ToLower().Contains(args.Filter.ToLower()));
+            }
 
-        var targetId = Todo.TodoList.None.Id;
-        if (preferredSelectedId.HasValue)
-        {
-            targetId = _listNames.FirstOrDefault(l => l.Id == preferredSelectedId.Value)?.Id ?? Todo.TodoList.None.Id;
+            if (!string.IsNullOrEmpty(args.OrderBy))
+            {
+                query = query.OrderBy(args.OrderBy);
+            }
+            _listsCount = await query.CountAsync();
+            if (args.Skip is not null)
+            {
+                query = query.Skip(args.Skip.Value);
+            }
+            if (args.Top is not null)
+            {
+                query = query.Take(args.Top.Value);
+            }
+
+            if (_listsCount == 0)
+            {
+                _lists = [Todo.TodoList.None];
+            }
+
+            _lists = await query.ToListAsync();
         }
-        else if (selectDefault)
+        catch (Exception)
         {
-            targetId = _listNames.Where(l => l.Id != Todo.TodoList.None.Id)
-                                .OrderByDescending(l => l.LastModified)
-                                .FirstOrDefault()?.Id ?? Todo.TodoList.None.Id;
+            _lists = [];
+            _listsCount = 0;
         }
-        
-        _selectedList = _listNames.FirstOrDefault(l => l.Id == targetId) ?? Todo.TodoList.None;
+        finally
+        {
+            _isListsDataLoading = false;
+            await InvokeAsync(StateHasChanged); 
+        }
     }
-    
     private async Task FetchTasksAsync(int skip, int top)
     {
         if (_selectedList.Id == Todo.TodoList.None.Id)
         {
             _tasks = [];
-            _count = 0;
+            _tasksCount = 0;
             return;
         }
 
         try
         {
-            _isLoading = true;
+            _isTasksDataLoading = true;
             await using var context = await DbContextFactory.CreateDbContextAsync();
             var query = context.Tasks
                 .AsNoTracking()
@@ -153,17 +186,17 @@
                 .OrderBy(e => e.DateCreated)
                 .AsQueryable();
             
-            _count = await query.CountAsync();
+            _tasksCount = await query.CountAsync();
             _tasks = await query.Skip(skip).Take(top).ToListAsync();
         }
         catch (Exception)
         {
             _tasks = [];
-            _count = 0;
+            _tasksCount = 0;
         }
         finally
         {
-            _isLoading = false;
+            _isTasksDataLoading = false;
         }
     }
 
@@ -171,17 +204,18 @@
     {
         if (!_hasInitialized) return;
 
-        await FetchTasksAsync(args.Skip ?? 0, args.Top ?? PageCount);
+        await FetchTasksAsync(args.Skip ?? 0, args.Top ?? TasksPageCount);
         await InvokeAsync(StateHasChanged);
     }
 
     private async Task RefreshCurrentListAsync()
     {
-        await LoadListsAsync(preferredSelectedId: _selectedList.Id);
+        await LoadListsAsync(DefaultListsLoadDataArgs);
         if (_dataList is not null)
         {
             await _dataList.Reload();
         }
+        _selectedList = _lists.FirstOrDefault() ?? Todo.TodoList.None;
     }
 
     private async Task DeleteTaskAsync(TaskEntry entry)
@@ -268,8 +302,7 @@
         var message = await DeleteListHandler.HandleAsync(command);
         NotificationService.Show(message);
 
-        await LoadListsAsync(selectDefault: true);
-        if (_dataList is not null) await _dataList.FirstPage(true);
+        await RefreshCurrentListAsync();
     }
 
     private async Task CreateListAsync()
@@ -280,7 +313,6 @@
         var message = await CreateListHandler.HandleAsync(command);
         NotificationService.Show(message);
 
-        await LoadListsAsync(selectDefault: true);
-        if (_dataList is not null) await _dataList.FirstPage(true);
+        await RefreshCurrentListAsync();
     }
 }
