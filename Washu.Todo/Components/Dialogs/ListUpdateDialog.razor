@@ -24,7 +24,7 @@
     };
 
     private bool NewListNameChanged => _model.NewListName != OldList.Name;
-    [Parameter] public required TodoList OldList { get; set; }
+    [Parameter, EditorRequired] public TodoList OldList { get; set; }
 
     protected override void OnInitialized()
     {

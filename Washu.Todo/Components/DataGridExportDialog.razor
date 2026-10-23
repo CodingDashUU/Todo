@@ -41,9 +41,9 @@
 
 @code {
     private readonly Model _model = new();
-    [Parameter] public required RadzenDataGrid<TaskEntry> DataGrid { get; set; }
-    [Parameter] public required string FileName { get; set; }
-    [Parameter] public required string ExcelTitle { get; set; }
+    [Parameter, EditorRequired] public RadzenDataGrid<TaskEntry> DataGrid { get; set; }
+    [Parameter, EditorRequired] public string FileName { get; set; }
+    [Parameter, EditorRequired] public string ExcelTitle { get; set; }
     private void OnDialogClose()
     {
         DialogService.Close(new DataGridExportCommand(

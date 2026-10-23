@@ -25,8 +25,8 @@
 @code {
     private readonly Model _model = new();
     private readonly Validator _validator = new();
-    [Parameter] public required Guid ListId { get; set; }
-    [Parameter] public required Guid ListVersionId { get; set; }
+    [Parameter, EditorRequired] public Guid ListId { get; set; }
+    [Parameter, EditorRequired] public Guid ListVersionId { get; set; }
     protected override void OnInitialized()
     {
         _model.GoalDate = DateTimeOffset.UtcNow.AddHours(1).ToTimeZone(TimeZoneProvider.TimeZoneInfo).WithoutSeconds;

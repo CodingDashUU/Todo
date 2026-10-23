@@ -97,10 +97,10 @@
 </style>
 @code {
 
-    [Parameter] public TaskEntry Entry { get; set; } = null!;
-    [Parameter] public required Func<Task> OnTaskCompleted { get; set; }
-    [Parameter] public required Func<Task> OnSettingsClicked { get; set; }
-    [Parameter] public required Func<Task> OnDeleteClicked { get; set; }
+    [Parameter, EditorRequired] public TaskEntry Entry { get; set; }
+    [Parameter, EditorRequired] public Func<Task> OnTaskCompleted { get; set; }
+    [Parameter, EditorRequired] public Func<Task> OnSettingsClicked { get; set; }
+    [Parameter, EditorRequired] public Func<Task> OnDeleteClicked { get; set; }
     [Parameter] public bool IsEditing { get; set; }
     [Parameter] public bool IsDeleting { get; set; }
 

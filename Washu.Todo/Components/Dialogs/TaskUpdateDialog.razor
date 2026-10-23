@@ -28,9 +28,9 @@
     {
         ButtonText = "Update Task"
     };
-    [Parameter] public required TaskEntry OldEntry { get; set; }
-    [Parameter] public required Guid ListId { get; set; }
-    [Parameter] public required Guid ListVersionId { get; set; }
+    [Parameter, EditorRequired] public TaskEntry OldEntry { get; set; }
+    [Parameter, EditorRequired] public Guid ListId { get; set; }
+    [Parameter, EditorRequired] public Guid ListVersionId { get; set; }
    
     protected override void OnInitialized()
     {

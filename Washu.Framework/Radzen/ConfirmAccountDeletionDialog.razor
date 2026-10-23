@@ -19,8 +19,8 @@
 @code {
     private readonly Model _model = new();
     ConfirmAccountDeletionValidator Validator => new(Email);
-    [Parameter] public required Guid UserId { get; set; }
-    [Parameter] public required string Email { get; set; }
+    [Parameter, EditorRequired] public Guid UserId { get; set; }
+    [Parameter, EditorRequired] public string Email { get; set; }
 
     public SubmitButtonConfig DeleteAccountButtonConfig { get; set; } = new()
     {
