@@ -14,12 +14,11 @@
         <RadzenTextBox @bind-Value="_model.NewTaskName"/>
     </RadzenFormField>
     <RadzenFormField Text="New Goal Date">
-        <RadzenDatePicker
-            TValue="DateTimeOffset"
+        <LocalDateTimePicker
             @bind-Value="_model.NewGoalDate"
-            ShowTime
-            Min="DateTimeOffset.UtcNow.AddMinutes(5).ToTimeZone(TimeZoneProvider.TimeZoneInfo).DateTime"
-            Max="DateTimeOffset.UtcNow.AddYears(50).ToTimeZone(TimeZoneProvider.TimeZoneInfo).DateTime"/>
+            MinUtc="DateTimeOffset.UtcNow.AddMinutes(5).WithoutSeconds"
+            MaxUtc="DateTimeOffset.UtcNow.AddYears(50).WithoutSeconds"
+        />
     </RadzenFormField>
 </ApplicationForm>
 @code {
@@ -35,7 +34,7 @@
    
     protected override void OnInitialized()
     {
-        _model.NewGoalDate = OldEntry.GoalDate.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
+        _model.NewGoalDate = OldEntry.GoalDate.ToTimeZone(TimeZoneProvider.TimeZoneInfo).WithoutSeconds;
         _model.NewTaskName = OldEntry.Name;
         _validator = new Validator(OldEntry);
     }

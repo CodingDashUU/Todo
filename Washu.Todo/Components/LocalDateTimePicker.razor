@@ -1,0 +1,19 @@
+@using System.Linq.Expressions
+@using Washu.Framework.Extensions
+@using Washu.Framework.Identity
+@inject UserTimeZoneProvider TimeZoneProvider
+<RadzenDatePicker
+    TValue="DateTimeOffset"
+    Value="Value"
+    ValueChanged="ValueChanged"
+    ShowTime
+    Min="MinUtc.ToTimeZone(TimeZoneProvider.TimeZoneInfo).DateTime"
+    Max="MaxUtc.ToTimeZone(TimeZoneProvider.TimeZoneInfo).DateTime"/>
+    
+@code {
+    [Parameter] public DateTimeOffset Value { get; set; }
+    [Parameter] public EventCallback<DateTimeOffset> ValueChanged { get; set; }
+    [Parameter] public Expression<Func<DateTimeOffset>>? ValueExpression { get; set; }
+    [Parameter, EditorRequired] public DateTimeOffset MinUtc { get; set; }
+    [Parameter, EditorRequired] public DateTimeOffset MaxUtc { get; set; }
+}

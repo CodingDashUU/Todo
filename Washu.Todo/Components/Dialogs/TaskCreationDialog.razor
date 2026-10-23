@@ -13,12 +13,11 @@
         <RadzenTextBox @bind-Value="_model.TaskName"/>
     </RadzenFormField>
     <RadzenFormField Text="Goal Date">
-        <RadzenDatePicker
-            TValue="DateTimeOffset"
+        <LocalDateTimePicker
             @bind-Value="_model.GoalDate"
-            ShowTime
-            Min="DateTimeOffset.UtcNow.AddMinutes(5).ToTimeZone(TimeZoneProvider.TimeZoneInfo).DateTime"
-            Max="DateTimeOffset.UtcNow.AddYears(50).ToTimeZone(TimeZoneProvider.TimeZoneInfo).DateTime"/>
+            MinUtc="DateTimeOffset.UtcNow.AddMinutes(5).WithoutSeconds"
+            MaxUtc="DateTimeOffset.UtcNow.AddYears(50).WithoutSeconds"
+        />
     </RadzenFormField>
 </ApplicationForm>
 
@@ -30,7 +29,7 @@
     [Parameter] public required Guid ListVersionId { get; set; }
     protected override void OnInitialized()
     {
-        _model.GoalDate = DateTimeOffset.UtcNow.AddHours(1).ToTimeZone(TimeZoneProvider.TimeZoneInfo);
+        _model.GoalDate = DateTimeOffset.UtcNow.AddHours(1).ToTimeZone(TimeZoneProvider.TimeZoneInfo).WithoutSeconds;
     }
     private void CloseDialog()
     {

@@ -17,7 +17,7 @@
 </ApplicationForm>
 
 @code {
-    private Model _model = new();
+    private readonly Model _model = new();
     ConfirmAccountDeletionValidator Validator => new(Email);
     [Parameter] public required Guid UserId { get; set; }
     [Parameter] public required string Email { get; set; }
