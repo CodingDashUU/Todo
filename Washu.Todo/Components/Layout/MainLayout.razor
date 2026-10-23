@@ -1,63 +1,8 @@
-@using Washu.Framework.Extensions
-@using Washu.Framework.Identity
 @inherits LayoutComponentBase
-@inject ApplicationUserStore UserStore
-<QueryNotificationHandler />
-<RadzenLayout>
-    <RadzenHeader>
-        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0">
-            <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />
-            <RadzenLabel>Todo Application</RadzenLabel>
-            <div style="flex-grow: 1;"></div>
-            <ThemeToggle/>
-            <AuthorizeView>
-                <Authorized>
-                    <RadzenProfileMenu>
-                        <Template>
-                            <RadzenGravatar Email="@_email" 
-                                            Size="64" 
-                                            class="rz-border-radius-circle" 
-                                            Style="border: 2px solid var(--rz-primary-light);" />
-                        </Template>
-                        <ChildContent>
-                            <RadzenProfileMenuItem Text="Manage Account" Icon="@MaterialIcons.AccountCircle" Path="@ApplicationRoutes.ManageAccount"></RadzenProfileMenuItem>
-                        </ChildContent>
-                    </RadzenProfileMenu>
-                </Authorized>
-            </AuthorizeView>
-            <div style="width: 10px;"></div>
-        </RadzenStack>
-    </RadzenHeader>
-    <RadzenSidebar @bind-Expanded="@sidebarExpanded">
-        <RadzenPanelMenu>
-            <RadzenPanelMenuItem Text="Home" Icon="@MaterialIcons.Home" Path="@ApplicationRoutes.Home"/>
-        </RadzenPanelMenu>
-    </RadzenSidebar>
-    <RadzenBody>
-        <div class="rz-p-4">
-            @Body
-        </div>
-    </RadzenBody>
-    <RadzenComponents @rendermode="InteractiveServer" />
-    <RadzenFooter>
-        <RadzenStack Orientation="Orientation.Horizontal">
-            <RadzenStack JustifyContent="JustifyContent.Center">
-                <SymbolLogo Size="50"/>
-            </RadzenStack>
-            <RadzenStack JustifyContent="JustifyContent.Center">
-                <RadzenText TextStyle="TextStyle.DisplayH6">Washu Software</RadzenText>
-            </RadzenStack>
-        </RadzenStack>
-    </RadzenFooter>
-</RadzenLayout>
+<WfLayout ApplicationName="Todo Application"
+          Content="Body"
+          PanelMenuItems="_panelMenuItems"/>
 @code {
-    private bool sidebarExpanded = true;
-    private string _email = "";
-    [CascadingParameter] public required Task<AuthenticationState> Context { get; set; }
-    protected override async Task OnInitializedAsync()
-    {
-        var state = await Context;
-        if (state.User.UserId is not {} userGuid) return;
-        _email = (await UserStore.GetOrSetUserAsync(userGuid))?.Email ?? "";
-    }
-}
+    private readonly PanelMenuItem[] _panelMenuItems = 
+        [new("Home", MaterialIcons.Home, ApplicationRoutes.Home)];
+}          
