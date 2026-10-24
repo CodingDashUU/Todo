@@ -66,7 +66,7 @@ public static class WebApplicationExtensions
             var dbContext = scope.ServiceProvider.GetRequiredService<TDbContext>();
             await dbContext.Database.MigrateAsync();
         }
-        private void MapWfHealthChecks() =>
+        internal void MapWfHealthChecks() =>
             app.MapHealthChecks("/health-wf", new HealthCheckOptions
             {
                 ResponseWriter = async (context, report) =>
@@ -95,7 +95,7 @@ public static class WebApplicationExtensions
                 return await next(context);
             });
 
-        private void MapSignOutEndpoints()
+        internal void MapSignOutEndpoints()
         {
             app.MapGet(IdentityRoutes.SignOut, async (HttpContext context, [FromQuery] string? messageId) =>
                 {
