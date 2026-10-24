@@ -36,14 +36,10 @@ public sealed class UpdateTaskHandler(
         }
         if (goalDateChanged) task.ChangeGoalDate(command.NewGoalDate);
         if (taskNameChanged || goalDateChanged)
-        {
-            list.LastModified = DateTimeOffset.UtcNow;
-            list.ChangeVersionId();
-        }
+            dbContext.TodoLists.Update(list);
         else return Message.Info(
                 title: "Task Modification Info",
                 details: "Task has not been modified");
-        dbContext.TodoLists.Update(list);
         try
         {
             await dbContext.SaveChangesAsync();

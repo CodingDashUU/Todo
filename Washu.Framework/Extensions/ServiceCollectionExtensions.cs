@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -74,11 +75,12 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ICurrentUser, CurrentUser>();
         return services;
     }
-    public IServiceCollection AddWfDbContextFactory<TDbContext>(ConfigurationManager configuration)
+    public IServiceCollection AddWfDbContextFactory<TDbContext>(ConfigurationManager configuration, HashSet<IInterceptor> interceptors)
     where TDbContext : ApplicationDbContext
     {
         var connectionString = configuration.GetConnectionString("DefaultConnection");
         return services.AddDbContextFactory<ApplicationDbContext, TDbContext>(options =>
+        {
             options.UseNpgsql(
                 connectionString,
                 npgsqlOptions =>
@@ -86,7 +88,9 @@ public static class ServiceCollectionExtensions
                         maxRetryCount: 5,
                         maxRetryDelay: TimeSpan.FromSeconds(30),
                         errorCodesToAdd: null
-                    )));
+                    ));
+            options.AddInterceptors(interceptors);
+        });
     }
     public IServiceCollection AddUserTimeZoneProvider() => services.AddScoped<UserTimeZoneProvider>(sp =>
     {

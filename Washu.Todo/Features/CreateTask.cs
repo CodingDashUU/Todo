@@ -26,8 +26,7 @@ public sealed class CreateTaskHandler(
         if (await dbContext.Tasks.AnyAsync(t => t.Name == command.TaskName && t.TodoListId == command.ListId))
             return Message.Error("Task Creation Error", "Task with the given task name already exists");
         dbContext.Tasks.Add(new TaskEntry(command.TaskName, command.GoalDate, Guid.CreateVersion7(), list.Id));
-        list.LastModified = DateTimeOffset.UtcNow;
-        list.ChangeVersionId();
+        dbContext.TodoLists.Update(list);
         try
         {
             await dbContext.SaveChangesAsync();

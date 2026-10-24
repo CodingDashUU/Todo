@@ -13,7 +13,7 @@ builder.Services.AddHealthChecks().AddDbContextCheck<TodoDbContext>();
 builder.Services.AddWfRadzenBlazorServer();
 builder.Services.AddWfIdentityServices();
 builder.Services.AddFusionCaching();
-builder.Services.AddWfDbContextFactory<TodoDbContext>(builder.Configuration);
+builder.Services.AddWfDbContextFactory<TodoDbContext>(builder.Configuration, [new TodoListInterceptor()]);
 builder.Services.AddUserTimeZoneProvider();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddAppAuthenticationStateProvider();

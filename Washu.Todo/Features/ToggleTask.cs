@@ -30,8 +30,7 @@ public sealed class ToggleTaskHandler(
             return Message.Error("Toggle Task Error", "Your todo list was already modified, please try again");
         if (task is null) return Message.Error(title: "Toggle Task Error", details: "Task does not exist");
         task.Toggle();
-        list.LastModified = DateTimeOffset.UtcNow;
-        list.ChangeVersionId();
+        dbContext.TodoLists.Update(list);
         try
         {
             await dbContext.SaveChangesAsync();
