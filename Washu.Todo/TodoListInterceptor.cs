@@ -5,13 +5,6 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 
 public class TodoListInterceptor : SaveChangesInterceptor
 {
-    public override InterceptionResult<int> SavingChanges(
-        DbContextEventData eventData, 
-        InterceptionResult<int> result)
-    {
-        UpdateFields(eventData.Context);
-        return base.SavingChanges(eventData, result);
-    }
     public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
         DbContextEventData eventData, 
         InterceptionResult<int> result, 
