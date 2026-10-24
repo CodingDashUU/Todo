@@ -40,7 +40,7 @@
             <ErrorContent>
                 <RadzenCard class="rz-my-12 rz-mx-auto rz-p-8" style="max-width: 450px;">
                     <RadzenStack AlignItems="AlignItems.Center" Gap="1.5rem" class="rz-text-align-center">
-                        <RadzenIcon Icon="sentiment_very_dissatisfied" Style="font-size: 3rem; color: var(--rz-danger);" />
+                        <RadzenIcon Icon="@MaterialIcons.DeadSadFace" Style="font-size: 3rem; color: var(--rz-danger);" />
         
                         <RadzenStack Gap="0.5rem">
                             <RadzenText TextStyle="TextStyle.DisplayH4">Page Error</RadzenText>
@@ -50,7 +50,7 @@
                         </RadzenStack>
 
                         <RadzenButton Text="Retry View" 
-                                      Icon="refresh" 
+                                      Icon="@MaterialIcons.Refresh" 
                                       ButtonStyle="ButtonStyle.Danger" 
                                       Click="@(() => _errorBoundary?.Recover())" />
                     </RadzenStack>

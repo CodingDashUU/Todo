@@ -21,4 +21,6 @@ public static class MaterialIcons
     public const string FileExport = "file_export";
     public const string LightMode = "light_mode";
     public const string DarkMode = "dark_mode";
+    public const string DeadSadFace = "sentiment_very_dissatisfied";
+    public const string Refresh = "refresh";
 }
