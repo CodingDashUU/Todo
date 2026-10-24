@@ -177,7 +177,6 @@ public static class ServiceCollectionExtensions
                 .AddHubOptions(options =>
                 {
                     options.EnableDetailedErrors = false;
-                    options.AddFilter<CircuitRateLimitingFilter>();
                     options.MaximumReceiveMessageSize = 32 * 1024;
                     options.HandshakeTimeout = TimeSpan.FromSeconds(5);
                     options.ClientTimeoutInterval = TimeSpan.FromSeconds(30);
