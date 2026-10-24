@@ -4,6 +4,7 @@ using AspNetCore;
 using Blazor;
 using global::Radzen;
 using Identity;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Forms;
@@ -52,8 +53,14 @@ public static class ServiceCollectionExtensions
     }
     public IServiceCollection AddAppAuthenticationStateProvider() =>
         services.AddScoped<AuthenticationStateProvider, AppAuthenticationStateProvider>();
-    public IServiceCollection AddNoOpAntiforgeryProvider() => 
+
+    public IServiceCollection AddNoOpAntiforgeryProvider()
+    {
         services.AddScoped<AntiforgeryStateProvider, NoOpAntiforgeryStateProvider>();
+        services.RemoveAll<IAntiforgery>();
+        services.AddSingleton<IAntiforgery, NullAntiforgery>();
+        return services;
+    }
     public IServiceCollection AddWfIdentityServices()
     {
         services.AddSingleton<AddRolesHandler>();
@@ -189,6 +196,25 @@ public static class ServiceCollectionExtensions
 file sealed class NoOpAntiforgeryStateProvider : AntiforgeryStateProvider
 {
     public override AntiforgeryRequestToken? GetAntiforgeryToken() => null;
+}
+file sealed class NullAntiforgery : IAntiforgery
+{
+    private static readonly AntiforgeryTokenSet DummyTokenSet = new(
+        requestToken: "null_request_token",
+        cookieToken: null,
+        formFieldName: "__RequestVerificationToken",
+        headerName: "X-CSRF-TOKEN"
+    );
+
+    public AntiforgeryTokenSet GetAndStoreTokens(HttpContext httpContext) => DummyTokenSet;
+
+    public AntiforgeryTokenSet GetTokens(HttpContext httpContext) => DummyTokenSet;
+
+    public Task<bool> IsRequestValidAsync(HttpContext httpContext) => Task.FromResult(true);
+
+    public Task ValidateRequestAsync(HttpContext httpContext) =>  Task.CompletedTask;
+
+    public void SetCookieTokenAndHeader(HttpContext httpContext) {}
 }
 file sealed class DbContextFactoryAdapter<TBaseContext, TDerivedContext>(
     IDbContextFactory<TDerivedContext> innerFactory) : IDbContextFactory<TBaseContext>
