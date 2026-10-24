@@ -36,9 +36,32 @@
         </RadzenPanelMenu>
     </RadzenSidebar>
     <RadzenBody>
-        <div class="rz-p-4">
-            @Content
-        </div>
+        <ErrorBoundary @ref="_errorBoundary">
+            <ErrorContent>
+                <RadzenCard class="rz-my-12 rz-mx-auto rz-p-8" style="max-width: 450px;">
+                    <RadzenStack AlignItems="AlignItems.Center" Gap="1.5rem" class="rz-text-align-center">
+                        <RadzenIcon Icon="sentiment_very_dissatisfied" Style="font-size: 3rem; color: var(--rz-danger);" />
+        
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenText TextStyle="TextStyle.DisplayH4">Page Error</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Body1">
+                                An error has occurred while loading this view.
+                            </RadzenText>
+                        </RadzenStack>
+
+                        <RadzenButton Text="Retry View" 
+                                      Icon="refresh" 
+                                      ButtonStyle="ButtonStyle.Danger" 
+                                      Click="@(() => _errorBoundary?.Recover())" />
+                    </RadzenStack>
+                </RadzenCard>
+            </ErrorContent>
+            <ChildContent>
+                <div class="rz-p-4">
+                    @Content
+                </div>
+            </ChildContent>
+        </ErrorBoundary>
     </RadzenBody>
     <RadzenComponents @rendermode="InteractiveServer" />
     <RadzenFooter>
@@ -57,6 +80,7 @@
     [Parameter, EditorRequired] public PanelMenuItem[] PanelMenuItems { get; set; }
     [Parameter] public RenderFragment? Content { get; set; }
     private bool _sidebarExpanded = true;
+    private ErrorBoundary? _errorBoundary;
     private string _email = "";
     [CascadingParameter] public required Task<AuthenticationState> Context { get; set; }
     protected override async Task OnInitializedAsync()
@@ -64,5 +88,9 @@
         var state = await Context;
         if (state.User.UserId is not {} userGuid) return;
         _email = (await UserStore.GetOrSetUserAsync(userGuid))?.Email ?? "";
+    }
+    protected override void OnParametersSet()
+    {
+        _errorBoundary?.Recover();
     }
 }
