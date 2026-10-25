@@ -1,5 +1,6 @@
 namespace Washu.Framework.IntegrationTests;
 
+using Extensions;
 using Fixtures;
 using FluentAssertions;
 using Identity;
@@ -7,6 +8,7 @@ using Identity.Entities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System.Security.Claims;
 using Xunit;
@@ -14,30 +16,21 @@ using Xunit;
 [Collection(PostgreSqlTestCollection.Name)]
 public class SignInHandlerTests(ApplicationPostgreSqlFixture fixture)
 {
-    private static (DefaultHttpContext Context, SignInHandler Handler) CreateContextAndHandler()
+    private (DefaultHttpContext Context, SignInHandler Handler) CreateContextAndHandler()
     {
         var services = new ServiceCollection();
         services.AddLogging();
-        services.AddAuthentication(options =>
-        {
-            options.DefaultScheme = IdentityConstants.ApplicationScheme;
-            options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
-        })
-        .AddCookie(IdentityConstants.ExternalScheme, options =>
-        {
-            options.Cookie.Name = ".Washu.External";
-            options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
-        })
-        .AddCookie(IdentityConstants.ApplicationScheme, options =>
-        {
-            options.Cookie.Name = ".Washu.Application";
-            options.ExpireTimeSpan = TimeSpan.FromDays(14);
-            options.SlidingExpiration = true;
-        });
+        services.AddDefaultAuthentication()
+            .AddWfExternalCookie()
+            .AddWfApplicationCookie();
 
         services.AddHttpContextAccessor();
         services.AddScoped<SignInHandler>();
-
+        services.AddSingleton<ApplicationUserStore>();
+        services.AddSingleton<FindUserHandler>();
+        services.AddFusionCaching();
+        services.AddDbContextFactory<ApplicationDbContext>(options =>
+            options.UseNpgsql(fixture.ConnectionString).AddInterceptors(new VersionedEntityInterceptor(), new AuditedEntityInterceptor()));
         var serviceProvider = services.BuildServiceProvider();
         var context = new DefaultHttpContext
         {
@@ -137,6 +130,28 @@ public class SignInHandlerTests(ApplicationPostgreSqlFixture fixture)
         var appCookie = setCookieHeaders.FirstOrDefault(c => c != null && c.Contains(".Washu.Application"));
         appCookie.Should().NotBeNull("the application cookie should be issued");
         appCookie!.Should().Match((string? c) => c != null && (c.Contains("expires=") || c.Contains("max-age=")), "a persistent cookie should specify an expiration");
+    }
+    [Fact]
+    public async Task HandleAsync_WhenSignedIn_ShouldSetUserLastSignedInDate()
+    {
+        var (_, handler) = CreateContextAndHandler();
+        var factory = fixture.CreateDbContextFactory();
+        var username = $"User_{Guid.NewGuid():N}";
+        var user = new ApplicationUser(username, $"{username}@example.com", $"sub_{Guid.NewGuid():N}");
+        await using (var dbContext = await factory.CreateDbContextAsync())
+        {
+            dbContext.Users.Add(user);
+            await dbContext.SaveChangesAsync();
+        }
+        var command = new SignInCommand(user, IsPersistent: true, AuthenticationMethod: "Google");
+        var now = DateTimeOffset.UtcNow;
+        await handler.HandleAsync(command);
+        await using (var dbContext = await factory.CreateDbContextAsync())
+        {
+            var userFound = await dbContext.Users.SingleOrDefaultAsync(u => u.Id == user.Id);
+            userFound.Should().NotBeNull();
+            userFound.LastSignedInDate.Should().NotBeNull().And.BeCloseTo(now, TimeSpan.FromSeconds(5));
+        }
     }
 
     [Fact]

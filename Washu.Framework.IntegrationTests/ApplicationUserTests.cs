@@ -32,6 +32,7 @@ public sealed class ApplicationUserTests(ApplicationPostgreSqlFixture fixture)
         retrieved.CreationDate.Should().BeCloseTo(now, TimeSpan.FromSeconds(10),
             "The interceptor should have updated the creation date");
         retrieved.LastModifiedDate.Should().BeNull();
+        retrieved.LastSignedInDate.Should().BeNull();
     }
     [Fact]
     public async Task CitextUniqueConstraint_RejectsInsensitiveDuplicateEmail()
@@ -255,6 +256,30 @@ public sealed class ApplicationUserTests(ApplicationPostgreSqlFixture fixture)
             (await saveAction.Should().ThrowAsync<PostgresException>("The action must throw this specific exception because we updated the property directly instead of calling SaveChangesAsync"))
                 .And
                 .SqlState.Should().Be(PostgresErrorCodes.CheckViolation, "the LastModifiedDate is 1 day less than the CreationDate");
+        }
+    }
+    [Fact]
+    public async Task CreationDateLTELastSignedInDateCheckConstraint_RejectLastSignedInDateLessThanCreationDate()
+    {
+        var factory = fixture.CreateDbContextFactory();
+        var username = $"User_{Guid.CreateVersion7():N}";
+        await using (var context = await factory.CreateDbContextAsync())
+        {
+            var user = new ApplicationUser(
+                username,
+                $"{Guid.CreateVersion7():N}@example.com",
+                $"{Guid.CreateVersion7():N}");
+
+            context.Users.Add(user);
+            await context.SaveChangesAsync();
+        }
+        await using (var context = await factory.CreateDbContextAsync())
+        {
+            var saveAction = async () => await context.Users
+                .Where(u => u.Username == username).ExecuteUpdateAsync(s => s.SetProperty(u => u.LastSignedInDate, DateTimeOffset.UtcNow.AddDays(-1)));
+            (await saveAction.Should().ThrowAsync<PostgresException>("The action must throw this specific exception because we updated the property directly instead of calling SaveChangesAsync"))
+                .And
+                .SqlState.Should().Be(PostgresErrorCodes.CheckViolation, "the LastSignedInDate is 1 day less than the CreationDate");
         }
     }
 }

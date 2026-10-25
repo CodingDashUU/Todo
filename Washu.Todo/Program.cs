@@ -20,8 +20,8 @@ builder.Services.AddAppAuthenticationStateProvider();
 builder.Services.AddNoOpAntiforgeryProvider();
 builder.Services
     .AddDefaultAuthentication()
-    .AddExternalCookie()
-    .AddApplicationCookie()
+    .AddWfExternalCookie()
+    .AddWfApplicationCookie()
     .AddWfGoogle(builder.Configuration);
 builder.Services.AddTodoHandlers();
 var app = builder.Build();

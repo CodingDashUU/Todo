@@ -100,7 +100,7 @@ public static class WebApplicationExtensions
             app.MapGet(IdentityRoutes.SignOut, async (HttpContext context, [FromQuery] string? messageId) =>
                 {
                     await context.SignOutAsync(IdentityConstants.ApplicationScheme);
-
+                    
                     var targetUrl = string.IsNullOrWhiteSpace(messageId)
                         ? ApplicationRoutes.SignIn
                         : $"{ApplicationRoutes.SignIn}?messageId={messageId}";
@@ -115,13 +115,11 @@ public static class WebApplicationExtensions
                     if (userId.HasValue)
                     {
                         await using var dbContext = await factory.CreateDbContextAsync();
-                        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId.Value);
-                        if (user is not null)
-                        {
-                            user.ChangeSecurityStamp();
-                            await dbContext.SaveChangesAsync();
-                        }
-
+                        await dbContext.Users
+                            .Where(u => u.Id == userId.Value)
+                            .ExecuteUpdateAsync(s =>
+                                s.SetProperty(u => u.SecurityStamp, Guid.CreateVersion7())
+                            );
                         await userStore.RemoveUserAsync(userId.Value);
                     }
                     await context.SignOutAsync(IdentityConstants.ApplicationScheme);

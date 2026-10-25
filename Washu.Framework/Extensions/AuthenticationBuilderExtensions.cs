@@ -5,6 +5,7 @@ using Identity;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Notifications;
@@ -21,7 +22,7 @@ public static class AuthenticationBuilderExtensions
     } 
     extension(AuthenticationBuilder builder)
     {
-        public AuthenticationBuilder AddExternalCookie() => builder.AddCookie(IdentityConstants.ExternalScheme,
+        public AuthenticationBuilder AddWfExternalCookie() => builder.AddCookie(IdentityConstants.ExternalScheme,
             options =>
             {
                 options.Cookie.HttpOnly = true;
@@ -30,7 +31,7 @@ public static class AuthenticationBuilderExtensions
                 options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
                 options.Cookie.Name = ".Washu.External";
             });
-        public AuthenticationBuilder AddApplicationCookie() => builder.AddCookie(IdentityConstants.ApplicationScheme,
+        public AuthenticationBuilder AddWfApplicationCookie() => builder.AddCookie(IdentityConstants.ApplicationScheme,
             options =>
 
         {
@@ -41,6 +42,26 @@ public static class AuthenticationBuilderExtensions
             options.SlidingExpiration = true;
             options.LoginPath = ApplicationRoutes.SignIn;
             options.Cookie.Name = ".Washu.Application";
+            options.Events.OnSigningIn = async context =>
+            {
+                var userId = context.Principal?.UserId;
+                if (!userId.HasValue) return;
+                await using var dbContext = await context.HttpContext.RequestServices
+                    .GetRequiredService<IDbContextFactory<ApplicationDbContext>>()
+                    .CreateDbContextAsync();
+                var rowsChanged = await dbContext.Users
+                    .Where(u => u.Id == userId)
+                    .ExecuteUpdateAsync(
+                        s => 
+                            s.SetProperty(u => u.LastSignedInDate, DateTimeOffset.UtcNow)
+                            );
+                if (rowsChanged != 1)
+                    await context.HttpContext.SignOutAsync(
+                        IdentityConstants.ApplicationScheme);
+                var userStore = context.HttpContext.RequestServices
+                    .GetRequiredService<ApplicationUserStore>();
+                await userStore.RemoveUserAsync(userId.Value);
+            };
             options.Events.OnValidatePrincipal = async context =>
             {
                 var userId = context.Principal?.UserId;

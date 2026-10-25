@@ -53,8 +53,8 @@
                     Account Information
                 </RadzenText>
 
-                <RadzenStack>
-                    <RadzenColumn Size="12" SizeMD="6">
+                <RadzenRow AlignItems="AlignItems.Center">
+                    <RadzenColumn Size="12">
                         <RadzenText TextStyle="TextStyle.Caption" class="rz-color-secondary rz-mb-0">
                             Username
                         </RadzenText>
@@ -62,7 +62,7 @@
                             @User.Username
                         </RadzenText>
                     </RadzenColumn>
-                </RadzenStack>
+                </RadzenRow>
                 <div style="height: 3px"/>
                 <RadzenRow AlignItems="AlignItems.Center">
                     <RadzenColumn Size="12">
@@ -74,6 +74,7 @@
                         </RadzenText>
                     </RadzenColumn>
                 </RadzenRow>
+                <hr class="rz-my-0 rz-border-top rz-border-base-300" />
                 <RadzenRow AlignItems="AlignItems.Center">
                     <RadzenColumn Size="12">
                         <RadzenText TextStyle="TextStyle.Caption" class="rz-color-secondary rz-mb-0">
@@ -84,6 +85,7 @@
                         </RadzenText>
                     </RadzenColumn>
                 </RadzenRow>
+                <div style="height: 3px"/>
                 <RadzenRow AlignItems="AlignItems.Center">
                     <RadzenColumn Size="12">
                         <RadzenText TextStyle="TextStyle.Caption" class="rz-color-secondary rz-mb-0">
@@ -103,8 +105,27 @@
                         }
                     </RadzenColumn>
                 </RadzenRow>
+                <div style="height: 3px"/>
+                <RadzenRow AlignItems="AlignItems.Center">
+                    <RadzenColumn Size="12">
+                        <RadzenText TextStyle="TextStyle.Caption" class="rz-color-secondary rz-mb-0">
+                            Last Signed In
+                        </RadzenText>
+                        @if (LastSignedInDate.HasValue)
+                        {
+                            <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0 rz-font-weight-bold">
+                                @(LastSignedInDate.Value.ToString("F")) (@LastSignedInDate.Value.Humanize())
+                            </RadzenText>
+                        }
+                        else
+                        {
+                            <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0 rz-font-weight-bold">
+                                Never
+                            </RadzenText>
+                        }
+                    </RadzenColumn>
+                </RadzenRow>
             </RadzenStack>
-
             <!-- Divider using Radzen CSS utility -->
             <hr class="rz-my-0 rz-border-top rz-border-base-300" />
             <RadzenText TextStyle="TextStyle.Subtitle2" class="rz-color-primary">
@@ -142,6 +163,7 @@
 @code {
     private DateTimeOffset CreationDate => User.CreationDate.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
     private DateTimeOffset? LastModifiedDate => User.LastModifiedDate?.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
+    private DateTimeOffset? LastSignedInDate => User.LastSignedInDate?.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
     private static readonly ConfirmOptions ConfirmAccountDeletionOptions = new()
     {
         Icon = MaterialIcons.Delete,

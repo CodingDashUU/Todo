@@ -53,8 +53,8 @@ public sealed class SignOutAndHealthEndpointsTests(ApplicationPostgreSqlFixture 
         builder.Services.AddWfIdentityServices();
 
         var authBuilder = builder.Services.AddDefaultAuthentication();
-        Washu.Framework.Extensions.AuthenticationBuilderExtensions.AddExternalCookie(authBuilder);
-        Washu.Framework.Extensions.AuthenticationBuilderExtensions.AddApplicationCookie(authBuilder);
+        authBuilder.AddWfExternalCookie();
+        authBuilder.AddWfApplicationCookie();
 
         builder.Services.AddAuthorization();
         builder.Services.AddRateLimiter(options =>
