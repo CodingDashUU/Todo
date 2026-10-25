@@ -1,3 +1,4 @@
+@using Humanizer
 @using Washu.Framework.Extensions
 @inject ChangeUsernameHandler ChangeUsernameHandler
 @inject DeleteUserHandler DeleteUserHandler
@@ -7,6 +8,7 @@
 @inject AuthenticationStateProvider AuthStateProvider
 @inject MessageStore Store
 @inject DialogService DialogService
+@inject UserTimeZoneProvider TimeZoneProvider
 @inherits AuthenticatedComponent
 
         <RadzenCard Variant="Variant.Outlined" class="rz-p-4 rz-p-md-6" Style=" margin: 0 auto;">
@@ -72,6 +74,35 @@
                         </RadzenText>
                     </RadzenColumn>
                 </RadzenRow>
+                <RadzenRow AlignItems="AlignItems.Center">
+                    <RadzenColumn Size="12">
+                        <RadzenText TextStyle="TextStyle.Caption" class="rz-color-secondary rz-mb-0">
+                            Account Created
+                        </RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0 rz-font-weight-bold">
+                            @CreationDate.ToString("F") (@CreationDate.Humanize())
+                        </RadzenText>
+                    </RadzenColumn>
+                </RadzenRow>
+                <RadzenRow AlignItems="AlignItems.Center">
+                    <RadzenColumn Size="12">
+                        <RadzenText TextStyle="TextStyle.Caption" class="rz-color-secondary rz-mb-0">
+                            Last Modified
+                        </RadzenText>
+                        @if (LastModifiedDate.HasValue)
+                        {
+                            <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0 rz-font-weight-bold">
+                                @(LastModifiedDate.Value.ToString("F")) (@LastModifiedDate.Value.Humanize())
+                            </RadzenText>
+                        }
+                        else
+                        {
+                            <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0 rz-font-weight-bold">
+                                Never
+                            </RadzenText>
+                        }
+                    </RadzenColumn>
+                </RadzenRow>
             </RadzenStack>
 
             <!-- Divider using Radzen CSS utility -->
@@ -109,6 +140,8 @@
     </RadzenCard>
 
 @code {
+    private DateTimeOffset CreationDate => User.CreationDate.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
+    private DateTimeOffset? LastModifiedDate => User.LastModifiedDate?.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
     private static readonly ConfirmOptions ConfirmAccountDeletionOptions = new()
     {
         Icon = MaterialIcons.Delete,

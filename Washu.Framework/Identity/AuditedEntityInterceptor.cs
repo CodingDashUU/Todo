@@ -22,10 +22,14 @@ public class AuditedEntityInterceptor : SaveChangesInterceptor
             .Where(e => e is { Entity: IAuditedEntity, State: EntityState.Modified or EntityState.Added });
 
         foreach (var entry in entries)
-        {
-            if (entry.State is EntityState.Added)
-                entry.Property(nameof(IAuditedEntity.CreationDate)).CurrentValue = DateTimeOffset.UtcNow;
-            entry.Property(nameof(IAuditedEntity.LastModifiedDate)).CurrentValue = DateTimeOffset.UtcNow;
-        }
+            switch (entry.State)
+            {
+                case EntityState.Added:
+                    entry.Property(nameof(IAuditedEntity.CreationDate)).CurrentValue = DateTimeOffset.UtcNow;
+                    break;
+                case EntityState.Modified:
+                    entry.Property(nameof(IAuditedEntity.LastModifiedDate)).CurrentValue = DateTimeOffset.UtcNow;
+                    break;
+            }
     }
 }

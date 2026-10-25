@@ -9,6 +9,7 @@
     <NoWarn>$(NoWarn);BL0005</NoWarn>
   </PropertyGroup>
   <ItemGroup>
+    <PackageVersion Include="Humanizer" Version="3.0.10" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.Google" Version="10.0.10" />
     <PackageVersion Include="Microsoft.Extensions.Caching.Memory" Version="10.0.11" />
     <PackageVersion Include="Radzen.Blazor" Version="12.0.5" />

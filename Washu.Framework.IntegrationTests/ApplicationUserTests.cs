@@ -31,8 +31,7 @@ public sealed class ApplicationUserTests(ApplicationPostgreSqlFixture fixture)
         retrieved.GoogleSubject.Should().Be(googleSubject,  "The googleSubject of the user received should match the googleSubject of the user created");
         retrieved.CreationDate.Should().BeCloseTo(now, TimeSpan.FromSeconds(10),
             "The interceptor should have updated the creation date");
-        retrieved.LastModifiedDate.Should().BeCloseTo(now, TimeSpan.FromSeconds(10),
-            "The interceptor should have updated the last modified date");
+        retrieved.LastModifiedDate.Should().BeNull();
     }
     [Fact]
     public async Task CitextUniqueConstraint_RejectsInsensitiveDuplicateEmail()

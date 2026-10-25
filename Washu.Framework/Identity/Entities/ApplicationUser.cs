@@ -16,5 +16,5 @@ public sealed class ApplicationUser(string userName, string email, string google
     public Guid VersionId { get; private init; }
     public void ChangeSecurityStamp() => SecurityStamp = Guid.CreateVersion7();
     public DateTimeOffset CreationDate { get; private init; }
-    public DateTimeOffset LastModifiedDate { get; private init; }
+    public DateTimeOffset? LastModifiedDate { get; private init; }
 }
