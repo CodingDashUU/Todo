@@ -5,13 +5,11 @@
 @inject NotificationService NotificationService
 @inject NavigationManager NavManager
 @inject ApplicationUserStore UserStore
-@inject AuthenticationStateProvider AuthStateProvider
 @inject MessageStore Store
 @inject DialogService DialogService
 @inject UserTimeZoneProvider TimeZoneProvider
-@inherits AuthenticatedComponent
 
-        <RadzenCard Variant="Variant.Outlined" class="rz-p-4 rz-p-md-6" Style=" margin: 0 auto;">
+<RadzenCard Variant="Variant.Outlined" class="rz-p-4 rz-p-md-6" Style=" margin: 0 auto;">
         <RadzenStack Gap="1rem">
             
             <!-- Header & Profile Overview -->
@@ -161,6 +159,8 @@
     </RadzenCard>
 
 @code {
+    [CascadingParameter] public required Task<AuthenticationState> Context { get; set; }
+    private ApplicationUserInfo User { get; set; } = new();
     private DateTimeOffset CreationDate => User.CreationDate.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
     private DateTimeOffset? LastModifiedDate => User.LastModifiedDate?.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
     private DateTimeOffset? LastSignedInDate => User.LastSignedInDate?.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
@@ -171,6 +171,13 @@
         OkButtonText = "Yes",
         CancelButtonText = "No" 
     };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await RefreshUserAsync();
+    }
+
     private async Task OnChangeUsernameAsync()
     {
         var parameters = new Dictionary<string, object?>(3)
@@ -214,20 +221,27 @@
 
     private async Task RefreshUserAsync()
     {
-        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-        if (authState.User.UserId is not { } userId)
+        var state = await Context;
+        if (state.User.UserId is not { } userId
+            || state.User.SecurityStamp is not { } securityStamp
+            || await UserStore.GetOrSetUserAsync(userId) is not { } user
+            || user.SecurityStamp != securityStamp)
         {
-            NavManager.NavigateTo(ApplicationRoutes.SignIn);
+            Redirect();
             return;
         }
-        var user = await UserStore.GetOrSetUserAsync(userId);
-        if (user is null)
+        User = new ApplicationUserInfo
         {
-            NavManager.NavigateTo(ApplicationRoutes.SignIn);
-            return;
-        }
-        User = user;
+            Id = user.Id,
+            Username = user.Username,
+            Email = user.Email,
+            CreationDate = user.CreationDate,
+            LastModifiedDate = user.LastModifiedDate,
+            LastSignedInDate = user.LastSignedInDate,
+            VersionId = user.VersionId
+        };
     }
+    private void Redirect() => NavManager.NavigateTo($"{ApplicationRoutes.SignIn}?returnUrl={ApplicationRoutes.Home}", forceLoad: true);
     private void SignOut() => NavManager.NavigateTo(IdentityRoutes.SignOut, forceLoad: true);
 
     private void SignOutFromAllSessions()
@@ -259,4 +273,16 @@
         var id = Store.Store(message);
         NavManager.NavigateTo($"{IdentityRoutes.SignOut}?messageId={id}", forceLoad: true);
     }
+
+    private sealed class ApplicationUserInfo
+    {
+        public Guid Id { get; set; }
+        public string Username { get; set; } = "UNKNOWN";
+        public string Email { get; set; } = "UNKNOWN";
+        public DateTimeOffset CreationDate { get; set; } = DateTimeOffset.UtcNow;
+        public DateTimeOffset? LastModifiedDate { get; set; } = DateTimeOffset.UtcNow;
+        public DateTimeOffset? LastSignedInDate { get; set; } = DateTimeOffset.UtcNow;
+        public Guid VersionId { get; set; } = Guid.CreateVersion7();
+    }
+
 }

@@ -2,8 +2,10 @@
 @using Washu.Todo.Identity
 @using Dialogs
 @using Washu.Framework.Extensions
+@using Washu.Framework.Identity
 @using Washu.Todo.Features
-@using System.Linq.Dynamic.Core
+@inject NavigationManager NavManager
+@inject ApplicationUserStore UserStore
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject IDbContextFactory<TodoDbContext> DbContextFactory
@@ -14,7 +16,7 @@
 @inject UpdateListHandler UpdateListHandler
 @inject DeleteTaskHandler DeleteTaskHandler
 @inject DeleteListHandler DeleteListHandler
-@inherits AuthenticatedComponent
+
 <RadzenStack Orientation="Orientation.Horizontal">
     <RadzenCard>
         <RadzenDropDownDataGrid 
@@ -65,6 +67,9 @@
 </RadzenDataList>
 
 @code {
+    [CascadingParameter] public required Task<AuthenticationState> Context { get; set; }
+
+    private Guid _userId;
     private static readonly ConfirmOptions ConfirmDeleteOptions = new()
     {
         Icon = MaterialIcons.Delete,
@@ -72,7 +77,6 @@
         OkButtonText = "Yes",
         CancelButtonText = "No" 
     };
-
     private const byte TasksPageCount = 10;
     private RadzenDataList<TaskEntry>? _dataList;
     private bool _isEditing;
@@ -98,7 +102,16 @@
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-
+        var state = await Context;
+        if (state.User.UserId is not { } userId
+            || state.User.SecurityStamp is not { } securityStamp
+            || await UserStore.GetOrSetUserAsync(userId) is not { } user
+            || user.SecurityStamp != securityStamp)
+        {
+            Redirect();
+            return;
+        }
+        _userId = user.Id;
         await LoadListsAsync(DefaultListsLoadDataArgs);
         _selectedList = _lists.FirstOrDefault() ?? Todo.TodoList.None;
         await FetchTasksAsync(skip: 0, top: TasksPageCount);
@@ -126,7 +139,7 @@
             await using var context = await DbContextFactory.CreateDbContextAsync();
             var query = context.TodoLists
                 .AsNoTracking()
-                .Where(t => t.UserId == User.Id)
+                .Where(t => t.UserId == _userId)
                 .OrderByDescending(e => e.LastModified)
                 .AsQueryable();
             
@@ -315,4 +328,5 @@
 
         await RefreshCurrentListAsync();
     }
+    private void Redirect() => NavManager.NavigateTo($"{ApplicationRoutes.SignIn}?returnUrl={ApplicationRoutes.Home}", forceLoad: true);
 }
