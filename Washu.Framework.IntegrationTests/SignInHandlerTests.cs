@@ -12,7 +12,7 @@ using System.Security.Claims;
 using Xunit;
 
 [Collection(PostgreSqlTestCollection.Name)]
-public class SignInHandlerTests(PostgreSqlFixture fixture)
+public class SignInHandlerTests(ApplicationPostgreSqlFixture fixture)
 {
     private static (DefaultHttpContext Context, SignInHandler Handler) CreateContextAndHandler()
     {
@@ -79,7 +79,7 @@ public class SignInHandlerTests(PostgreSqlFixture fixture)
         var username = $"User_{Guid.NewGuid():N}";
         var user = new ApplicationUser(username, $"{username}@example.com", $"sub_{Guid.NewGuid():N}");
 
-        await using (var db = fixture.CreateDbContext())
+        await using (var db = await fixture.CreateDbContextFactory().CreateDbContextAsync())
         {
             db.Users.Add(user);
             await db.SaveChangesAsync();

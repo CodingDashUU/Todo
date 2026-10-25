@@ -24,7 +24,7 @@ using Xunit;
 using ZiggyCreatures.Caching.Fusion;
 
 [Collection(PostgreSqlTestCollection.Name)]
-public sealed class SignOutAndHealthEndpointsTests(PostgreSqlFixture fixture) : IAsyncLifetime
+public sealed class SignOutAndHealthEndpointsTests(ApplicationPostgreSqlFixture fixture) : IAsyncLifetime
 {
     private WebApplication _app = null!;
     private HttpClient _client = null!;
@@ -128,7 +128,7 @@ public sealed class SignOutAndHealthEndpointsTests(PostgreSqlFixture fixture) : 
     [Fact]
     public async Task SeedPermissionsAsync_SeedsAdminPermissionAndIsIdempotent()
     {
-        await using (var db = fixture.CreateDbContext())
+        await using (var db = await fixture.CreateDbContextFactory().CreateDbContextAsync())
             if (!await db.Roles.AnyAsync(r => r.Name == InitialUserRoles.Admin))
             {
                 db.Roles.Add(new ApplicationRole(InitialUserRoles.Admin));
@@ -138,7 +138,7 @@ public sealed class SignOutAndHealthEndpointsTests(PostgreSqlFixture fixture) : 
         // First seeding
         await _app.SeedPermissionsAsync();
 
-        await using (var db = fixture.CreateDbContext())
+        await using (var db = await fixture.CreateDbContextFactory().CreateDbContextAsync())
         {
             var adminRole = await db.Roles.Include(r => r.Permissions).FirstAsync(r => r.Name == InitialUserRoles.Admin);
             adminRole.Permissions.Should().Contain(p => p.Name == CorePermissions.CanCheckSystemHealth);
@@ -153,7 +153,7 @@ public sealed class SignOutAndHealthEndpointsTests(PostgreSqlFixture fixture) : 
     public async Task SignOutEndpoint_RedirectsToSignIn_AndClearsApplicationCookie()
     {
         var user = new ApplicationUser($"User_{Guid.CreateVersion7():N}", $"{Guid.CreateVersion7():N}@example.com", $"sub_{Guid.CreateVersion7():N}");
-        await using (var db = fixture.CreateDbContext())
+        await using (var db = await fixture.CreateDbContextFactory().CreateDbContextAsync())
         {
             db.Users.Add(user);
             await db.SaveChangesAsync();
@@ -189,7 +189,7 @@ public sealed class SignOutAndHealthEndpointsTests(PostgreSqlFixture fixture) : 
     {
         var user = new ApplicationUser($"User_{Guid.CreateVersion7():N}", $"{Guid.CreateVersion7():N}@example.com", $"sub_{Guid.CreateVersion7():N}");
         var initialSecurityStamp = user.SecurityStamp;
-        await using (var db = fixture.CreateDbContext())
+        await using (var db = await fixture.CreateDbContextFactory().CreateDbContextAsync())
         {
             db.Users.Add(user);
             await db.SaveChangesAsync();
@@ -212,7 +212,7 @@ public sealed class SignOutAndHealthEndpointsTests(PostgreSqlFixture fixture) : 
         signOutResponse.Headers.Location!.OriginalString.Should().Be(ApplicationRoutes.SignIn);
 
         // Verify database SecurityStamp was changed
-        await using (var db = fixture.CreateDbContext())
+        await using (var db = await fixture.CreateDbContextFactory().CreateDbContextAsync())
         {
             var updatedUser = await db.Users.FindAsync(user.Id);
             updatedUser.Should().NotBeNull();
@@ -237,7 +237,7 @@ public sealed class SignOutAndHealthEndpointsTests(PostgreSqlFixture fixture) : 
     public async Task HealthEndpoint_WhenAuthenticatedWithoutPermission_ReturnsNotFound()
     {
         var user = new ApplicationUser($"User_{Guid.CreateVersion7():N}", $"{Guid.CreateVersion7():N}@example.com", $"sub_{Guid.CreateVersion7():N}");
-        await using (var db = fixture.CreateDbContext())
+        await using (var db = await fixture.CreateDbContextFactory().CreateDbContextAsync())
         {
             db.Users.Add(user);
             await db.SaveChangesAsync();
@@ -256,7 +256,7 @@ public sealed class SignOutAndHealthEndpointsTests(PostgreSqlFixture fixture) : 
     public async Task HealthEndpoint_WhenUserHasCanCheckSystemHealthPermission_ReturnsOkWithJsonReport()
     {
         var user = new ApplicationUser($"AdminUser_{Guid.CreateVersion7():N}", $"{Guid.CreateVersion7():N}@example.com", $"sub_{Guid.CreateVersion7():N}");
-        await using (var db = fixture.CreateDbContext())
+        await using (var db = await fixture.CreateDbContextFactory().CreateDbContextAsync())
         {
             db.Users.Add(user);
 

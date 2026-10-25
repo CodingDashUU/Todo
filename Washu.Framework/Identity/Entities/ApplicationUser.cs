@@ -2,26 +2,19 @@
 
 using System;
 
-public sealed class ApplicationUser(string userName, string email, string googleSubject)
+public sealed class ApplicationUser(string userName, string email, string googleSubject) : IVersionedEntity, IAuditedEntity
 {
     private ApplicationUser() : this(string.Empty, string.Empty, string.Empty) {}
     public Guid Id { get; private init; } = Guid.CreateVersion7();
 
-    public string Username
-    {
-        get;
-        set
-        {
-            field = value;
-            VersionId = Guid.CreateVersion7();
-        }
-    } = userName;
+    public string Username { get; set; } = userName;
 
     public string Email { get; private init; } = email;
-    public Guid VersionId { get; private set; } = Guid.CreateVersion7();
     public Guid SecurityStamp { get; private set; } = Guid.CreateVersion7();
     public string GoogleSubject { get; private init; } = googleSubject;
     public uint RowVersion { get; }
-    
+    public Guid VersionId { get; private init; }
     public void ChangeSecurityStamp() => SecurityStamp = Guid.CreateVersion7();
+    public DateTimeOffset CreationDate { get; private init; }
+    public DateTimeOffset LastModifiedDate { get; private init; }
 }

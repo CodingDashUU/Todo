@@ -9,7 +9,7 @@ using Notifications;
 using Xunit;
 
 [Collection(PostgreSqlTestCollection.Name)]
-public sealed class IdentityHandlersTests(PostgreSqlFixture fixture)
+public sealed class IdentityHandlersTests(ApplicationPostgreSqlFixture fixture)
 {
     [Fact]
     public async Task AddRolesHandler_ShouldInsertNewRolesAndIgnoreDuplicates()
@@ -26,7 +26,7 @@ public sealed class IdentityHandlersTests(PostgreSqlFixture fixture)
         // Second pass: include existing role and duplicates with different casing
         await handler.HandleAsync(new AddRolesCommand([role1.ToLowerInvariant(), role1.ToUpperInvariant(), role2.ToLowerInvariant(), role2.ToUpperInvariant()]));
 
-        await using var context = fixture.CreateDbContext();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var countRole1 = await context.Roles.CountAsync(r => r.Name == role1);
         var countRole2 = await context.Roles.CountAsync(r => r.Name == role2);
 
@@ -43,7 +43,7 @@ public sealed class IdentityHandlersTests(PostgreSqlFixture fixture)
         var username = $"FindUser_{Guid.NewGuid():N}";
         var user = new ApplicationUser(username, $"{username}@example.com", $"sub-{Guid.NewGuid():N}");
 
-        await using (var context = fixture.CreateDbContext())
+        await using (var context = await fixture.CreateDbContextFactory().CreateDbContextAsync())
         {
             context.Users.Add(user);
             await context.SaveChangesAsync();
@@ -65,7 +65,7 @@ public sealed class IdentityHandlersTests(PostgreSqlFixture fixture)
         var handler = new ChangeUsernameHandler(factory);
 
         var user = new ApplicationUser($"OldName_{Guid.NewGuid():N}", $"{Guid.NewGuid():N}@example.com", $"sub-{Guid.NewGuid():N}");
-        await using (var context = fixture.CreateDbContext())
+        await using (var context = await fixture.CreateDbContextFactory().CreateDbContextAsync())
         {
             context.Users.Add(user);
             await context.SaveChangesAsync();
@@ -74,7 +74,7 @@ public sealed class IdentityHandlersTests(PostgreSqlFixture fixture)
         var newUsername = $"NewName_{Guid.NewGuid():N}";
         var result = await handler.HandleAsync(new ChangeUsernameCommand(user.Id, user.VersionId, newUsername));
         result.Should().Be(ChangeUsernameResult.Success);
-        await using (var context = fixture.CreateDbContext())
+        await using (var context = await fixture.CreateDbContextFactory().CreateDbContextAsync())
         {
             var updatedUser = await context.Users.FindAsync(user.Id);
             updatedUser.Should().NotBeNull();
@@ -92,7 +92,7 @@ public sealed class IdentityHandlersTests(PostgreSqlFixture fixture)
         var user1 = new ApplicationUser(existingUsername, $"{Guid.NewGuid():N}@example.com", $"sub-{Guid.NewGuid():N}");
         var user2 = new ApplicationUser($"Other_{Guid.NewGuid():N}", $"{Guid.NewGuid():N}@example.com", $"sub-{Guid.NewGuid():N}");
 
-        await using (var context = fixture.CreateDbContext())
+        await using (var context = await fixture.CreateDbContextFactory().CreateDbContextAsync())
         {
             context.Users.AddRange(user1, user2);
             await context.SaveChangesAsync();
@@ -110,12 +110,12 @@ public sealed class IdentityHandlersTests(PostgreSqlFixture fixture)
         
         var user = new ApplicationUser($"DeletedUser_{Guid.NewGuid():N}", $"{Guid.NewGuid():N}@example.com", $"{Guid.NewGuid():N}");
 
-        await using (var context = fixture.CreateDbContext())
+        await using (var context = await fixture.CreateDbContextFactory().CreateDbContextAsync())
         {
             context.Users.Add(user);
             await context.SaveChangesAsync();
         }
-        await using (var context = fixture.CreateDbContext())
+        await using (var context = await fixture.CreateDbContextFactory().CreateDbContextAsync())
         {
             context.Users.Remove(user);
             await context.SaveChangesAsync();
@@ -132,7 +132,7 @@ public sealed class IdentityHandlersTests(PostgreSqlFixture fixture)
         var username1 = $"User_{Guid.NewGuid():N}";
         var user = new ApplicationUser(username1, $"{Guid.NewGuid():N}@example.com", $"sub-{Guid.NewGuid():N}");
 
-        await using (var context = fixture.CreateDbContext())
+        await using (var context = await fixture.CreateDbContextFactory().CreateDbContextAsync())
         {
             context.Users.Add(user);
             await context.SaveChangesAsync();
@@ -150,7 +150,7 @@ public sealed class IdentityHandlersTests(PostgreSqlFixture fixture)
         var handler = new DeleteUserHandler(factory);
 
         var user = new ApplicationUser($"DelUser_{Guid.NewGuid():N}", $"{Guid.NewGuid():N}@example.com", $"sub-{Guid.NewGuid():N}");
-        await using (var context = fixture.CreateDbContext())
+        await using (var context = await fixture.CreateDbContextFactory().CreateDbContextAsync())
         {
             context.Users.Add(user);
             await context.SaveChangesAsync();
@@ -159,7 +159,7 @@ public sealed class IdentityHandlersTests(PostgreSqlFixture fixture)
         var result = await handler.HandleAsync(new DeleteUserCommand(user.Id));
         result.Should().Be(DeleteUserResult.Success, "The handler should succeed");
 
-        await using (var context = fixture.CreateDbContext())
+        await using (var context = await fixture.CreateDbContextFactory().CreateDbContextAsync())
         {
             var exists = await context.Users.AnyAsync(u => u.Id == user.Id);
             exists.Should().BeFalse($"The user, {user.Username} should be deleted");
@@ -187,7 +187,7 @@ public sealed class IdentityHandlersTests(PostgreSqlFixture fixture)
         var user = new ApplicationUser($"CascadeDelUser_{Guid.NewGuid():N}", $"{Guid.NewGuid():N}@example.com", $"sub-{Guid.NewGuid():N}");
         var role = new ApplicationRole($"CascadeRole_{Guid.NewGuid():N}");
 
-        await using (var context = fixture.CreateDbContext())
+        await using (var context = await fixture.CreateDbContextFactory().CreateDbContextAsync())
         {
             context.Users.Add(user);
             context.Roles.Add(role);
@@ -199,7 +199,7 @@ public sealed class IdentityHandlersTests(PostgreSqlFixture fixture)
 
         await handler.HandleAsync(new DeleteUserCommand(user.Id));
 
-        await using (var context = fixture.CreateDbContext())
+        await using (var context = await fixture.CreateDbContextFactory().CreateDbContextAsync())
         {
             var userExists = await context.Users.AnyAsync(u => u.Id == user.Id);
             userExists.Should().BeFalse("The user should be deleted from the database");

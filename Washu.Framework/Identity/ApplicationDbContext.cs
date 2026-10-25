@@ -54,6 +54,7 @@ public class ApplicationDbContext(DbContextOptions options)
                 t.HasAllowedFirstCharacterCheckConstraint(p => p.Username, Characters.Letters);
                 t.HasMaxLengthCheckConstraint(p => p.Email, 255);
                 t.HasEmailCheckConstraint(p => p.Email);
+                t.HasDateLessThanOrEqualToOtherDateCheckConstraint(u => u.CreationDate, u => u.LastModifiedDate);
             });
             entity.Property(u => u.RowVersion).IsRowVersion();
         });

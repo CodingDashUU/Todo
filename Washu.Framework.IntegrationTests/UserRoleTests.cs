@@ -7,12 +7,12 @@ using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
 [Collection(PostgreSqlTestCollection.Name)]
-public class UserRoleTests(PostgreSqlFixture fixture)
+public class UserRoleTests(ApplicationPostgreSqlFixture fixture)
 {
     [Fact]
     public async Task CanAssociateUserWithRole()
     {
-        await using var context = fixture.CreateDbContext();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
 
         var user = new ApplicationUser(
             $"User_{Guid.CreateVersion7():N}", 
@@ -40,7 +40,7 @@ public class UserRoleTests(PostgreSqlFixture fixture)
     [Fact]
     public async Task RemoveRole_CascadesDeleteToUserRoles()
     {
-        await using var context = fixture.CreateDbContext();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var role1 = new ApplicationRole($"Admin_{Guid.CreateVersion7():N}");
         var role2 = new ApplicationRole($"User_{Guid.CreateVersion7():N}");
         var guid1 = $"{Guid.CreateVersion7():N}";
@@ -66,7 +66,7 @@ public class UserRoleTests(PostgreSqlFixture fixture)
     [Fact]
     public async Task RemoveUser_CascadesDeleteToUserRoles()
     {
-        await using var context = fixture.CreateDbContext();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var role1 = new ApplicationRole($"Admin_{Guid.CreateVersion7():N}");
         var role2 = new ApplicationRole($"User_{Guid.CreateVersion7():N}");
         var guid1 = $"{Guid.CreateVersion7():N}";
@@ -93,7 +93,7 @@ public class UserRoleTests(PostgreSqlFixture fixture)
     [Fact]
     public async Task UniqueConstraint_RejectDuplicateRole()
     {
-        await using var context = fixture.CreateDbContext();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
 
         var user = new ApplicationUser(
             $"User_{Guid.CreateVersion7():N}", 
@@ -131,7 +131,7 @@ public class UserRoleTests(PostgreSqlFixture fixture)
     [Fact]
     public async Task ForeignKeyConstraint_RejectsNonExistentUserId()
     {
-        await using var context = fixture.CreateDbContext();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
 
         var role = new ApplicationRole($"Role_{Guid.CreateVersion7():N}");
         context.Roles.Add(role);
@@ -155,7 +155,7 @@ public class UserRoleTests(PostgreSqlFixture fixture)
     [Fact]
     public async Task ForeignKeyConstraint_RejectsNonExistentRoleId()
     {
-        await using var context = fixture.CreateDbContext();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
 
         var user = new ApplicationUser(
             $"User_{Guid.CreateVersion7():N}",

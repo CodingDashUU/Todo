@@ -8,12 +8,12 @@ using Npgsql;
 using Xunit;
 
 [Collection(PostgreSqlTestCollection.Name)]
-public class RolePermissionTests(PostgreSqlFixture fixture)
+public class RolePermissionTests(ApplicationPostgreSqlFixture fixture)
 {
     [Fact]
     public async Task CanInsertAndRetrieveRolePermission()
     {
-        await using var context = fixture.CreateDbContext();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
 
         var role = new ApplicationRole($"Role_{Guid.CreateVersion7():N}");
         context.Roles.Add(role);
@@ -38,7 +38,7 @@ public class RolePermissionTests(PostgreSqlFixture fixture)
     [Fact]
     public async Task CitextUniqueConstraint_RejectsInsensitiveDuplicatePermissionName()
     {
-        await using var context = fixture.CreateDbContext();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
 
         var role1 = new ApplicationRole($"Role1_{Guid.CreateVersion7():N}");
         var role2 = new ApplicationRole($"Role2_{Guid.CreateVersion7():N}");
@@ -63,7 +63,7 @@ public class RolePermissionTests(PostgreSqlFixture fixture)
     [Fact]
     public async Task MaxLengthCheckConstraint_RejectsNameExceeding64Characters()
     {
-        await using var context = fixture.CreateDbContext();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
 
         var role = new ApplicationRole($"Role_{Guid.CreateVersion7():N}");
         context.Roles.Add(role);
@@ -83,7 +83,7 @@ public class RolePermissionTests(PostgreSqlFixture fixture)
     [Fact]
     public async Task ForeignKeyConstraint_RejectsNonExistentRoleId()
     {
-        await using var context = fixture.CreateDbContext();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
 
         var nonExistentRoleId = Guid.CreateVersion7();
         var perm = new RolePermission($"Perm_{Guid.CreateVersion7():N}", nonExistentRoleId);
@@ -99,7 +99,7 @@ public class RolePermissionTests(PostgreSqlFixture fixture)
     [Fact]
     public async Task CascadeDelete_WhenRoleDeleted_DeletesAssociatedRolePermissions()
     {
-        await using var context = fixture.CreateDbContext();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
 
         var role = new ApplicationRole($"Role_{Guid.CreateVersion7():N}");
         context.Roles.Add(role);

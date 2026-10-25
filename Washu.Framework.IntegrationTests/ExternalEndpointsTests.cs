@@ -26,7 +26,7 @@ using Microsoft.Extensions.Primitives;
 using ZiggyCreatures.Caching.Fusion;
 
 [Collection(PostgreSqlTestCollection.Name)]
-public sealed class ExternalEndpointsTests(PostgreSqlFixture fixture) : IAsyncLifetime
+public sealed class ExternalEndpointsTests(ApplicationPostgreSqlFixture fixture) : IAsyncLifetime
 {
     private WebApplication _app = null!;
     private HttpClient _client = null!;
@@ -144,7 +144,7 @@ public sealed class ExternalEndpointsTests(PostgreSqlFixture fixture) : IAsyncLi
 
     private async Task EnsureUserRoleExistsAsync()
     {
-        await using var db = fixture.CreateDbContext();
+        await using var db = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         if (!await db.Roles.AnyAsync(r => r.Name == InitialUserRoles.User))
         {
             db.Roles.Add(new ApplicationRole(InitialUserRoles.User));
@@ -212,7 +212,7 @@ public sealed class ExternalEndpointsTests(PostgreSqlFixture fixture) : IAsyncLi
     {
         var username = $"User_{Guid.NewGuid():N}";
         var user = new ApplicationUser(username, $"{username}@example.com", $"sub_{Guid.NewGuid():N}");
-        await using (var db = fixture.CreateDbContext())
+        await using (var db = await fixture.CreateDbContextFactory().CreateDbContextAsync())
         {
             db.Users.Add(user);
             await db.SaveChangesAsync();
@@ -235,7 +235,7 @@ public sealed class ExternalEndpointsTests(PostgreSqlFixture fixture) : IAsyncLi
     {
         var username = $"User_{Guid.NewGuid():N}";
         var user = new ApplicationUser(username, $"{username}@example.com", $"sub_{Guid.NewGuid():N}");
-        await using (var db = fixture.CreateDbContext())
+        await using (var db = await fixture.CreateDbContextFactory().CreateDbContextAsync())
         {
             db.Users.Add(user);
             await db.SaveChangesAsync();
@@ -308,7 +308,7 @@ public sealed class ExternalEndpointsTests(PostgreSqlFixture fixture) : IAsyncLi
             "the external authentication cookie must be cleared on successful sign-in");
 
         // Verify database persistence
-        await using var db = fixture.CreateDbContext();
+        await using var db = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var user = await db.Users.SingleOrDefaultAsync(u => u.GoogleSubject == subject);
         user.Should().NotBeNull("the new user must be persisted in the database");
         user!.Email.Should().Be(email, "the registered user email must match the claim value");
@@ -327,7 +327,7 @@ public sealed class ExternalEndpointsTests(PostgreSqlFixture fixture) : IAsyncLi
         var username = $"User_{Guid.NewGuid():N}";
         var existingUser = new ApplicationUser(username, email, subject);
 
-        await using (var db = fixture.CreateDbContext())
+        await using (var db = await fixture.CreateDbContextFactory().CreateDbContextAsync())
         {
             db.Users.Add(existingUser);
             await db.SaveChangesAsync();
@@ -347,7 +347,7 @@ public sealed class ExternalEndpointsTests(PostgreSqlFixture fixture) : IAsyncLi
         var setCookies = response.Headers.GetValues("Set-Cookie").ToArray();
         setCookies.Should().Contain(c => c.Contains(".Washu.Application"), "application cookie should be emitted");
 
-        await using (var db = fixture.CreateDbContext())
+        await using (var db = await fixture.CreateDbContextFactory().CreateDbContextAsync())
         {
             var userCount = await db.Users.CountAsync(u => u.GoogleSubject == subject);
             userCount.Should().Be(1, "no duplicate user records should be created for an existing subject");
@@ -379,7 +379,7 @@ public sealed class ExternalEndpointsTests(PostgreSqlFixture fixture) : IAsyncLi
         messages[0].Title.Should().Be("Registration Error", "stored notification title must match");
         messages[0].Details.Should().Be("Email was not provided or not found", "error message must state that email was missing");
 
-        await using var db = fixture.CreateDbContext();
+        await using var db = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var exists = await db.Users.AnyAsync(u => u.GoogleSubject == subject);
         exists.Should().BeFalse("no user should be registered when email is missing");
     }
@@ -392,7 +392,7 @@ public sealed class ExternalEndpointsTests(PostgreSqlFixture fixture) : IAsyncLi
         var secondSubject = $"second-sub_{Guid.NewGuid():N}";
 
         var initialUser = new ApplicationUser($"User_{Guid.NewGuid():N}", commonEmail, firstSubject);
-        await using (var setupDb = fixture.CreateDbContext())
+        await using (var setupDb = await fixture.CreateDbContextFactory().CreateDbContextAsync())
         {
             setupDb.Users.Add(initialUser);
             await setupDb.SaveChangesAsync();
@@ -420,7 +420,7 @@ public sealed class ExternalEndpointsTests(PostgreSqlFixture fixture) : IAsyncLi
         messages[0].Details.Should().Be("This account or email is already registered. Please sign in.",
             "error message should indicate account or email is already registered");
 
-        await using var verifyDb = fixture.CreateDbContext();
+        await using var verifyDb = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var secondUserExists = await verifyDb.Users.AnyAsync(u => u.GoogleSubject == secondSubject);
         secondUserExists.Should().BeFalse("the new subject should not be added when email is already taken");
     }
@@ -430,7 +430,7 @@ public sealed class ExternalEndpointsTests(PostgreSqlFixture fixture) : IAsyncLi
     {
         // Temporarily remove InitialUserRoles.User role from the database
         ApplicationRole? existingRole;
-        await using (var db = fixture.CreateDbContext())
+        await using (var db = await fixture.CreateDbContextFactory().CreateDbContextAsync())
         {
             existingRole = await db.Roles.FirstOrDefaultAsync(r => r.Name == InitialUserRoles.User);
             if (existingRole is not null)

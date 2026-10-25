@@ -89,7 +89,7 @@ public static class ServiceCollectionExtensions
                         maxRetryDelay: TimeSpan.FromSeconds(30),
                         errorCodesToAdd: null
                     ));
-            options.AddInterceptors(interceptors);
+            options.AddInterceptors([new VersionedEntityInterceptor(), new AuditedEntityInterceptor(), ..interceptors]);
         });
     }
     public IServiceCollection AddUserTimeZoneProvider() => services.AddScoped<UserTimeZoneProvider>(sp =>

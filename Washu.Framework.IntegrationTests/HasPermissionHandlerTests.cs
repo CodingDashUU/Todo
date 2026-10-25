@@ -11,7 +11,7 @@ using Xunit;
 using ZiggyCreatures.Caching.Fusion;
 
 [Collection(PostgreSqlTestCollection.Name)]
-public class HasPermissionHandlerTests(PostgreSqlFixture fixture)
+public class HasPermissionHandlerTests(ApplicationPostgreSqlFixture fixture)
 {
     private static HttpContextAccessor CreateHttpContext(Guid? userId)
     {

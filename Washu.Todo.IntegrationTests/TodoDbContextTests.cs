@@ -8,7 +8,7 @@ using Washu.Framework.IntegrationTests.Fixtures;
 using Washu.Todo.Identity;
 
 [Collection(TodoPostgreSqlTestCollection.Name)]
-public class TodoDbContextTests(PostgreSqlFixture fixture)
+public class TodoDbContextTests(TodoPostgreSqlFixture fixture)
 {
     private static async Task<ApplicationUser> CreateTestUserAsync(TodoDbContext context)
     {
@@ -22,7 +22,7 @@ public class TodoDbContextTests(PostgreSqlFixture fixture)
     [Fact]
     public async Task CanInsertAndRetrieveTodoListWithTasks()
     {
-        await using var context = fixture.CreateDbContext<TodoDbContext>();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var user = await CreateTestUserAsync(context);
 
         var list = new TodoList(user.Id, "Groceries");
@@ -32,7 +32,7 @@ public class TodoDbContextTests(PostgreSqlFixture fixture)
         context.TodoLists.Add(list);
         await context.SaveChangesAsync();
 
-        await using var verifyContext = fixture.CreateDbContext<TodoDbContext>();
+        await using var verifyContext = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var retrievedList = await verifyContext.TodoLists
             .Include(l => l.Tasks)
             .FirstOrDefaultAsync(l => l.Id == list.Id);
@@ -46,7 +46,7 @@ public class TodoDbContextTests(PostgreSqlFixture fixture)
     [Fact]
     public async Task CascadeDelete_WhenTodoListDeleted_DeletesAssociatedTasks()
     {
-        await using var context = fixture.CreateDbContext<TodoDbContext>();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var user = await CreateTestUserAsync(context);
 
         var list = new TodoList(user.Id, "Work");
@@ -59,7 +59,7 @@ public class TodoDbContextTests(PostgreSqlFixture fixture)
         context.TodoLists.Remove(list);
         await context.SaveChangesAsync();
 
-        await using var verifyContext = fixture.CreateDbContext<TodoDbContext>();
+        await using var verifyContext = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var taskExists = await verifyContext.Tasks.AnyAsync(t => t.Id == task.Id);
         taskExists.Should().BeFalse("Associated tasks should be cascaded when TodoList is deleted");
     }
@@ -67,7 +67,7 @@ public class TodoDbContextTests(PostgreSqlFixture fixture)
     [Fact]
     public async Task ListNameCheckConstraint_RejectsDisallowedCharacters()
     {
-        await using var context = fixture.CreateDbContext<TodoDbContext>();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var user = await CreateTestUserAsync(context);
 
         var invalidList = new TodoList(user.Id, "Invalid*Name");
@@ -82,7 +82,7 @@ public class TodoDbContextTests(PostgreSqlFixture fixture)
     [Fact]
     public async Task TaskNameCheckConstraint_RejectsDisallowedCharacters()
     {
-        await using var context = fixture.CreateDbContext<TodoDbContext>();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var user = await CreateTestUserAsync(context);
 
         var list = new TodoList(user.Id, "Daily");

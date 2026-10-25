@@ -7,12 +7,12 @@ using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
 [Collection(PostgreSqlTestCollection.Name)]
-public class ApplicationRoleTests(PostgreSqlFixture fixture)
+public class ApplicationRoleTests(ApplicationPostgreSqlFixture fixture)
 {
     [Fact]
     public async Task CanInsertAndRetrieveRole()
     {
-        await using var context = fixture.CreateDbContext();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var role = new ApplicationRole($"User_{Guid.CreateVersion7():N}");
         await context.Roles.AddAsync(role);
         await context.SaveChangesAsync();
@@ -25,7 +25,7 @@ public class ApplicationRoleTests(PostgreSqlFixture fixture)
     [Fact]
     public async Task CitextUniqueConstraint_RejectsInsensitiveDuplicateName()
     {
-        await using var context = fixture.CreateDbContext();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var name = $"User_{Guid.CreateVersion7():N}";
         var role = new ApplicationRole(name.ToUpperInvariant());
         context.Roles.Add(role);
@@ -44,7 +44,7 @@ public class ApplicationRoleTests(PostgreSqlFixture fixture)
     [Fact]
     public async Task MaxLengthCheckConstraint_RejectsNameExceeding128Characters()
     {
-        await using var context = fixture.CreateDbContext();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var tooLongName = new string('A', 129);
         var role = new ApplicationRole(tooLongName);
         context.Roles.Add(role);
@@ -59,7 +59,7 @@ public class ApplicationRoleTests(PostgreSqlFixture fixture)
     [Fact]
     public async Task CanDeleteRole_RemovesRoleFromDatabase()
     {
-        await using var context = fixture.CreateDbContext();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var role = new ApplicationRole($"Role_{Guid.CreateVersion7():N}");
         context.Roles.Add(role);
         await context.SaveChangesAsync();

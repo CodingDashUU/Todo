@@ -7,7 +7,7 @@ using Identity.Entities;
 using ZiggyCreatures.Caching.Fusion;
 
 [Collection(PostgreSqlTestCollection.Name)]
-public class ApplicationUserStoreTests(PostgreSqlFixture fixture)
+public class ApplicationUserStoreTests(ApplicationPostgreSqlFixture fixture)
 {
     [Fact]
     public async Task GetOrAddUserAsync_CachesUserOnSecondCall()

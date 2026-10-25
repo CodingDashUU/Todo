@@ -9,7 +9,7 @@ using Washu.Todo.Features;
 using Washu.Todo.Identity;
 
 [Collection(TodoPostgreSqlTestCollection.Name)]
-public class TodoHandlersTests(PostgreSqlFixture fixture)
+public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
 {
     private static async Task<ApplicationUser> CreateTestUserAsync(TodoDbContext context)
     {
@@ -26,7 +26,7 @@ public class TodoHandlersTests(PostgreSqlFixture fixture)
     public async Task CreateListHandler_CreatesNewList_AndRejectsDuplicateNameForSameUser()
     {
         var factory = fixture.CreateDbContextFactory<TodoDbContext>();
-        await using var context = fixture.CreateDbContext<TodoDbContext>();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var user = await CreateTestUserAsync(context);
 
         var handler = new CreateListHandler(factory, new MockCurrentUser(user.Id));
@@ -36,7 +36,7 @@ public class TodoHandlersTests(PostgreSqlFixture fixture)
         var result = await handler.HandleAsync(new CreateListCommand(listName));
         result.Type.Should().Be(MessageType.Success);
 
-        await using var verifyContext = fixture.CreateDbContext<TodoDbContext>();
+        await using var verifyContext = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var list = await verifyContext.TodoLists.FirstOrDefaultAsync(l => l.UserId == user.Id && l.Name == listName);
         list.Should().NotBeNull();
 
@@ -50,7 +50,7 @@ public class TodoHandlersTests(PostgreSqlFixture fixture)
     public async Task CreateListHandler_AllowsSameListName_ForDifferentUsers()
     {
         var factory = fixture.CreateDbContextFactory<TodoDbContext>();
-        await using var context = fixture.CreateDbContext<TodoDbContext>();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var user1 = await CreateTestUserAsync(context);
         var user2 = await CreateTestUserAsync(context);
 
@@ -64,7 +64,7 @@ public class TodoHandlersTests(PostgreSqlFixture fixture)
         result1.Type.Should().Be(MessageType.Success);
         result2.Type.Should().Be(MessageType.Success);
 
-        await using var verifyContext = fixture.CreateDbContext<TodoDbContext>();
+        await using var verifyContext = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var count = await verifyContext.TodoLists.CountAsync(l => l.Name == sharedListName);
         count.Should().Be(2);
     }
@@ -77,7 +77,7 @@ public class TodoHandlersTests(PostgreSqlFixture fixture)
     public async Task UpdateListHandler_UpdatesListName_AndChecksConcurrencyVersion()
     {
         var factory = fixture.CreateDbContextFactory<TodoDbContext>();
-        await using var context = fixture.CreateDbContext<TodoDbContext>();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var user = await CreateTestUserAsync(context);
 
         var list = new TodoList(user.Id, "Old Name");
@@ -95,7 +95,7 @@ public class TodoHandlersTests(PostgreSqlFixture fixture)
         var successResult = await handler.HandleAsync(new UpdateListCommand(list.Id, list.VersionId, "New Name"));
         successResult.Type.Should().Be(MessageType.Success);
 
-        await using var verifyContext = fixture.CreateDbContext<TodoDbContext>();
+        await using var verifyContext = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var updatedList = await verifyContext.TodoLists.FirstAsync(l => l.Id == list.Id);
         updatedList.Name.Should().Be("New Name");
         updatedList.VersionId.Should().NotBe(list.VersionId);
@@ -105,7 +105,7 @@ public class TodoHandlersTests(PostgreSqlFixture fixture)
     public async Task UpdateListHandler_ReturnsError_WhenListDoesNotExist()
     {
         var factory = fixture.CreateDbContextFactory<TodoDbContext>();
-        await using var context = fixture.CreateDbContext<TodoDbContext>();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var user = await CreateTestUserAsync(context);
 
         var handler = new UpdateListHandler(factory, new MockCurrentUser(user.Id));
@@ -121,7 +121,7 @@ public class TodoHandlersTests(PostgreSqlFixture fixture)
     public async Task UpdateListHandler_ReturnsError_WhenAnotherListWithTargetNameAlreadyExists()
     {
         var factory = fixture.CreateDbContextFactory<TodoDbContext>();
-        await using var context = fixture.CreateDbContext<TodoDbContext>();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var user = await CreateTestUserAsync(context);
 
         var list1 = new TodoList(user.Id, "List One");
@@ -142,7 +142,7 @@ public class TodoHandlersTests(PostgreSqlFixture fixture)
     public async Task UpdateListHandler_ReturnsError_WhenUserDoesNotOwnList()
     {
         var factory = fixture.CreateDbContextFactory<TodoDbContext>();
-        await using var context = fixture.CreateDbContext<TodoDbContext>();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var owner = await CreateTestUserAsync(context);
         var otherUser = await CreateTestUserAsync(context);
 
@@ -166,7 +166,7 @@ public class TodoHandlersTests(PostgreSqlFixture fixture)
     public async Task DeleteListHandler_DeletesList()
     {
         var factory = fixture.CreateDbContextFactory<TodoDbContext>();
-        await using var context = fixture.CreateDbContext<TodoDbContext>();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var user = await CreateTestUserAsync(context);
 
         var list = new TodoList(user.Id, "To Delete");
@@ -178,7 +178,7 @@ public class TodoHandlersTests(PostgreSqlFixture fixture)
         var result = await handler.HandleAsync(new DeleteListCommand(list.Id));
         result.Type.Should().Be(MessageType.Success);
 
-        await using var verifyContext = fixture.CreateDbContext<TodoDbContext>();
+        await using var verifyContext = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var exists = await verifyContext.TodoLists.AnyAsync(l => l.Id == list.Id);
         exists.Should().BeFalse();
     }
@@ -187,7 +187,7 @@ public class TodoHandlersTests(PostgreSqlFixture fixture)
     public async Task DeleteListHandler_ReturnsError_WhenListDoesNotExist()
     {
         var factory = fixture.CreateDbContextFactory<TodoDbContext>();
-        await using var context = fixture.CreateDbContext<TodoDbContext>();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var user = await CreateTestUserAsync(context);
 
         var handler = new DeleteListHandler(factory, new MockCurrentUser(user.Id));
@@ -202,7 +202,7 @@ public class TodoHandlersTests(PostgreSqlFixture fixture)
     public async Task DeleteListHandler_ReturnsError_WhenUserDoesNotOwnList()
     {
         var factory = fixture.CreateDbContextFactory<TodoDbContext>();
-        await using var context = fixture.CreateDbContext<TodoDbContext>();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var owner = await CreateTestUserAsync(context);
         var otherUser = await CreateTestUserAsync(context);
 
@@ -217,7 +217,7 @@ public class TodoHandlersTests(PostgreSqlFixture fixture)
         result.Type.Should().Be(MessageType.Error);
         result.Details.Should().Contain("List was not found");
 
-        await using var verifyContext = fixture.CreateDbContext<TodoDbContext>();
+        await using var verifyContext = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var exists = await verifyContext.TodoLists.AnyAsync(l => l.Id == list.Id);
         exists.Should().BeTrue();
     }
@@ -230,7 +230,7 @@ public class TodoHandlersTests(PostgreSqlFixture fixture)
     public async Task CreateTaskHandler_CreatesTask_AndRejectsDuplicateNameInSameList()
     {
         var factory = fixture.CreateDbContextFactory<TodoDbContext>();
-        await using var context = fixture.CreateDbContext<TodoDbContext>();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var user = await CreateTestUserAsync(context);
 
         var list = new TodoList(user.Id, "Tasks List");
@@ -244,7 +244,7 @@ public class TodoHandlersTests(PostgreSqlFixture fixture)
         var result = await handler.HandleAsync(new CreateTaskCommand(list.Id, list.VersionId, "Task Alpha", goalDate));
         result.Type.Should().Be(MessageType.Success);
 
-        await using var verifyContext = fixture.CreateDbContext<TodoDbContext>();
+        await using var verifyContext = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var task = await verifyContext.Tasks.FirstOrDefaultAsync(t => t.TodoListId == list.Id && t.Name == "Task Alpha");
         task.Should().NotBeNull();
 
@@ -259,7 +259,7 @@ public class TodoHandlersTests(PostgreSqlFixture fixture)
     public async Task CreateTaskHandler_AllowsSameTaskName_InDifferentLists()
     {
         var factory = fixture.CreateDbContextFactory<TodoDbContext>();
-        await using var context = fixture.CreateDbContext<TodoDbContext>();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var user = await CreateTestUserAsync(context);
 
         var list1 = new TodoList(user.Id, "List A");
@@ -294,7 +294,7 @@ public class TodoHandlersTests(PostgreSqlFixture fixture)
     public async Task CreateTaskHandler_ReturnsError_WhenListVersionIsStale()
     {
         var factory = fixture.CreateDbContextFactory<TodoDbContext>();
-        await using var context = fixture.CreateDbContext<TodoDbContext>();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var user = await CreateTestUserAsync(context);
 
         var list = new TodoList(user.Id, "Stale Task List");
@@ -318,7 +318,7 @@ public class TodoHandlersTests(PostgreSqlFixture fixture)
     public async Task ToggleTaskHandler_TogglesTaskCompletion()
     {
         var factory = fixture.CreateDbContextFactory<TodoDbContext>();
-        await using var context = fixture.CreateDbContext<TodoDbContext>();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var user = await CreateTestUserAsync(context);
 
         var list = new TodoList(user.Id, "Toggle List");
@@ -333,7 +333,7 @@ public class TodoHandlersTests(PostgreSqlFixture fixture)
         var result1 = await handler.HandleAsync(new ToggleTaskCommand(task.Id, list.Id, list.VersionId));
         result1.Type.Should().Be(MessageType.Success);
 
-        await using var verifyContext1 = fixture.CreateDbContext<TodoDbContext>();
+        await using var verifyContext1 = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var toggledTask = await verifyContext1.Tasks.FirstAsync(t => t.Id == task.Id);
         toggledTask.IsCompleted.Should().BeTrue();
         toggledTask.DateCompleted.Should().NotBeNull();
@@ -344,7 +344,7 @@ public class TodoHandlersTests(PostgreSqlFixture fixture)
         var result2 = await handler.HandleAsync(new ToggleTaskCommand(task.Id, list.Id, updatedList.VersionId));
         result2.Type.Should().Be(MessageType.Success);
 
-        await using var verifyContext2 = fixture.CreateDbContext<TodoDbContext>();
+        await using var verifyContext2 = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var untoggledTask = await verifyContext2.Tasks.FirstAsync(t => t.Id == task.Id);
         untoggledTask.IsCompleted.Should().BeFalse();
         untoggledTask.DateCompleted.Should().BeNull();
@@ -366,7 +366,7 @@ public class TodoHandlersTests(PostgreSqlFixture fixture)
     public async Task ToggleTaskHandler_ReturnsError_WhenListVersionIsStale()
     {
         var factory = fixture.CreateDbContextFactory<TodoDbContext>();
-        await using var context = fixture.CreateDbContext<TodoDbContext>();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var user = await CreateTestUserAsync(context);
 
         var list = new TodoList(user.Id, "Toggle Stale List");
@@ -387,7 +387,7 @@ public class TodoHandlersTests(PostgreSqlFixture fixture)
     public async Task ToggleTaskHandler_ReturnsError_WhenTaskDoesNotExist()
     {
         var factory = fixture.CreateDbContextFactory<TodoDbContext>();
-        await using var context = fixture.CreateDbContext<TodoDbContext>();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var user = await CreateTestUserAsync(context);
 
         var list = new TodoList(user.Id, "Toggle Empty List");
@@ -410,7 +410,7 @@ public class TodoHandlersTests(PostgreSqlFixture fixture)
     public async Task UpdateTaskHandler_UpdatesTaskNameAndGoalDate()
     {
         var factory = fixture.CreateDbContextFactory<TodoDbContext>();
-        await using var context = fixture.CreateDbContext<TodoDbContext>();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var user = await CreateTestUserAsync(context);
 
         var list = new TodoList(user.Id, "Update List");
@@ -425,7 +425,7 @@ public class TodoHandlersTests(PostgreSqlFixture fixture)
         var result = await handler.HandleAsync(new UpdateTaskCommand(task.Id, "Updated Task Name", newGoalDate, list.Id, list.VersionId));
         result.Type.Should().Be(MessageType.Success);
 
-        await using var verifyContext = fixture.CreateDbContext<TodoDbContext>();
+        await using var verifyContext = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var updatedTask = await verifyContext.Tasks.FirstAsync(t => t.Id == task.Id);
         updatedTask.Name.Should().Be("Updated Task Name");
         updatedTask.GoalDate.Should().BeCloseTo(newGoalDate.ToUniversalTime(), TimeSpan.FromMilliseconds(1));
@@ -435,7 +435,7 @@ public class TodoHandlersTests(PostgreSqlFixture fixture)
     public async Task UpdateTaskHandler_ReturnsInfo_WhenNoPropertiesChanged()
     {
         var factory = fixture.CreateDbContextFactory<TodoDbContext>();
-        await using var context = fixture.CreateDbContext<TodoDbContext>();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var user = await CreateTestUserAsync(context);
 
         var goalDate = DateTimeOffset.UtcNow.AddDays(2);
@@ -447,7 +447,7 @@ public class TodoHandlersTests(PostgreSqlFixture fixture)
 
         var handler = new UpdateTaskHandler(factory, new MockCurrentUser(user.Id));
 
-        await using var readContext = fixture.CreateDbContext<TodoDbContext>();
+        await using var readContext = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var persistedTask = await readContext.Tasks.FirstAsync(t => t.Id == task.Id);
 
         var result = await handler.HandleAsync(new UpdateTaskCommand(persistedTask.Id, "Same Name", persistedTask.GoalDate, list.Id, list.VersionId));
@@ -460,7 +460,7 @@ public class TodoHandlersTests(PostgreSqlFixture fixture)
     public async Task UpdateTaskHandler_ReturnsError_WhenNewTaskNameCollidesInSameList()
     {
         var factory = fixture.CreateDbContextFactory<TodoDbContext>();
-        await using var context = fixture.CreateDbContext<TodoDbContext>();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var user = await CreateTestUserAsync(context);
 
         var list = new TodoList(user.Id, "Collision List");
@@ -495,7 +495,7 @@ public class TodoHandlersTests(PostgreSqlFixture fixture)
     public async Task UpdateTaskHandler_ReturnsError_WhenListVersionIsStale()
     {
         var factory = fixture.CreateDbContextFactory<TodoDbContext>();
-        await using var context = fixture.CreateDbContext<TodoDbContext>();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var user = await CreateTestUserAsync(context);
 
         var list = new TodoList(user.Id, "Stale Update Task List");
@@ -516,7 +516,7 @@ public class TodoHandlersTests(PostgreSqlFixture fixture)
     public async Task UpdateTaskHandler_ReturnsError_WhenTaskDoesNotExist()
     {
         var factory = fixture.CreateDbContextFactory<TodoDbContext>();
-        await using var context = fixture.CreateDbContext<TodoDbContext>();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var user = await CreateTestUserAsync(context);
 
         var list = new TodoList(user.Id, "No Task List");
@@ -539,7 +539,7 @@ public class TodoHandlersTests(PostgreSqlFixture fixture)
     public async Task DeleteTaskHandler_DeletesTask_AndUpdatesListVersion()
     {
         var factory = fixture.CreateDbContextFactory<TodoDbContext>();
-        await using var context = fixture.CreateDbContext<TodoDbContext>();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var user = await CreateTestUserAsync(context);
 
         var list = new TodoList(user.Id, "Delete Task List");
@@ -553,7 +553,7 @@ public class TodoHandlersTests(PostgreSqlFixture fixture)
         var result = await handler.HandleAsync(new DeleteTaskCommand(task.Id, list.Id, list.VersionId));
         result.Type.Should().Be(MessageType.Success);
 
-        await using var verifyContext = fixture.CreateDbContext<TodoDbContext>();
+        await using var verifyContext = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var taskExists = await verifyContext.Tasks.AnyAsync(t => t.Id == task.Id);
         taskExists.Should().BeFalse();
 
@@ -577,7 +577,7 @@ public class TodoHandlersTests(PostgreSqlFixture fixture)
     public async Task DeleteTaskHandler_ReturnsError_WhenListVersionIsStale()
     {
         var factory = fixture.CreateDbContextFactory<TodoDbContext>();
-        await using var context = fixture.CreateDbContext<TodoDbContext>();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var user = await CreateTestUserAsync(context);
 
         var list = new TodoList(user.Id, "Stale Delete List");
@@ -598,7 +598,7 @@ public class TodoHandlersTests(PostgreSqlFixture fixture)
     public async Task DeleteTaskHandler_ReturnsError_WhenTaskDoesNotExist()
     {
         var factory = fixture.CreateDbContextFactory<TodoDbContext>();
-        await using var context = fixture.CreateDbContext<TodoDbContext>();
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var user = await CreateTestUserAsync(context);
 
         var list = new TodoList(user.Id, "Empty Delete List");
