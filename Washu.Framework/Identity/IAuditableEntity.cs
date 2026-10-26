@@ -1,7 +1,8 @@
 namespace Washu.Framework.Identity;
 
-public interface IAuditedEntity
+public interface IAuditableEntity
 {
+    Guid VersionId { get; }
     DateTimeOffset CreationDate { get; }
     DateTimeOffset? LastModifiedDate { get; }
 }

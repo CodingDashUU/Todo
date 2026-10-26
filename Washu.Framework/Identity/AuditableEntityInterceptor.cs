@@ -4,7 +4,7 @@ using Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
-public class AuditedEntityInterceptor : SaveChangesInterceptor
+public class AuditableEntityInterceptor : SaveChangesInterceptor
 {
     public override ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData,
         InterceptionResult<int> result,
@@ -19,16 +19,17 @@ public class AuditedEntityInterceptor : SaveChangesInterceptor
         if (context is null) return;
 
         var entries = context.ChangeTracker.Entries()
-            .Where(e => e is { Entity: IAuditedEntity, State: EntityState.Modified or EntityState.Added });
+            .Where(e => e is { Entity: IAuditableEntity, State: EntityState.Modified or EntityState.Added });
 
         foreach (var entry in entries)
             switch (entry.State)
             {
                 case EntityState.Added:
-                    entry.Property(nameof(IAuditedEntity.CreationDate)).CurrentValue = DateTimeOffset.UtcNow;
+                    entry.Property(nameof(IAuditableEntity.CreationDate)).CurrentValue = DateTimeOffset.UtcNow;
                     break;
                 case EntityState.Modified:
-                    entry.Property(nameof(IAuditedEntity.LastModifiedDate)).CurrentValue = DateTimeOffset.UtcNow;
+                    entry.Property(nameof(IAuditableEntity.VersionId)).CurrentValue = Guid.CreateVersion7();
+                    entry.Property(nameof(IAuditableEntity.LastModifiedDate)).CurrentValue = DateTimeOffset.UtcNow;
                     break;
             }
     }

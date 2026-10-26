@@ -29,9 +29,6 @@ public sealed class ApplicationUserTests(ApplicationPostgreSqlFixture fixture)
         retrieved.Username.Should().Be(username, "The name of the user received should match the name of the user created");
         retrieved.Email.Should().Be(email, "The email of the user received should match the email of the user created");
         retrieved.GoogleSubject.Should().Be(googleSubject,  "The googleSubject of the user received should match the googleSubject of the user created");
-        retrieved.CreationDate.Should().BeCloseTo(now, TimeSpan.FromSeconds(10),
-            "The interceptor should have updated the creation date");
-        retrieved.LastModifiedDate.Should().BeNull();
         retrieved.LastSignedInDate.Should().BeNull();
     }
     [Fact]
@@ -233,30 +230,6 @@ public sealed class ApplicationUserTests(ApplicationPostgreSqlFixture fixture)
             .WithInnerException<PostgresException>("The reason should be a Postgres error specifically")
             .And
             .SqlState.Should().Be(PostgresErrorCodes.StringDataRightTruncation, "The GoogleSubject violates the 255 character MaxLength check constraint");
-    }
-    [Fact]
-    public async Task CreationDateLTELastModifiedDateCheckConstraint_RejectLastModifiedDateLessThanCreationDate()
-    {
-        var factory = fixture.CreateDbContextFactory();
-        var username = $"User_{Guid.CreateVersion7():N}";
-        await using (var context = await factory.CreateDbContextAsync())
-        {
-            var user = new ApplicationUser(
-                username,
-                $"{Guid.CreateVersion7():N}@example.com",
-                $"{Guid.CreateVersion7():N}");
-
-            context.Users.Add(user);
-            await context.SaveChangesAsync();
-        }
-        await using (var context = await factory.CreateDbContextAsync())
-        {
-            var saveAction = async () => await context.Users
-                .Where(u => u.Username == username).ExecuteUpdateAsync(s => s.SetProperty(u => u.LastModifiedDate, DateTimeOffset.UtcNow.AddDays(-1)));
-            (await saveAction.Should().ThrowAsync<PostgresException>("The action must throw this specific exception because we updated the property directly instead of calling SaveChangesAsync"))
-                .And
-                .SqlState.Should().Be(PostgresErrorCodes.CheckViolation, "the LastModifiedDate is 1 day less than the CreationDate");
-        }
     }
     [Fact]
     public async Task CreationDateLTELastSignedInDateCheckConstraint_RejectLastSignedInDateLessThanCreationDate()

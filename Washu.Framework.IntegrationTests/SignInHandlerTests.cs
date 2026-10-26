@@ -30,7 +30,7 @@ public class SignInHandlerTests(ApplicationPostgreSqlFixture fixture)
         services.AddSingleton<FindUserHandler>();
         services.AddFusionCaching();
         services.AddDbContextFactory<ApplicationDbContext>(options =>
-            options.UseNpgsql(fixture.ConnectionString).AddInterceptors(new VersionedEntityInterceptor(), new AuditedEntityInterceptor()));
+            options.UseNpgsql(fixture.ConnectionString).AddInterceptors(new AuditableEntityInterceptor()));
         var serviceProvider = services.BuildServiceProvider();
         var context = new DefaultHttpContext
         {

@@ -2,7 +2,7 @@
 
 using System;
 
-public sealed class ApplicationUser(string userName, string email, string googleSubject) : IVersionedEntity, IAuditedEntity
+public sealed class ApplicationUser(string userName, string email, string googleSubject) : IAuditableEntity
 {
     private ApplicationUser() : this(string.Empty, string.Empty, string.Empty) {}
     public Guid Id { get; private init; } = Guid.CreateVersion7();
