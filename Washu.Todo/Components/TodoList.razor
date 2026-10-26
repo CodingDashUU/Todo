@@ -240,7 +240,7 @@
             options: ConfirmDeleteOptions);
         if (!confirmData.HasValue || !confirmData.Value) return;
 
-        var command = new DeleteTaskCommand(entry.Id, _selectedList.Id, _selectedList.VersionId);
+        var command = new DeleteTaskCommand(entry.Id, _selectedList.Id, _selectedList.RowVersion);
         var message = await DeleteTaskHandler.HandleAsync(command);
         NotificationService.Show(message);
         
@@ -252,7 +252,7 @@
         var parameters = new Dictionary<string, object?>(2)
         {
             [nameof(TaskCreationDialog.ListId)] = _selectedList.Id, 
-            [nameof(TaskCreationDialog.ListVersionId)] = _selectedList.VersionId
+            [nameof(TaskCreationDialog.ListVersionId)] = _selectedList.RowVersion
         };
         var result = await DialogService.OpenAsync<TaskCreationDialog>("Create Task", parameters);
         if (result is not CreateTaskCommand command) return;
@@ -280,7 +280,7 @@
 
     private async Task OnToggleTask(TaskEntry entry)
     {
-        var command = new ToggleTaskCommand(entry.Id, _selectedList.Id, _selectedList.VersionId);
+        var command = new ToggleTaskCommand(entry.Id, _selectedList.Id, _selectedList.RowVersion);
         var message = await ToggleTaskHandler.HandleAsync(command);
         NotificationService.Show(message, duration: RadzenNotificationConstants.ShortDuration);
 
@@ -293,7 +293,7 @@
         {
             [nameof(TaskUpdateDialog.OldEntry)] = entry,
             [nameof(TaskUpdateDialog.ListId)] = _selectedList.Id,
-            [nameof(TaskUpdateDialog.ListVersionId)] = _selectedList.VersionId
+            [nameof(TaskUpdateDialog.ListVersionId)] = _selectedList.RowVersion
         };
         var result = await DialogService.OpenAsync<TaskUpdateDialog>("Update Task", parameters);
         if (result is not UpdateTaskCommand command) return;

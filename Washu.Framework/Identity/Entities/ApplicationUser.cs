@@ -12,8 +12,7 @@ public sealed class ApplicationUser(string userName, string email, string google
     public string Email { get; private init; } = email;
     public Guid SecurityStamp { get; private init; } = Guid.CreateVersion7();
     public string GoogleSubject { get; private init; } = googleSubject;
-    public uint RowVersion { get; }
-    public Guid VersionId { get; private init; }
+    public uint RowVersion { get; private init; }
     public DateTimeOffset CreationDate { get; private init; }
     public DateTimeOffset? LastModifiedDate { get; private init; }
     public DateTimeOffset? LastSignedInDate { get; private init; }

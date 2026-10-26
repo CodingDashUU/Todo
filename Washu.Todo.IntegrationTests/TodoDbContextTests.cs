@@ -46,7 +46,7 @@ public class TodoDbContextTests(TodoPostgreSqlFixture fixture)
         retrievedList.Tasks[0].Name.Should().Be("Milk");
     }
     [Fact]
-    public async Task OnUpdateTodoList_VersionIdAndDateModifiedChanges()
+    public async Task OnUpdateTodoList_RowVersionAndDateModifiedChanges()
     {
         await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var user = await CreateTestUserAsync(context);
@@ -72,7 +72,7 @@ public class TodoDbContextTests(TodoPostgreSqlFixture fixture)
         retrievedList.Should().NotBeNull();
         retrievedList.Name.Should().Be("Bob");
         retrievedList.LastModifiedDate.Should().BeCloseTo(now, TimeSpan.FromSeconds(5));
-        retrievedList.VersionId.Should().NotBe(list.VersionId);
+        retrievedList.RowVersion.Should().NotBe(list.RowVersion);
         
     }
     [Fact]

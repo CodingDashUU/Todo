@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Washu.Framework.Notifications;
 using Washu.Todo.Identity;
 
-public sealed record CreateTaskCommand(Guid ListId, Guid ListVersionId, string TaskName, DateTimeOffset GoalDate);
+public sealed record CreateTaskCommand(Guid ListId, uint ListRowVersion, string TaskName, DateTimeOffset GoalDate);
 
 public sealed class CreateTaskHandler(
     IDbContextFactory<TodoDbContext> dbContextFactory,
@@ -22,7 +22,7 @@ public sealed class CreateTaskHandler(
             .SingleOrDefaultAsync();
         if (list is null)
             return Message.Error("Task Creation Error", "List does not exist");
-        if (list.VersionId != command.ListVersionId) return Message.Error("Task Creation Error", "Your todo list was already modified, please try again");
+        dbContext.SetRowVersion(list, command.ListRowVersion);
         if (await dbContext.Tasks.AnyAsync(t => t.Name == command.TaskName && t.TodoListId == command.ListId))
             return Message.Error("Task Creation Error", "Task with the given task name already exists");
         dbContext.Tasks.Add(new TaskEntry(command.TaskName, command.GoalDate, Guid.CreateVersion7(), list.Id));
@@ -31,6 +31,10 @@ public sealed class CreateTaskHandler(
         {
             await dbContext.SaveChangesAsync();
             return Message.Success("Task Creation", "Successfully Created Task");
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return Message.Error("Task Creation Error", "Your todo list was already modified, please try again");
         }
         catch (Exception)
         {

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Washu.Framework.Notifications;
 using Washu.Todo.Identity;
 
-public sealed record UpdateTaskCommand(Guid TaskId, string NewTaskName, DateTimeOffset NewGoalDate, Guid ListId, Guid ListVersionId);
+public sealed record UpdateTaskCommand(Guid TaskId, string NewTaskName, DateTimeOffset NewGoalDate, Guid ListId, uint ListRowVersion);
 
 public sealed class UpdateTaskHandler(
     IDbContextFactory<TodoDbContext> factory,
@@ -21,8 +21,7 @@ public sealed class UpdateTaskHandler(
         var task = await taskQuery.ByTask(command.TaskId).SingleOrDefaultAsync();
         if (list is null)
             return Message.Error("Toggle Task Error", "Todo list does not exist");
-        if (list.VersionId != command.ListVersionId)
-            return Message.Error("Toggle Task Error", "Your todo list was already modified, please try again");
+        dbContext.SetRowVersion(list, command.ListRowVersion);
         if (task is null) return Message.Error(title: "Toggle Task Error", details: "Task does not exist");
         var taskNameChanged = command.NewTaskName != task.Name;
         var goalDateChanged = command.NewGoalDate != task.GoalDate;
@@ -46,6 +45,10 @@ public sealed class UpdateTaskHandler(
             return Message.Success(
                     title: "Task Modification",
                     details: "Successfully modified the task");
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return Message.Error("Task Update Error", "Your todo list was already modified, please try again");
         }
         catch (Exception)
         {

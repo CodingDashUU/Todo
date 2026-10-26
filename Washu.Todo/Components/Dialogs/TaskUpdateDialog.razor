@@ -30,7 +30,7 @@
     };
     [Parameter, EditorRequired] public TaskEntry OldEntry { get; set; }
     [Parameter, EditorRequired] public Guid ListId { get; set; }
-    [Parameter, EditorRequired] public Guid ListVersionId { get; set; }
+    [Parameter, EditorRequired] public uint ListVersionId { get; set; }
    
     protected override void OnInitialized()
     {

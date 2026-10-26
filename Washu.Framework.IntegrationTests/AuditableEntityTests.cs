@@ -33,14 +33,14 @@ public class AuditableEntityTests(ApplicationPostgreSqlFixture fixture)
         }
     }
     [Fact]
-    public async Task ModifyEntity_ShouldUpdateLastModifiedToNow()
+    public async Task ModifyEntity_ShouldUpdateLastModifiedToNowAndRowVersion()
     {
         var username = $"User_{Guid.NewGuid()}";
         var email = $"Email_{Guid.NewGuid()}@example.com";
         var googleSubject = $"sub-{Guid.NewGuid()}";
         var entity = new ApplicationUser(username, email, googleSubject);
         var dbContextFactory = fixture.CreateDbContextFactory();
-        Guid versionId;
+        uint rowVersion;
         await using (var adderDbContext = await dbContextFactory.CreateDbContextAsync())
         {
             adderDbContext.Add(entity);
@@ -51,7 +51,7 @@ public class AuditableEntityTests(ApplicationPostgreSqlFixture fixture)
         {
             entity = await modifyDbContext.Users.SingleOrDefaultAsync(u => u.Id == entity.Id);
             entity.Should().NotBeNull();
-            versionId = entity.VersionId;
+            rowVersion = entity.RowVersion;
             entity.Username = $"User_{Guid.NewGuid()}";
             await modifyDbContext.SaveChangesAsync();
         }
@@ -59,7 +59,7 @@ public class AuditableEntityTests(ApplicationPostgreSqlFixture fixture)
         {
             entity = await verifyDbContext.Users.SingleOrDefaultAsync(u => u.Id == entity.Id);
             entity.Should().NotBeNull();
-            entity.VersionId.Should().NotBe(versionId);
+            entity.RowVersion.Should().NotBe(rowVersion);
             entity.LastModifiedDate.Should().BeCloseTo(now, TimeSpan.FromSeconds(5));
         }
     }

@@ -34,7 +34,7 @@
 
     private void CloseDialog()
     {
-        var command = new UpdateListCommand(OldList.Id, OldList.VersionId, _model.NewListName);
+        var command = new UpdateListCommand(OldList.Id, OldList.RowVersion, _model.NewListName);
         DialogService.Close(command);
     }
 

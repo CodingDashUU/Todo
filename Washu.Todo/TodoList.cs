@@ -13,7 +13,6 @@ public class TodoList(Guid userId, string listName) : IOwnedByUser, IAuditableEn
     public List<TaskEntry> Tasks { get; private init; } = [];
     public DateTimeOffset CreationDate { get; private init; }
     public DateTimeOffset? LastModifiedDate { get; private init; }
-    public Guid VersionId { get; private init; }
     public uint RowVersion { get; private init; }
     
     private TodoList() : this(Guid.Empty, string.Empty) { }
@@ -21,7 +20,6 @@ public class TodoList(Guid userId, string listName) : IOwnedByUser, IAuditableEn
     {
         Id = Guid.Empty,
         Name = "None",
-        VersionId = Guid.Empty,
         Tasks = []
     };
 }

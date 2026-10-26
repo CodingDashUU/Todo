@@ -6,7 +6,7 @@ using Framework.Notifications;
 using Identity;
 using Microsoft.EntityFrameworkCore;
 
-public sealed record UpdateListCommand(Guid ListId, Guid ListVersionId, string NewListName);
+public sealed record UpdateListCommand(Guid ListId, uint ListRowVersion, string NewListName);
 public sealed class UpdateListHandler(
     IDbContextFactory<TodoDbContext> factory,
     ICurrentUser user
@@ -20,14 +20,17 @@ public sealed class UpdateListHandler(
         var list = await todoListQuery.ByTodoList(command.ListId).SingleOrDefaultAsync();
         if (list is null)
             return Message.Error("Update List Error", "Todo list does not exist");
-        if (list.VersionId != command.ListVersionId)
-            return Message.Error("Toggle Task Error", "Your todo list was already modified, please try again");
+        dbContext.SetRowVersion(list, command.ListRowVersion);
         if (todoListQuery.Any(l => l.Name == command.NewListName && l.Id != command.ListId))
             return Message.Error("Update List Error", "A todo list with the given name already exists");
         list.Name =  command.NewListName;
         try
         {
             await dbContext.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            return Message.Error("Update List Error", "Your todo list was already modified, please try again");
         }
         catch (Exception)
         {

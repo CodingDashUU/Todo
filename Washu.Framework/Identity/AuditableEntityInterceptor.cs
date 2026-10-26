@@ -28,7 +28,6 @@ public class AuditableEntityInterceptor : SaveChangesInterceptor
                     entry.Property(nameof(IAuditableEntity.CreationDate)).CurrentValue = DateTimeOffset.UtcNow;
                     break;
                 case EntityState.Modified:
-                    entry.Property(nameof(IAuditableEntity.VersionId)).CurrentValue = Guid.CreateVersion7();
                     entry.Property(nameof(IAuditableEntity.LastModifiedDate)).CurrentValue = DateTimeOffset.UtcNow;
                     break;
             }

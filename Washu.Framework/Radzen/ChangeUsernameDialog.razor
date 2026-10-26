@@ -21,7 +21,7 @@
     private ChangeUsernameValidator Validator => new(OldUsername);
     [Parameter, EditorRequired] public string OldUsername { get; set; }
     [Parameter, EditorRequired] public Guid UserId { get; set; }
-    [Parameter, EditorRequired] public Guid UserVersionId { get; set; }
+    [Parameter, EditorRequired] public uint UserVersionId { get; set; }
     private bool UsernameChanged => _model.Username != OldUsername;
     private SubmitButtonConfig ChangeUsernameButtonConfig => new()
     {

@@ -184,7 +184,7 @@
         {
             [nameof(ChangeUsernameDialog.OldUsername)] = User.Username,
             [nameof(ChangeUsernameDialog.UserId)] = User.Id,
-            [nameof(ChangeUsernameDialog.UserVersionId)] = User.VersionId
+            [nameof(ChangeUsernameDialog.UserVersionId)] = User.RowVersion
         };
         var data = await DialogService.OpenAsync<ChangeUsernameDialog>("Change Username", parameters);
         if (data is not ChangeUsernameCommand command) return;
@@ -238,7 +238,7 @@
             CreationDate = user.CreationDate,
             LastModifiedDate = user.LastModifiedDate,
             LastSignedInDate = user.LastSignedInDate,
-            VersionId = user.VersionId
+            RowVersion = user.RowVersion
         };
     }
     private void Redirect() => NavManager.NavigateTo($"{ApplicationRoutes.SignIn}?returnUrl={ApplicationRoutes.Home}", forceLoad: true);
@@ -282,7 +282,7 @@
         public DateTimeOffset CreationDate { get; set; } = DateTimeOffset.UtcNow;
         public DateTimeOffset? LastModifiedDate { get; set; } = DateTimeOffset.UtcNow;
         public DateTimeOffset? LastSignedInDate { get; set; } = DateTimeOffset.UtcNow;
-        public Guid VersionId { get; set; } = Guid.CreateVersion7();
+        public uint RowVersion { get; set; }
     }
 
 }

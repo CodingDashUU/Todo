@@ -72,7 +72,7 @@ public sealed class IdentityHandlersTests(ApplicationPostgreSqlFixture fixture)
         }
 
         var newUsername = $"NewName_{Guid.NewGuid():N}";
-        var result = await handler.HandleAsync(new ChangeUsernameCommand(user.Id, user.VersionId, newUsername));
+        var result = await handler.HandleAsync(new ChangeUsernameCommand(user.Id, user.RowVersion, newUsername));
         result.Should().Be(ChangeUsernameResult.Success);
         await using (var context = await fixture.CreateDbContextFactory().CreateDbContextAsync())
         {
@@ -98,7 +98,7 @@ public sealed class IdentityHandlersTests(ApplicationPostgreSqlFixture fixture)
             await context.SaveChangesAsync();
         }
 
-        var result = await handler.HandleAsync(new ChangeUsernameCommand(user2.Id, user2.VersionId, existingUsername));
+        var result = await handler.HandleAsync(new ChangeUsernameCommand(user2.Id, user2.RowVersion, existingUsername));
         result.Should().Be(ChangeUsernameResult.UsernameTaken, "The handler should fail");
     }
     
@@ -120,7 +120,7 @@ public sealed class IdentityHandlersTests(ApplicationPostgreSqlFixture fixture)
             context.Users.Remove(user);
             await context.SaveChangesAsync();
         }
-        var result = await handler.HandleAsync(new ChangeUsernameCommand(user.Id, user.VersionId, $"NewName_{Guid.NewGuid():N}"));
+        var result = await handler.HandleAsync(new ChangeUsernameCommand(user.Id, user.RowVersion, $"NewName_{Guid.NewGuid():N}"));
         result.Should().Be(ChangeUsernameResult.AccountNotFound, "The handler should fail");
     }
 
@@ -138,9 +138,9 @@ public sealed class IdentityHandlersTests(ApplicationPostgreSqlFixture fixture)
             await context.SaveChangesAsync();
         }
         var username2 = $"User2_{Guid.NewGuid():N}";
-        await handler.HandleAsync(new ChangeUsernameCommand(user.Id, user.VersionId, username2));
+        await handler.HandleAsync(new ChangeUsernameCommand(user.Id, user.RowVersion, username2));
         var username3 = $"User3_{Guid.NewGuid():N}";
-        var result = await handler.HandleAsync(new ChangeUsernameCommand(user.Id, user.VersionId, username3));
+        var result = await handler.HandleAsync(new ChangeUsernameCommand(user.Id, user.RowVersion, username3));
         result.Should().Be(ChangeUsernameResult.UserAlreadyModified, "The handler should fail");
     }
     [Fact]
