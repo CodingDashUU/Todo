@@ -11,6 +11,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Washu.Framework\Washu.Framework.csproj"/>
+        <ProjectReference Include="..\Washu.Testing\Washu.Testing.csproj" />
     </ItemGroup>
 
     <ItemGroup>

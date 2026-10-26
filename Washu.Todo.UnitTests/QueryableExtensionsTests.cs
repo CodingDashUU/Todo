@@ -7,18 +7,15 @@ public class QueryableExtensionsTests
     [Fact]
     public void ByTodoList_FiltersListsById()
     {
-        var targetListId = Guid.CreateVersion7();
-        var otherListId = Guid.CreateVersion7();
-
-        var list1 = new TodoList(Guid.CreateVersion7(), "List 1") { Id = targetListId };
-        var list2 = new TodoList(Guid.CreateVersion7(), "List 2") { Id = otherListId };
+        var list1 = new TodoList(Guid.CreateVersion7(), "List 1");
+        var list2 = new TodoList(Guid.CreateVersion7(), "List 2");
 
         var query = new List<TodoList> { list1, list2 }.AsQueryable();
 
-        var result = query.ByTodoList(targetListId).ToList();
+        var result = query.ByTodoList(list1.Id).ToList();
 
         result.Should().ContainSingle();
-        result[0].Id.Should().Be(targetListId);
+        result[0].Id.Should().Be(list1.Id);
     }
 
     [Fact]

@@ -3,6 +3,7 @@ namespace Washu.Framework.UnitTests;
 using FluentAssertions;
 using Washu.Framework.Extensions;
 using Washu.Framework.Identity;
+using Testing;
 
 public class QueryableExtensionsTests
 {
@@ -10,11 +11,6 @@ public class QueryableExtensionsTests
     {
         public Guid UserId { get; init; }
         public string Title { get; set; } = string.Empty;
-    }
-
-    private sealed class TestCurrentUser(Guid? userId) : ICurrentUser
-    {
-        public Guid? UserId => userId;
     }
 
     [Fact]
@@ -30,7 +26,7 @@ public class QueryableExtensionsTests
             new() { UserId = targetUserId, Title = "Target Item 2" }
         }.AsQueryable();
 
-        var currentUser = new TestCurrentUser(targetUserId);
+        var currentUser = new MockCurrentUser(targetUserId);
 
         var filtered = items.ForCurrentUser(currentUser).ToList();
 
@@ -46,7 +42,7 @@ public class QueryableExtensionsTests
             new() { UserId = Guid.CreateVersion7(), Title = "Item" }
         }.AsQueryable();
 
-        var currentUser = new TestCurrentUser(null);
+        var currentUser = new MockCurrentUser(null);
 
         var act = () => items.ForCurrentUser(currentUser);
 

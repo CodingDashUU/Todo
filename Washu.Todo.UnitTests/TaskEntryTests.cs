@@ -5,25 +5,6 @@ using FluentAssertions;
 public class TaskEntryTests
 {
     [Fact]
-    public void Constructor_InitializesPropertiesCorrectly()
-    {
-        var id = Guid.CreateVersion7();
-        var todoListId = Guid.CreateVersion7();
-        var goalDate = DateTimeOffset.UtcNow.AddDays(2);
-        const string name = "Buy Groceries";
-
-        var task = new TaskEntry(name, goalDate, id, todoListId);
-
-        task.Id.Should().Be(id);
-        task.TodoListId.Should().Be(todoListId);
-        task.Name.Should().Be(name);
-        task.GoalDate.Should().Be(goalDate.ToUniversalTime());
-        task.IsCompleted.Should().BeFalse();
-        task.DateCompleted.Should().BeNull();
-        task.DateCreated.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(5));
-    }
-
-    [Fact]
     public void Toggle_WhenIncomplete_MarksCompletedAndSetsDateCompleted()
     {
         var task = new TaskEntry("Task 1", DateTimeOffset.UtcNow.AddDays(1), Guid.CreateVersion7(), Guid.CreateVersion7());

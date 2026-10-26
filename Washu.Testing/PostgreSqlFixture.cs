@@ -37,10 +37,3 @@ where TDbContext : ApplicationDbContext
 
     public async Task DisposeAsync() => await _dbContainer.DisposeAsync();
 }
-
-public sealed class ApplicationPostgreSqlFixture : PostgreSqlFixture<ApplicationDbContext>;
-[CollectionDefinition(Name)]
-public sealed class PostgreSqlTestCollection : ICollectionFixture<ApplicationPostgreSqlFixture>
-{
-    public const string Name = "PostgreSql Collection";
-}

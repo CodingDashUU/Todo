@@ -4,19 +4,18 @@ using Framework.Identity;
 using Framework.Identity.Entities;
 using Identity;
 
-public class TodoList(Guid userId, string listName) : IOwnedByUser
+public class TodoList(Guid userId, string listName) : IOwnedByUser, IVersionedEntity, IAuditedEntity
 {
-    public Guid Id { get; init; } = Guid.CreateVersion7();
+    public Guid Id { get; private init; } = Guid.CreateVersion7();
     public Guid UserId { get; init; } = userId;
-    public ApplicationUser User { get; init; } = null!;
+    public ApplicationUser User { get; private init; } = null!;
     public string Name { get; set; } = listName;
-    public List<TaskEntry> Tasks { get; init; } = [];
-    public DateTimeOffset CreationDate { get; init; } = DateTimeOffset.UtcNow;
-    public DateTimeOffset LastModified { get; set; } = DateTimeOffset.UtcNow;
-    public Guid VersionId { get; private set; } = Guid.CreateVersion7();
-    public uint RowVersion { get; init; }
-
-    public override string ToString() => Name;
+    public List<TaskEntry> Tasks { get; private init; } = [];
+    public DateTimeOffset CreationDate { get; private init; }
+    public DateTimeOffset? LastModifiedDate { get; private init; }
+    public Guid VersionId { get; private init; }
+    public uint RowVersion { get; private init; }
+    
     private TodoList() : this(Guid.Empty, string.Empty) { }
     public static readonly TodoList None = new()
     {
@@ -25,5 +24,4 @@ public class TodoList(Guid userId, string listName) : IOwnedByUser
         VersionId = Guid.Empty,
         Tasks = []
     };
-    public void ChangeVersionId() => VersionId = Guid.CreateVersion7();
 }

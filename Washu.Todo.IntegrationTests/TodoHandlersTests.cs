@@ -2,11 +2,11 @@ namespace Washu.Todo.IntegrationTests;
 
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Testing;
 using Washu.Framework.Identity.Entities;
-using Washu.Framework.IntegrationTests.Fixtures;
-using Washu.Framework.Notifications;
-using Washu.Todo.Features;
-using Washu.Todo.Identity;
+using Framework.Notifications;
+using Features;
+using Identity;
 
 [Collection(TodoPostgreSqlTestCollection.Name)]
 public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
@@ -99,6 +99,7 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
         var updatedList = await verifyContext.TodoLists.FirstAsync(l => l.Id == list.Id);
         updatedList.Name.Should().Be("New Name");
         updatedList.VersionId.Should().NotBe(list.VersionId);
+        
     }
 
     [Fact]

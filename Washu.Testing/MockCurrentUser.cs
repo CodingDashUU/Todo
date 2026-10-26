@@ -1,4 +1,4 @@
-namespace Washu.Todo.IntegrationTests;
+namespace Washu.Testing;
 
 using Framework.Identity;
 

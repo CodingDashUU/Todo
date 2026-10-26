@@ -188,7 +188,8 @@
             var query = context.TodoLists
                 .AsNoTracking()
                 .Where(t => t.UserId == userId)
-                .OrderByDescending(e => e.LastModified)
+                .OrderByDescending(e => e.LastModifiedDate.HasValue)
+                .ThenByDescending(e => e.LastModifiedDate)
                 .AsQueryable();
             
             if (!string.IsNullOrEmpty(args.Filter))
@@ -253,7 +254,7 @@
             var query = context.Tasks
                 .AsNoTracking()
                 .Where(e => e.TodoListId == _selectedList.Id)
-                .OrderBy(e => e.DateCreated)
+                .OrderByDescending(e => e.DateCreated)
                 .AsQueryable();
 
             if (!string.IsNullOrEmpty(args.Filter))

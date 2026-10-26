@@ -22,7 +22,7 @@ public class TodoDbContext(DbContextOptions<TodoDbContext> options) : Applicatio
             {
                 table.HasMaxLengthCheckConstraint(p => p.Name, 64);
                 table.HasAllowedCharactersCheckConstraint(p => p.Name, TodoRules.ListName.AllowedCharacters);
-                table.HasDateLessThanOrEqualToOtherDateCheckConstraint(p => p.CreationDate, p => p.LastModified);
+                table.HasDateLessThanOrEqualToNullableDateCheckConstraint(p => p.CreationDate, p => p.LastModifiedDate);
             });
             entity.Property(t => t.RowVersion).IsRowVersion();
             

@@ -2,6 +2,7 @@
 <Project Path="Washu.Framework.IntegrationTests/Washu.Framework.IntegrationTests.csproj" />
 <Project Path="Washu.Framework.UnitTests/Washu.Framework.UnitTests.csproj" />
 <Project Path="Washu.Framework/Washu.Framework.csproj" />
+<Project Path="Washu.Testing/Washu.Testing.csproj" />
 <Project Path="Washu.Todo.IntegrationTests/Washu.Todo.IntegrationTests.csproj" />
 <Project Path="Washu.Todo.UnitTests/Washu.Todo.UnitTests.csproj" />
 <Project Path="Washu.Todo/Washu.Todo.csproj" />

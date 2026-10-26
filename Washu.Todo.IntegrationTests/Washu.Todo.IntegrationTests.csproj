@@ -11,7 +11,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Washu.Todo\Washu.Todo.csproj"/>
-        <ProjectReference Include="..\Washu.Framework.IntegrationTests\Washu.Framework.IntegrationTests.csproj"/>
+        <ProjectReference Include="..\Washu.Testing\Washu.Testing.csproj"/>
     </ItemGroup>
 
     <ItemGroup>

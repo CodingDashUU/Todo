@@ -30,6 +30,7 @@ public class TodoDbContextTests(TodoPostgreSqlFixture fixture)
         list.Tasks.Add(task);
 
         context.TodoLists.Add(list);
+        var now = DateTimeOffset.UtcNow;
         await context.SaveChangesAsync();
 
         await using var verifyContext = await fixture.CreateDbContextFactory().CreateDbContextAsync();
@@ -38,11 +39,42 @@ public class TodoDbContextTests(TodoPostgreSqlFixture fixture)
             .FirstOrDefaultAsync(l => l.Id == list.Id);
 
         retrievedList.Should().NotBeNull();
-        retrievedList!.Name.Should().Be("Groceries");
+        retrievedList.Name.Should().Be("Groceries");
         retrievedList.Tasks.Should().HaveCount(1);
+        retrievedList.LastModifiedDate.Should().BeNull();
+        retrievedList.CreationDate.Should().BeCloseTo(now, TimeSpan.FromSeconds(5));
         retrievedList.Tasks[0].Name.Should().Be("Milk");
     }
+    [Fact]
+    public async Task OnUpdateTodoList_VersionIdAndDateModifiedChanges()
+    {
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
+        var user = await CreateTestUserAsync(context);
 
+        var list = new TodoList(user.Id, "Groceries");
+        var task = new TaskEntry("Milk", DateTimeOffset.UtcNow.AddDays(1), Guid.CreateVersion7(), list.Id);
+        list.Tasks.Add(task);
+
+        context.TodoLists.Add(list);
+        await context.SaveChangesAsync();
+        
+        await using var modifyContext = await fixture.CreateDbContextFactory().CreateDbContextAsync();
+        var retrievedList = await modifyContext.TodoLists
+            .FirstOrDefaultAsync(l => l.Id == list.Id);
+        retrievedList.Should().NotBeNull();
+        retrievedList.Name = "Bob";
+        var now = DateTimeOffset.UtcNow;
+        await modifyContext.SaveChangesAsync();
+        
+        await using var verifyContext = await fixture.CreateDbContextFactory().CreateDbContextAsync();
+        retrievedList = await modifyContext.TodoLists
+            .FirstOrDefaultAsync(l => l.Id == list.Id);
+        retrievedList.Should().NotBeNull();
+        retrievedList.Name.Should().Be("Bob");
+        retrievedList.LastModifiedDate.Should().BeCloseTo(now, TimeSpan.FromSeconds(5));
+        retrievedList.VersionId.Should().NotBe(list.VersionId);
+        
+    }
     [Fact]
     public async Task CascadeDelete_WhenTodoListDeleted_DeletesAssociatedTasks()
     {

@@ -75,7 +75,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ICurrentUser, CurrentUser>();
         return services;
     }
-    public IServiceCollection AddWfDbContextFactory<TDbContext>(ConfigurationManager configuration, HashSet<IInterceptor> interceptors)
+    public IServiceCollection AddWfDbContextFactory<TDbContext>(ConfigurationManager configuration, params HashSet<IInterceptor> interceptors)
     where TDbContext : ApplicationDbContext
     {
         var connectionString = configuration.GetConnectionString("DefaultConnection");
