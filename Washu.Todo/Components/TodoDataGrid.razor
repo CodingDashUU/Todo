@@ -1,11 +1,9 @@
 @using Microsoft.EntityFrameworkCore
 @using System.Linq.Dynamic.Core 
-@using Microsoft.AspNetCore.WebUtilities
 @using Washu.Framework.Extensions
 @using Washu.Framework.Identity
 @using Washu.Framework.Notifications
 @using Washu.Todo.Identity
-@using TodoList = Washu.Todo.TodoList
 @inject UserTimeZoneProvider TimeZoneProvider
 @inject IDbContextFactory<TodoDbContext> DbContextFactory
 @inject MessageStore Store
@@ -23,7 +21,7 @@
                 AllowPaging
                 ShowPagingSummary
                 PageSize="10"  
-                Style="height:600px"
+                Style="max-height:600px"
                 FilterMode="FilterMode.SimpleWithMenu" 
                 PagerHorizontalAlign="HorizontalAlign.Left"
                 SelectionMode="DataGridSelectionMode.Single" 
@@ -40,14 +38,14 @@
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
             <RadzenFormField Text="Selected Todo List">
                 <RadzenDropDownDataGrid 
-                    TValue="Todo.TodoList"
+                    TValue="TodoList"
                     Value="@_selectedList" 
                     Count="_listsCount"
                     IsLoading="_isListsDataLoading"
                     Data="@_lists"
                     ValueChanged="OnListSelected"
                     LoadData="LoadListsAsync"
-                    TextProperty="@nameof(Todo.TodoList.Name)"
+                    TextProperty="@nameof(TodoList.Name)"
                 />
             </RadzenFormField>
             <DataGridExportButton DataGrid="_grid" ExcelTitle="@_selectedList.Name" FileName="todo"/>
@@ -106,8 +104,8 @@
     int _count;
     IEnumerable<TaskEntry>? _tasks;
     IList<TaskEntry> _selectedTasks = [];
-    Todo.TodoList _selectedList = Todo.TodoList.None;
-    List<Todo.TodoList> _lists = [];
+    TodoList _selectedList = TodoList.None;
+    List<TodoList> _lists = [];
     private int _listsCount;
     private bool _isListsDataLoading;
     private Task? _initTask;
@@ -141,7 +139,7 @@
     {
         return value is FilterOperator.IsEmpty or FilterOperator.IsNotEmpty or FilterOperator.IsNull or FilterOperator.IsNotNull;
     }
-    void OnListSelected(Todo.TodoList newList)
+    void OnListSelected(TodoList newList)
     {
         _selectedList = newList;
         StateHasChanged();
@@ -213,7 +211,7 @@
 
             if (_listsCount == 0)
             {
-                _lists = [Todo.TodoList.None];
+                _lists = [TodoList.None];
             }
 
             _lists = await query.ToListAsync();
@@ -240,9 +238,9 @@
             {
                 await _initTask;
                 _initTask = null;
-                _selectedList = _lists.FirstOrDefault() ?? Todo.TodoList.None;
+                _selectedList = _lists.FirstOrDefault() ?? TodoList.None;
             }
-            if (_selectedList.Id == Todo.TodoList.None.Id)
+            if (_selectedList.Id == TodoList.None.Id)
             {
                 _tasks = [];
                 _count = 0;
@@ -250,10 +248,9 @@
             }
 
             await using var context = await DbContextFactory.CreateDbContextAsync();
-            
             var query = context.Tasks
                 .AsNoTracking()
-                .Where(e => e.TodoListId == _selectedList.Id)
+                .ForTodoList(_selectedList.Id)
                 .OrderByDescending(e => e.DateCreated)
                 .AsQueryable();
 

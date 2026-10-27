@@ -20,14 +20,14 @@
 <RadzenStack Orientation="Orientation.Horizontal">
     <RadzenCard>
         <RadzenDropDownDataGrid 
-            TValue="Todo.TodoList"
+            TValue="TodoList"
             Value="@_selectedList" 
             Count="_listsCount"
             IsLoading="_isListsDataLoading"
             Data="@_lists"
             ValueChanged="OnListSelected"
             LoadData="LoadListsAsync"
-            TextProperty="@nameof(Todo.TodoList.Name)"
+            TextProperty="@nameof(TodoList.Name)"
             />
         <RadzenButton class="big-icon-button"
                       ButtonStyle="@(_isEditing ? ButtonStyle.Success : ButtonStyle.Danger)"
@@ -84,11 +84,11 @@
     
     private bool _hasInitialized; 
     
-    private bool IsNoListSelected => _selectedList.Id == Todo.TodoList.None.Id;
+    private bool IsNoListSelected => _selectedList.Id == TodoList.None.Id;
     
-    private Todo.TodoList _selectedList = Todo.TodoList.None;
+    private TodoList _selectedList = TodoList.None;
     private IList<TaskEntry> _tasks = [];
-    private List<Todo.TodoList> _lists = [];
+    private List<TodoList> _lists = [];
     private bool _isTasksDataLoading;
     private bool _isListsDataLoading;
     private int _tasksCount;
@@ -121,9 +121,9 @@
     private void ToggleEditing() => _isEditing = !_isEditing;
     private void ToggleDeleting() => _isDeleting = !_isDeleting;
 
-    private async Task OnListSelected(Todo.TodoList newList)
+    private async Task OnListSelected(TodoList newList)
     {
-        _selectedList = newList.Id == Todo.TodoList.None.Id ? Todo.TodoList.None : newList;
+        _selectedList = newList.Id == TodoList.None.Id ? TodoList.None : newList;
         if (_dataList is not null)
         {
             await _dataList.FirstPage(true);
@@ -165,7 +165,7 @@
 
             if (_listsCount == 0)
             {
-                _lists = [Todo.TodoList.None];
+                _lists = [TodoList.None];
             }
 
             _lists = await query.ToListAsync();
@@ -183,7 +183,7 @@
     }
     private async Task FetchTasksAsync(int skip, int top)
     {
-        if (_selectedList.Id == Todo.TodoList.None.Id)
+        if (_selectedList.Id == TodoList.None.Id)
         {
             _tasks = [];
             _tasksCount = 0;
@@ -196,7 +196,7 @@
             await using var context = await DbContextFactory.CreateDbContextAsync();
             var query = context.Tasks
                 .AsNoTracking()
-                .Where(e => e.TodoListId == _selectedList.Id)
+                .ForTodoList(_selectedList.Id)
                 .OrderByDescending(e => e.DateCreated)
                 .AsQueryable();
             
@@ -229,7 +229,7 @@
         {
             await _dataList.Reload();
         }
-        _selectedList = _lists.FirstOrDefault() ?? Todo.TodoList.None;
+        _selectedList = _lists.FirstOrDefault() ?? TodoList.None;
     }
 
     private async Task DeleteTaskAsync(TaskEntry entry)
