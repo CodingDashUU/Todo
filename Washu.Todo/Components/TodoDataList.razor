@@ -113,7 +113,7 @@
         }
         _userId = user.Id;
         await LoadListsAsync(DefaultListsLoadDataArgs);
-        _selectedList = _lists.FirstOrDefault() ?? Todo.TodoList.None;
+        _selectedList = _lists.FirstOrDefault() ?? TodoList.None;
         await FetchTasksAsync(skip: 0, top: TasksPageCount);
         _hasInitialized = true;
     }

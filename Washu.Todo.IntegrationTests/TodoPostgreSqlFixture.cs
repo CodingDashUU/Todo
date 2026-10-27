@@ -1,6 +1,6 @@
 namespace Washu.Todo.IntegrationTests;
 
-using Framework.IntegrationTests.Fixtures;
 using Identity;
+using Testing;
 
 public sealed class TodoPostgreSqlFixture : PostgreSqlFixture<TodoDbContext>;

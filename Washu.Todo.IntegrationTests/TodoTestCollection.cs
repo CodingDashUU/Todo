@@ -1,6 +1,5 @@
 namespace Washu.Todo.IntegrationTests;
 
-using Washu.Framework.IntegrationTests.Fixtures;
 using Xunit;
 
 [CollectionDefinition(Name)]

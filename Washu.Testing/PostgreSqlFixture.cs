@@ -1,16 +1,16 @@
-namespace Washu.Framework.IntegrationTests.Fixtures;
+namespace Washu.Testing;
 
-using Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Testcontainers.PostgreSql;
+using Washu.Framework.Identity;
 using Xunit;
 
 public class PostgreSqlFixture<TDbContext>(params HashSet<IInterceptor> interceptors) : IAsyncLifetime
 where TDbContext : ApplicationDbContext
 {
-    private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder("postgres:17-alpine")
+    private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder("postgres:18")
         .WithDatabase("washu_framework_tests")
         .WithUsername("postgres")
         .WithPassword("postgres")

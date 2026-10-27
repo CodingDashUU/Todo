@@ -4,7 +4,6 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Washu.Framework.Identity.Entities;
-using Washu.Framework.IntegrationTests.Fixtures;
 using Washu.Todo.Identity;
 
 [Collection(TodoPostgreSqlTestCollection.Name)]

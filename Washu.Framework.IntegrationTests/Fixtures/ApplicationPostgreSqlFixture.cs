@@ -1,6 +1,7 @@
 namespace Washu.Framework.IntegrationTests.Fixtures;
 
 using Identity;
+using Testing;
 
 public sealed class ApplicationPostgreSqlFixture : PostgreSqlFixture<ApplicationDbContext>;
 [CollectionDefinition(Name)]
