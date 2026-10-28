@@ -4,7 +4,6 @@ public static class MaterialIcons
 {
     public const string Task = "task";
     public const string Home = "home";
-    public const string Settings = "settings";
     public const string CheckCircle = "check_circle";
     public const string Cancel = "cancel";
     public const string AccountCircle = "account_circle";
@@ -23,4 +22,5 @@ public static class MaterialIcons
     public const string DarkMode = "dark_mode";
     public const string DeadSadFace = "sentiment_very_dissatisfied";
     public const string Refresh = "refresh";
+    public const string Edit = "edit";
 }

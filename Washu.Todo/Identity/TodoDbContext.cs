@@ -34,6 +34,7 @@ public class TodoDbContext(DbContextOptions<TodoDbContext> options) : Applicatio
         builder.Entity<TaskEntry>(entity =>
         {
             entity.HasIndex(t => t.Name);
+            entity.HasIndex(t => t.TodoListId);
             entity.ToTable(table =>
             {
                 table.HasMaxLengthCheckConstraint(p => p.Name, 64);
