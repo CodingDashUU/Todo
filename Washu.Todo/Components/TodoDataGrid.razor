@@ -59,7 +59,7 @@
                 />
             </RadzenFormField>
             
-            <DataGridExportButton DataGrid="_grid" ExcelTitle="@_selectedList.Name" FileName="todo"/>
+            <DataGridExportButton DataGrid="_grid" ExcelTitle="@_selectedList.Name" FileName="todo" DisableExportAllScope="@(_count > 999)"/>
             <RadzenButton class="big-icon-button"
                           ButtonStyle="@(_isEditing ? ButtonStyle.Success : ButtonStyle.Danger)"
                           Variant="Variant.Text"
@@ -319,7 +319,7 @@
     {
         _selectedList = newList;
         StateHasChanged();
-        _grid.Reload();
+        _grid.FirstPage(forceReload: true);
     }
     void OnFilter(DataGridColumnFilterEventArgs<TaskEntry> args)
     {
@@ -357,6 +357,7 @@
                 .Where(t => t.UserId == _userId)
                 .OrderByDescending(e => e.LastModifiedDate.HasValue)
                 .ThenByDescending(e => e.LastModifiedDate)
+                .ThenByDescending(e => e.CreationDate)
                 .AsQueryable();
             
             if (!string.IsNullOrEmpty(args.Filter))

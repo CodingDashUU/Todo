@@ -6,7 +6,7 @@
         <RadzenSelectBar @bind-Value="@_model.Scope" TValue="DataGridExportScope" Size="ButtonSize.Small">
             <Items>
                 <RadzenSelectBarItem Text="Current page" Value="DataGridExportScope.CurrentPage"/>
-                <RadzenSelectBarItem Text="All" Value="DataGridExportScope.All"/>
+                <RadzenSelectBarItem Text="All" Value="DataGridExportScope.All" disabled="DisableExportAllScope"/>
             </Items>
         </RadzenSelectBar>
     </RadzenStack>
@@ -44,6 +44,7 @@
     [Parameter, EditorRequired] public RadzenDataGrid<TaskEntry> DataGrid { get; set; }
     [Parameter, EditorRequired] public string FileName { get; set; }
     [Parameter, EditorRequired] public string ExcelTitle { get; set; }
+    [Parameter, EditorRequired] public bool DisableExportAllScope { get; set; }
     private void OnDialogClose()
     {
         DialogService.Close(new DataGridExportCommand(

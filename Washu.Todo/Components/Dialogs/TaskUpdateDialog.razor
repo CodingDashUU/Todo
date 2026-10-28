@@ -58,7 +58,7 @@
                 .Unless(m => oldEntry.Name == m.NewTaskName);
             RuleFor(m => m.NewGoalDate)
                 .SetValidator(new GoalDateValidator())
-                .Unless(m => oldEntry.GoalDate.WithoutSeconds == m.NewGoalDate);
+                .Unless(m => oldEntry.GoalDate == m.NewGoalDate);
         }
 
     }

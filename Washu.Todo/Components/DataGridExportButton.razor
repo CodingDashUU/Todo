@@ -5,6 +5,7 @@
     [Parameter, EditorRequired] public RadzenDataGrid<TaskEntry> DataGrid { get; set; }
     [Parameter, EditorRequired] public string ExcelTitle { get; set; }
     [Parameter, EditorRequired] public string FileName { get; set; }
+    [Parameter, EditorRequired] public bool DisableExportAllScope { get; set; }
 
     private async Task OnDialogOpen()
     {
@@ -12,13 +13,14 @@
         {
             [nameof(DataGridExportDialog.FileName)] = FileName,
             [nameof(DataGridExportDialog.ExcelTitle)] = ExcelTitle,
-            [nameof(DataGridExportDialog.DataGrid)] = DataGrid
+            [nameof(DataGridExportDialog.DataGrid)] = DataGrid,
+            [nameof(DataGridExportDialog.DisableExportAllScope)] = DisableExportAllScope
         };
         var data = await DialogService.OpenAsync<DataGridExportDialog>("Table Export", parameters);
         if (data is not DataGridExportCommand command) return;
         await HandleExportAsync(command);
     }
-    private static async Task HandleExportAsync(DataGridExportCommand command)
+    private async Task HandleExportAsync(DataGridExportCommand command)
     {
         switch (command.ExportMode)
         {
@@ -26,12 +28,12 @@
                 await command.DataGrid.ExportToExcelAsync($"{command.FileName}.xlsx", 
                     new DataGridExcelExportOptions
                     {
-                        Scope = command.Scope, Title = command.ExcelTitle, UseTheme = command.UseTheme
+                        Scope = DisableExportAllScope ? DataGridExportScope.CurrentPage : command.Scope, Title = command.ExcelTitle, UseTheme = command.UseTheme
                     });
                 break;
             case DataGridExportMode.Csv:
                 await command.DataGrid.ExportToCsvAsync($"{command.FileName}.csv", 
-                    new DataGridCsvExportOptions { Scope = command.Scope });
+                    new DataGridCsvExportOptions { Scope = DisableExportAllScope ? DataGridExportScope.CurrentPage : command.Scope });
                 break;
         }
     }

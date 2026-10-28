@@ -35,6 +35,10 @@ public class TodoDbContext(DbContextOptions<TodoDbContext> options) : Applicatio
         {
             entity.HasIndex(t => t.Name);
             entity.HasIndex(t => t.TodoListId);
+            entity.HasIndex(t => t.DateCreated);
+            entity.HasIndex(t => t.DateCompleted);
+            entity.HasIndex(t => t.IsCompleted);
+            entity.HasIndex(t => t.GoalDate);
             entity.ToTable(table =>
             {
                 table.HasMaxLengthCheckConstraint(p => p.Name, 64);
