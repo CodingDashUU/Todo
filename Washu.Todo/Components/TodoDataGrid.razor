@@ -47,30 +47,28 @@
                 IsNotNullText="Is not N/A">
     <HeaderTemplate>
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
-            <RadzenFormField Text="Selected Todo List">
-                <RadzenDropDownDataGrid 
-                    TValue="TodoList"
-                    Value="@_selectedList" 
-                    Count="_listsCount"
-                    IsLoading="_isListsDataLoading"
-                    Data="@_lists"
-                    ValueChanged="OnListSelected"
-                    LoadData="LoadListsAsync"
-                    TextProperty="@nameof(TodoList.Name)"
-                />
-            </RadzenFormField>
-            
+                <RadzenFormField Text="Selected Todo List">
+                    <RadzenDropDownDataGrid
+                        TValue="TodoList"
+                        Value="@_selectedList"
+                        Count="_listsCount"
+                        IsLoading="_isListsDataLoading"
+                        Data="@_lists"
+                        ValueChanged="OnListSelected"
+                        LoadData="LoadListsAsync"
+                        TextProperty="@nameof(TodoList.Name)"/>
+                </RadzenFormField>
+                <RadzenButton class="big-icon-button"
+                              ButtonStyle="@(_isEditing ? ButtonStyle.Success : ButtonStyle.Danger)"
+                              Variant="Variant.Text"
+                              Click="@ToggleEditing"
+                              Disabled="IsNoListSelected"
+                              Text="@($"Edit Mode: {(_isEditing ? "ON" : "OFF")}")"/>
+                <RadzenButton Click="CreateTaskAsync" Disabled="IsNoListSelected" Icon="add" ButtonStyle="ButtonStyle.Success" Text="Add Task"/>
+                <RadzenButton Click="CreateListAsync" Icon="add" ButtonStyle="ButtonStyle.Success" Text="Add List"/>
+                <RadzenButton Click="DeleteListAsync" Disabled="IsNoListSelected" ButtonStyle="ButtonStyle.Danger" Icon="@MaterialIcons.Delete" Text="Delete List"/>
+                <RadzenButton Click="UpdateListAsync" Disabled="IsNoListSelected" ButtonStyle="ButtonStyle.Warning" Icon="@MaterialIcons.Update" Text="Update List"/>
             <DataGridExportButton DataGrid="_grid" ExcelTitle="@_selectedList.Name" FileName="todo" DisableExportAllScope="@(_count > 999)"/>
-            <RadzenButton class="big-icon-button"
-                          ButtonStyle="@(_isEditing ? ButtonStyle.Success : ButtonStyle.Danger)"
-                          Variant="Variant.Text"
-                          Click="@ToggleEditing"
-                          Disabled="IsNoListSelected"
-                          Text="@($"Edit Mode: {(_isEditing ? "ON" : "OFF")}")" />
-            <RadzenButton Click="CreateTaskAsync" Disabled="IsNoListSelected">Add Task</RadzenButton>
-            <RadzenButton Click="CreateListAsync">Add List</RadzenButton>
-            <RadzenButton Click="DeleteListAsync" Disabled="IsNoListSelected">Delete List</RadzenButton>
-            <RadzenButton Click="UpdateListAsync" Disabled="IsNoListSelected">Update List</RadzenButton>
         </RadzenStack>
     </HeaderTemplate>
     <Columns>

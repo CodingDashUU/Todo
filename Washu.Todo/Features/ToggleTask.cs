@@ -26,8 +26,8 @@ public sealed class ToggleTaskHandler(
             .SingleOrDefaultAsync();
         if (list is null)
             return Message.Error("Toggle Task Error", "Todo list does not exist");
-        dbContext.SetRowVersion(list, command.ListRowVersion);
         if (task is null) return Message.Error(title: "Toggle Task Error", details: "Task does not exist");
+        dbContext.SetRowVersion(list, command.ListRowVersion);
         task.Toggle();
         dbContext.TodoLists.Update(list);
         try

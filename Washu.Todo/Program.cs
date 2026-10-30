@@ -31,6 +31,6 @@ var app = builder.Build();
 await app.MigrateAsync<TodoDbContext>();
 app.UseWfPipeline();
 app.MapWfRazorComponents<App>();
-await app.SeedRolesAsync([.. InitialUserRoles.Roles, "Bob"]);
+await app.SeedRolesAsync([.. InitialUserRoles.Roles]);
 await app.SeedPermissionsAsync();
 await app.RunAsync();

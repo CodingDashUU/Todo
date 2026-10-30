@@ -26,8 +26,8 @@ public sealed class DeleteTaskHandler(
             .SingleOrDefaultAsync();
         if (list is null)
             return Message.Error("Toggle Task Error", "Todo list does not exist");
-        dbContext.SetRowVersion(list, command.ListRowVersion);
         if (task is null) return Message.Error(title: "Toggle Task Error", details: "Task does not exist");
+        dbContext.SetRowVersion(list, command.ListRowVersion);
         dbContext.Tasks.Remove(task);
         dbContext.TodoLists.Update(list);
         try

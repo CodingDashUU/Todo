@@ -20,9 +20,9 @@ public sealed class UpdateListHandler(
         var list = await todoListQuery.ByTodoList(command.ListId).SingleOrDefaultAsync();
         if (list is null)
             return Message.Error("Update List Error", "Todo list does not exist");
-        dbContext.SetRowVersion(list, command.ListRowVersion);
         if (todoListQuery.Any(l => l.Name == command.NewListName && l.Id != command.ListId))
             return Message.Error("Update List Error", "A todo list with the given name already exists");
+        dbContext.SetRowVersion(list, command.ListRowVersion);
         list.Name =  command.NewListName;
         try
         {

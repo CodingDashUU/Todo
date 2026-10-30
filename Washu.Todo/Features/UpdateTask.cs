@@ -21,7 +21,6 @@ public sealed class UpdateTaskHandler(
         var task = await taskQuery.ByTask(command.TaskId).SingleOrDefaultAsync();
         if (list is null)
             return Message.Error("Toggle Task Error", "Todo list does not exist");
-        dbContext.SetRowVersion(list, command.ListRowVersion);
         if (task is null) return Message.Error(title: "Toggle Task Error", details: "Task does not exist");
         var taskNameChanged = command.NewTaskName != task.Name;
         var goalDateChanged = command.NewGoalDate != task.GoalDate;
@@ -35,7 +34,10 @@ public sealed class UpdateTaskHandler(
         }
         if (goalDateChanged) task.ChangeGoalDate(command.NewGoalDate);
         if (taskNameChanged || goalDateChanged)
+        {
+            dbContext.SetRowVersion(list, command.ListRowVersion);
             dbContext.TodoLists.Update(list);
+        }
         else return Message.Info(
                 title: "Task Modification Info",
                 details: "Task has not been modified");
