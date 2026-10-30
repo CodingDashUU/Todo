@@ -21,14 +21,7 @@ public sealed class CreateListHandler(
                 .AnyAsync(l => l.Name == command.ListName))
             return Message.Error("List Creation Error", "Todo List with the given name already exists");
         dbContext.TodoLists.Add(new TodoList(user.UserId!.Value, command.ListName));
-        try
-        {
-            await dbContext.SaveChangesAsync();
-        }
-        catch (Exception)
-        {
-            return Message.Error("List Creation Error", "There was an unknown error while creating your list");
-        }
+        await dbContext.SaveChangesAsync();
         return Message.Success("List Creation Success", $"Successfully created list: {command.ListName}");
     }
 }

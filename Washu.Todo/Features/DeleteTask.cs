@@ -38,10 +38,6 @@ public sealed class DeleteTaskHandler(
         {
             return Message.Error("Task Deletion Error", "Your todo list was already modified, please try again");
         }
-        catch (Exception)
-        {
-            return Message.Error("Task Deletion Error", "There was an unknown error while deleting your task");
-        }
         return Message.Success("Task Deletion Success", "Successfully deleted task");
     }
 }

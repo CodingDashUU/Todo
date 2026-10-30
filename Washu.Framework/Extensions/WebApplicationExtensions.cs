@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Serilog;
 
 public static class WebApplicationExtensions
 {
@@ -46,7 +47,7 @@ public static class WebApplicationExtensions
             app.UseRateLimiter();
             app.UseAuthentication();
             app.UseAuthorization();
-            
+            app.UseSerilogRequestLogging(); 
             app.MapExternalEndpoints();
             app.MapWfHealthChecks();
             app.MapSignOutEndpoints();

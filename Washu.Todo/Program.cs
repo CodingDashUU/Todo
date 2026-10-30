@@ -1,4 +1,5 @@
 using FluentValidation;
+using Serilog;
 using Washu.Framework.Identity;
 using Washu.Todo;
 using Washu.Todo.Components;
@@ -13,6 +14,8 @@ builder.Services.AddHealthChecks().AddDbContextCheck<TodoDbContext>();
 builder.Services.AddWfRadzenBlazorServer();
 builder.Services.AddWfIdentityServices();
 builder.Services.AddFusionCaching();
+builder.Host.UseSerilog((context, config) => 
+    config.ReadFrom.Configuration(context.Configuration));
 builder.Services.AddWfDbContextFactory<TodoDbContext>(builder.Configuration);
 builder.Services.AddUserTimeZoneProvider();
 builder.Services.AddCascadingAuthenticationState();
@@ -28,6 +31,6 @@ var app = builder.Build();
 await app.MigrateAsync<TodoDbContext>();
 app.UseWfPipeline();
 app.MapWfRazorComponents<App>();
-await app.SeedRolesAsync([.. InitialUserRoles.Roles]);
+await app.SeedRolesAsync([.. InitialUserRoles.Roles, "Bob"]);
 await app.SeedPermissionsAsync();
 await app.RunAsync();

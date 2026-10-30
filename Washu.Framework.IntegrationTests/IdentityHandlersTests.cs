@@ -5,6 +5,7 @@ using FluentAssertions;
 using Identity;
 using Identity.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Notifications;
 using Xunit;
 
@@ -15,7 +16,7 @@ public sealed class IdentityHandlersTests(ApplicationPostgreSqlFixture fixture)
     public async Task AddRolesHandler_ShouldInsertNewRolesAndIgnoreDuplicates()
     {
         var factory = fixture.CreateDbContextFactory();
-        var handler = new AddRolesHandler(factory);
+        var handler = new AddRolesHandler(factory, new NullLogger<AddRolesHandler>());
 
         var role1 = $"Role_{Guid.NewGuid():N}";
         var role2 = $"Role_{Guid.NewGuid():N}";
@@ -62,7 +63,7 @@ public sealed class IdentityHandlersTests(ApplicationPostgreSqlFixture fixture)
     public async Task ChangeUsernameHandler_ShouldUpdateUsernameSuccessfully()
     {
         var factory = fixture.CreateDbContextFactory();
-        var handler = new ChangeUsernameHandler(factory);
+        var handler = new ChangeUsernameHandler(factory, new NullLogger<ChangeUsernameHandler>());
 
         var user = new ApplicationUser($"OldName_{Guid.NewGuid():N}", $"{Guid.NewGuid():N}@example.com", $"sub-{Guid.NewGuid():N}");
         await using (var context = await fixture.CreateDbContextFactory().CreateDbContextAsync())
@@ -86,7 +87,7 @@ public sealed class IdentityHandlersTests(ApplicationPostgreSqlFixture fixture)
     public async Task ChangeUsernameHandler_ShouldFailWhenUsernameAlreadyTaken()
     {
         var factory = fixture.CreateDbContextFactory();
-        var handler = new ChangeUsernameHandler(factory);
+        var handler = new ChangeUsernameHandler(factory, new NullLogger<ChangeUsernameHandler>());
 
         var existingUsername = $"Taken_{Guid.NewGuid():N}";
         var user1 = new ApplicationUser(existingUsername, $"{Guid.NewGuid():N}@example.com", $"sub-{Guid.NewGuid():N}");
@@ -106,7 +107,7 @@ public sealed class IdentityHandlersTests(ApplicationPostgreSqlFixture fixture)
     public async Task ChangeUsernameHandler_ShouldFailWhenUserIsNotFound()
     {
         var factory = fixture.CreateDbContextFactory();
-        var handler = new ChangeUsernameHandler(factory);
+        var handler = new ChangeUsernameHandler(factory, new NullLogger<ChangeUsernameHandler>());
         
         var user = new ApplicationUser($"DeletedUser_{Guid.NewGuid():N}", $"{Guid.NewGuid():N}@example.com", $"{Guid.NewGuid():N}");
 
@@ -127,7 +128,7 @@ public sealed class IdentityHandlersTests(ApplicationPostgreSqlFixture fixture)
     [Fact] public async Task ChangeUsernameHandler_ShouldFailWhenUserAlreadyModified()
     {
         var factory = fixture.CreateDbContextFactory();
-        var handler = new ChangeUsernameHandler(factory);
+        var handler = new ChangeUsernameHandler(factory, new NullLogger<ChangeUsernameHandler>());
 
         var username1 = $"User_{Guid.NewGuid():N}";
         var user = new ApplicationUser(username1, $"{Guid.NewGuid():N}@example.com", $"sub-{Guid.NewGuid():N}");
@@ -147,7 +148,7 @@ public sealed class IdentityHandlersTests(ApplicationPostgreSqlFixture fixture)
     public async Task DeleteUserHandler_ShouldRemoveUserFromDatabase()
     {
         var factory = fixture.CreateDbContextFactory();
-        var handler = new DeleteUserHandler(factory);
+        var handler = new DeleteUserHandler(factory, new NullLogger<DeleteUserHandler>());
 
         var user = new ApplicationUser($"DelUser_{Guid.NewGuid():N}", $"{Guid.NewGuid():N}@example.com", $"sub-{Guid.NewGuid():N}");
         await using (var context = await fixture.CreateDbContextFactory().CreateDbContextAsync())
@@ -170,7 +171,7 @@ public sealed class IdentityHandlersTests(ApplicationPostgreSqlFixture fixture)
     public async Task DeleteUserHandler_ShouldReturnError_WhenUserDoesNotExist()
     {
         var factory = fixture.CreateDbContextFactory();
-        var handler = new DeleteUserHandler(factory);
+        var handler = new DeleteUserHandler(factory, new NullLogger<DeleteUserHandler>());
 
         var nonExistentId = Guid.NewGuid();
         var result = await handler.HandleAsync(new DeleteUserCommand(nonExistentId));
@@ -182,7 +183,7 @@ public sealed class IdentityHandlersTests(ApplicationPostgreSqlFixture fixture)
     public async Task DeleteUserHandler_ShouldCascadeDeleteUserRoles_WhenUserHasRoles()
     {
         var factory = fixture.CreateDbContextFactory();
-        var handler = new DeleteUserHandler(factory);
+        var handler = new DeleteUserHandler(factory, new NullLogger<DeleteUserHandler>());
 
         var user = new ApplicationUser($"CascadeDelUser_{Guid.NewGuid():N}", $"{Guid.NewGuid():N}@example.com", $"sub-{Guid.NewGuid():N}");
         var role = new ApplicationRole($"CascadeRole_{Guid.NewGuid():N}");

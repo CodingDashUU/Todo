@@ -50,9 +50,5 @@ public sealed class UpdateTaskHandler(
         {
             return Message.Error("Task Update Error", "Your todo list was already modified, please try again");
         }
-        catch (Exception)
-        {
-            return Message.Error("Task Update Error", "There was an unknown error while updating your task");
-        }
     }
 }

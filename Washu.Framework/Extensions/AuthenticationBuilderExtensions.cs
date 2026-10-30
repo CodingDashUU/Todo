@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Notifications;
 
 public static class AuthenticationBuilderExtensions
@@ -44,8 +45,18 @@ public static class AuthenticationBuilderExtensions
             options.Cookie.Name = ".Washu.Application";
             options.Events.OnSigningIn = async context =>
             {
+                var logger = context.HttpContext.RequestServices
+                    .GetRequiredService<ILogger<OnSigningIn>>();
                 var userId = context.Principal?.UserId;
-                if (!userId.HasValue) return;
+                if (!userId.HasValue)
+                {
+                    await context.HttpContext.SignOutAsync(
+                        IdentityConstants.ApplicationScheme);
+                    logger.LogError(
+                        "No userId found in ClaimsPrincipal for connection {Id}",
+                        context.HttpContext.Connection.Id);
+                    return;
+                }
                 await using var dbContext = await context.HttpContext.RequestServices
                     .GetRequiredService<IDbContextFactory<ApplicationDbContext>>()
                     .CreateDbContextAsync();
@@ -56,8 +67,19 @@ public static class AuthenticationBuilderExtensions
                             s.SetProperty(u => u.LastSignedInDate, DateTimeOffset.UtcNow)
                             );
                 if (rowsChanged != 1)
+                {
                     await context.HttpContext.SignOutAsync(
                         IdentityConstants.ApplicationScheme);
+                    logger.LogError(
+                        "Could not update 'LastSignedInDate' for user with id {UserId}. Rows changed: {RowsChanged}",
+                        userId, rowsChanged);
+                }
+
+                else
+                {
+                    logger.LogInformation("Updated 'LastSignInDate' for user with id {UserId}", userId);
+                    logger.LogInformation("User with id {UserId} signing in", userId);
+                }
                 var userStore = context.HttpContext.RequestServices
                     .GetRequiredService<ApplicationUserStore>();
                 await userStore.RemoveUserAsync(userId.Value);
@@ -80,7 +102,7 @@ public static class AuthenticationBuilderExtensions
                     || context.Principal?.SecurityStamp is null 
                     || context.Principal?.SecurityStamp != user.SecurityStamp)
                 {
-                    context.RejectPrincipal();
+                 context.RejectPrincipal();
                     await context.HttpContext.SignOutAsync(
                         IdentityConstants.ApplicationScheme);
                 }
@@ -122,3 +144,5 @@ public static class AuthenticationBuilderExtensions
         });
     } 
 }
+
+file abstract class OnSigningIn;

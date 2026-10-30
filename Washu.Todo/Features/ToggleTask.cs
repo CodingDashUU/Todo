@@ -38,10 +38,6 @@ public sealed class ToggleTaskHandler(
         {
             return Message.Error("Toggle Task Error", "Your todo list was already modified, please try again");
         }
-        catch (Exception)
-        {
-            return Message.Error("Toggle Task Error", "There was an unknown error while toggling your task");
-        }
 
         return Message.Success(title: "Toggle Task", details: "Successfully toggled task");
     }

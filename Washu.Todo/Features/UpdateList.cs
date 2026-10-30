@@ -32,10 +32,6 @@ public sealed class UpdateListHandler(
         {
             return Message.Error("Update List Error", "Your todo list was already modified, please try again");
         }
-        catch (Exception)
-        {
-            return Message.Error("Update List Error", "There was an unknown error while updating your list");
-        }
 
         return Message.Success(title: "Update List", details: "Successfully updated list");
     }

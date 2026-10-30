@@ -36,9 +36,5 @@ public sealed class CreateTaskHandler(
         {
             return Message.Error("Task Creation Error", "Your todo list was already modified, please try again");
         }
-        catch (Exception)
-        {
-            return Message.Error("Task Creation Error", "There was an unknown error while creating your task");
-        }
     }
 }
