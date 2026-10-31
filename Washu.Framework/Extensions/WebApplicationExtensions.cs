@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Serilog;
 
 public static class WebApplicationExtensions
@@ -98,33 +99,44 @@ public static class WebApplicationExtensions
 
         internal void MapSignOutEndpoints()
         {
-            app.MapGet(IdentityRoutes.SignOut, async (HttpContext context, [FromQuery] string? messageId) =>
+            app.MapGet(IdentityRoutes.SignOut, async (HttpContext context, ILogger<SignOut> logger, [FromQuery] string? messageId) =>
                 {
+                    var userId = context.User.UserId;
+                    if (!userId.HasValue)
+                        logger.LogWarning("There is no UserId claim for connection {ConnectionId}", context.Connection.Id);
                     await context.SignOutAsync(IdentityConstants.ApplicationScheme);
-                    
+                    if (userId.HasValue)
+                        logger.LogInformation("User with id {UserId} signed out", userId);
+                    else logger.LogInformation("User with connection {ConnectionId} signed out",
+                        context.Connection.Id);
                     var targetUrl = string.IsNullOrWhiteSpace(messageId)
                         ? ApplicationRoutes.SignIn
                         : $"{ApplicationRoutes.SignIn}?messageId={messageId}";
-
                     return TypedResults.Redirect(targetUrl);
                 })
                 .RequireRateLimiting(RateLimiterPolicy.StandardRateLimiter);
-            app.MapGet(IdentityRoutes.SignOutFromAllSessions, async (HttpContext context, ApplicationUserStore userStore, IDbContextFactory<ApplicationDbContext> factory,[FromQuery] string? messageId) =>
+            app.MapGet(IdentityRoutes.SignOutFromAllSessions, async (HttpContext context, ILogger<SignOutFromAllSessions> logger, ApplicationUserStore userStore, IDbContextFactory<ApplicationDbContext> factory,[FromQuery] string? messageId) =>
                 {
                     var userId = context.User.UserId;
 
                     if (userId.HasValue)
                     {
                         await using var dbContext = await factory.CreateDbContextAsync();
-                        await dbContext.Users
+                        var rowsChanged = await dbContext.Users
                             .Where(u => u.Id == userId.Value)
                             .ExecuteUpdateAsync(s =>
                                 s.SetProperty(u => u.SecurityStamp, Guid.CreateVersion7())
                             );
+                        if (rowsChanged == 1)
+                            logger.LogInformation("Changed security stamp for user with id {UserId}", userId);
                         await userStore.RemoveUserAsync(userId.Value);
                     }
+                    else logger.LogWarning("There is no UserId claim for connection {ConnectionId}", context.Connection.Id);
                     await context.SignOutAsync(IdentityConstants.ApplicationScheme);
-
+                    if (userId.HasValue)
+                        logger.LogInformation("User with id {UserId} signed out from all sessions", userId);
+                    else logger.LogInformation("User with connection {ConnectionId} signed out",
+                        context.Connection.Id);
                     var targetUrl = string.IsNullOrWhiteSpace(messageId)
                         ? ApplicationRoutes.SignIn
                         : $"{ApplicationRoutes.SignIn}?messageId={messageId}";
@@ -135,3 +147,5 @@ public static class WebApplicationExtensions
         }
     }
 }
+file abstract class SignOut;
+file abstract class SignOutFromAllSessions;
