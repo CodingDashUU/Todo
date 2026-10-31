@@ -5,6 +5,7 @@ using Framework.Identity;
 using Framework.Notifications;
 using Identity;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 public sealed record UpdateListCommand(Guid ListId, uint ListRowVersion, string NewListName);
 public sealed class UpdateListHandler(
@@ -27,6 +28,13 @@ public sealed class UpdateListHandler(
         try
         {
             await dbContext.SaveChangesAsync();
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+                                           {
+                                               SqlState: PostgresErrorCodes.UniqueViolation
+                                           })
+        {
+            return Message.Error("Update List Error", "Todo List with the given name already exists");
         }
         catch (DbUpdateConcurrencyException)
         {

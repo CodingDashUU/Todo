@@ -30,18 +30,17 @@ public class TodoDbContext(DbContextOptions<TodoDbContext> options) : Applicatio
                 .WithOne()
                 .HasForeignKey(x => x.TodoListId)
                 .OnDelete(DeleteBehavior.Cascade);
+            entity.HasUniqueIndex(t => new { t.UserId, t.Name });
         });
         builder.Entity<TaskEntry>(entity =>
         {
-            entity.HasIndex(t => t.Name);
-            entity.HasIndex(t => t.TodoListId);
+            entity.HasUniqueIndex(t => new { t.TodoListId, t.Name });
             entity.ToTable(table =>
             {
                 table.HasMaxLengthCheckConstraint(p => p.Name, 64);
                 table.HasAllowedCharactersCheckConstraint(p => p.Name, TodoRules.TaskName.AllowedCharacters);
                 table.HasDateLessThanOrEqualToOtherDateCheckConstraint(p => p.DateCreated, p => p.GoalDate);
                 table.HasDateLessThanOrEqualToNullableDateCheckConstraint(p => p.DateCreated, p => p.DateCompleted);
-                
             });
         });
     }

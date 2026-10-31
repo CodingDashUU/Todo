@@ -3,6 +3,7 @@
 using Framework.Extensions;
 using Framework.Identity;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Washu.Framework.Notifications;
 using Washu.Todo.Identity;
 
@@ -22,8 +23,6 @@ public sealed class CreateTaskHandler(
             .SingleOrDefaultAsync();
         if (list is null)
             return Message.Error("Task Creation Error", "List does not exist");
-        if (await dbContext.Tasks.AnyAsync(t => t.Name == command.TaskName && t.TodoListId == command.ListId))
-            return Message.Error("Task Creation Error", "Task with the given task name already exists");
         if (await dbContext.Tasks.ForTodoList(command.ListId).CountAsync() >= 1000) 
             return Message.Error("Task Creation Error", 
                 "A single todo list cannot exceed 1000 tasks. Please either delete any existing task or create a new todo list");
@@ -38,6 +37,10 @@ public sealed class CreateTaskHandler(
         catch (DbUpdateConcurrencyException)
         {
             return Message.Error("Task Creation Error", "Your todo list was already modified, please try again");
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
+        {
+            return Message.Error("Task Creation Error", "Task with the given task name already exists");
         }
     }
 }
