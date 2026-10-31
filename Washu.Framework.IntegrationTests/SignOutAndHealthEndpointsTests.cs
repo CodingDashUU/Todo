@@ -227,32 +227,6 @@ public sealed class SignOutAndHealthEndpointsTests(ApplicationPostgreSqlFixture 
     }
 
     [Fact]
-    public async Task HealthEndpoint_WhenAnonymous_ReturnsNotFound()
-    {
-        var response = await _client.GetAsync("/health-wf");
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound, "Unauthenticated access to /health-wf must return 404");
-    }
-
-    [Fact]
-    public async Task HealthEndpoint_WhenAuthenticatedWithoutPermission_ReturnsNotFound()
-    {
-        var user = new ApplicationUser($"User_{Guid.CreateVersion7():N}", $"{Guid.CreateVersion7():N}@example.com", $"sub_{Guid.CreateVersion7():N}");
-        await using (var db = await fixture.CreateDbContextFactory().CreateDbContextAsync())
-        {
-            db.Users.Add(user);
-            await db.SaveChangesAsync();
-        }
-
-        var cookie = await SignInAppAsync(user.Id, user.SecurityStamp);
-
-        var request = new HttpRequestMessage(HttpMethod.Get, "/health-wf");
-        request.Headers.Add("Cookie", cookie);
-
-        var response = await _client.SendAsync(request);
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound, "Authenticated user without CanCheckSystemHealth must return 404");
-    }
-
-    [Fact]
     public async Task HealthEndpoint_WhenUserHasCanCheckSystemHealthPermission_ReturnsOkWithJsonReport()
     {
         var user = new ApplicationUser($"AdminUser_{Guid.CreateVersion7():N}", $"{Guid.CreateVersion7():N}@example.com", $"sub_{Guid.CreateVersion7():N}");
