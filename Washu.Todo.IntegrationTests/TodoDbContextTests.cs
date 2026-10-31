@@ -25,7 +25,7 @@ public class TodoDbContextTests(TodoPostgreSqlFixture fixture)
         var user = await CreateTestUserAsync(context);
 
         var list = new TodoList(user.Id, "Groceries");
-        var task = new TaskEntry("Milk", DateTimeOffset.UtcNow.AddDays(1), Guid.CreateVersion7(), list.Id);
+        var task = new TaskEntry("Milk", DateTimeOffset.UtcNow.AddDays(1), list.Id);
         list.Tasks.Add(task);
 
         context.TodoLists.Add(list);
@@ -51,7 +51,7 @@ public class TodoDbContextTests(TodoPostgreSqlFixture fixture)
         var user = await CreateTestUserAsync(context);
 
         var list = new TodoList(user.Id, "Groceries");
-        var task = new TaskEntry("Milk", DateTimeOffset.UtcNow.AddDays(1), Guid.CreateVersion7(), list.Id);
+        var task = new TaskEntry("Milk", DateTimeOffset.UtcNow.AddDays(1), list.Id);
         list.Tasks.Add(task);
 
         context.TodoLists.Add(list);
@@ -81,7 +81,7 @@ public class TodoDbContextTests(TodoPostgreSqlFixture fixture)
         var user = await CreateTestUserAsync(context);
 
         var list = new TodoList(user.Id, "Work");
-        var task = new TaskEntry("Report", DateTimeOffset.UtcNow.AddDays(2), Guid.CreateVersion7(), list.Id);
+        var task = new TaskEntry("Report", DateTimeOffset.UtcNow.AddDays(2), list.Id);
         list.Tasks.Add(task);
 
         context.TodoLists.Add(list);
@@ -120,7 +120,7 @@ public class TodoDbContextTests(TodoPostgreSqlFixture fixture)
         context.TodoLists.Add(list);
         await context.SaveChangesAsync();
 
-        var invalidTask = new TaskEntry("Invalid^Task", DateTimeOffset.UtcNow.AddDays(1), Guid.CreateVersion7(), list.Id);
+        var invalidTask = new TaskEntry("Invalid^Task", DateTimeOffset.UtcNow.AddDays(1), list.Id);
         context.Tasks.Add(invalidTask);
 
         var act = async () => await context.SaveChangesAsync();

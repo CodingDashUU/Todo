@@ -323,7 +323,7 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
         var user = await CreateTestUserAsync(context);
 
         var list = new TodoList(user.Id, "Toggle List");
-        var task = new TaskEntry("Toggle Me", DateTimeOffset.UtcNow.AddDays(1), Guid.CreateVersion7(), list.Id);
+        var task = new TaskEntry("Toggle Me", DateTimeOffset.UtcNow.AddDays(1), list.Id);
         list.Tasks.Add(task);
         context.TodoLists.Add(list);
         await context.SaveChangesAsync();
@@ -371,7 +371,7 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
         var user = await CreateTestUserAsync(context);
 
         var list = new TodoList(user.Id, "Toggle Stale List");
-        var task = new TaskEntry("Task 1", DateTimeOffset.UtcNow.AddDays(1), Guid.CreateVersion7(), list.Id);
+        var task = new TaskEntry("Task 1", DateTimeOffset.UtcNow.AddDays(1), list.Id);
         list.Tasks.Add(task);
         context.TodoLists.Add(list);
         await context.SaveChangesAsync();
@@ -415,7 +415,7 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
         var user = await CreateTestUserAsync(context);
 
         var list = new TodoList(user.Id, "Update List");
-        var task = new TaskEntry("Initial Task", DateTimeOffset.UtcNow.AddDays(1), Guid.CreateVersion7(), list.Id);
+        var task = new TaskEntry("Initial Task", DateTimeOffset.UtcNow.AddDays(1), list.Id);
         list.Tasks.Add(task);
         context.TodoLists.Add(list);
         await context.SaveChangesAsync();
@@ -441,7 +441,7 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
 
         var goalDate = DateTimeOffset.UtcNow.AddDays(2);
         var list = new TodoList(user.Id, "No Change List");
-        var task = new TaskEntry("Same Name", goalDate, Guid.CreateVersion7(), list.Id);
+        var task = new TaskEntry("Same Name", goalDate, list.Id);
         list.Tasks.Add(task);
         context.TodoLists.Add(list);
         await context.SaveChangesAsync();
@@ -465,8 +465,8 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
         var user = await CreateTestUserAsync(context);
 
         var list = new TodoList(user.Id, "Collision List");
-        var task1 = new TaskEntry("Task One", DateTimeOffset.UtcNow.AddDays(1), Guid.CreateVersion7(), list.Id);
-        var task2 = new TaskEntry("Task Two", DateTimeOffset.UtcNow.AddDays(2), Guid.CreateVersion7(), list.Id);
+        var task1 = new TaskEntry("Task One", DateTimeOffset.UtcNow.AddDays(1), list.Id);
+        var task2 = new TaskEntry("Task Two", DateTimeOffset.UtcNow.AddDays(2), list.Id);
         list.Tasks.AddRange([task1, task2]);
         context.TodoLists.Add(list);
         await context.SaveChangesAsync();
@@ -500,7 +500,7 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
         var user = await CreateTestUserAsync(context);
 
         var list = new TodoList(user.Id, "Stale Update Task List");
-        var task = new TaskEntry("Task 1", DateTimeOffset.UtcNow.AddDays(1), Guid.CreateVersion7(), list.Id);
+        var task = new TaskEntry("Task 1", DateTimeOffset.UtcNow.AddDays(1), list.Id);
         list.Tasks.Add(task);
         context.TodoLists.Add(list);
         await context.SaveChangesAsync();
@@ -544,7 +544,7 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
         var user = await CreateTestUserAsync(context);
 
         var list = new TodoList(user.Id, "Delete Task List");
-        var task = new TaskEntry("Task to Delete", DateTimeOffset.UtcNow.AddDays(1), Guid.CreateVersion7(), list.Id);
+        var task = new TaskEntry("Task to Delete", DateTimeOffset.UtcNow.AddDays(1), list.Id);
         list.Tasks.Add(task);
         context.TodoLists.Add(list);
         await context.SaveChangesAsync();
@@ -582,7 +582,7 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
         var user = await CreateTestUserAsync(context);
 
         var list = new TodoList(user.Id, "Stale Delete List");
-        var task = new TaskEntry("Task 1", DateTimeOffset.UtcNow.AddDays(1), Guid.CreateVersion7(), list.Id);
+        var task = new TaskEntry("Task 1", DateTimeOffset.UtcNow.AddDays(1), list.Id);
         list.Tasks.Add(task);
         context.TodoLists.Add(list);
         await context.SaveChangesAsync();

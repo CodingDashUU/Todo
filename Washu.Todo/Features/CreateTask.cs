@@ -28,7 +28,7 @@ public sealed class CreateTaskHandler(
             return Message.Error("Task Creation Error", 
                 "A single todo list cannot exceed 1000 tasks. Please either delete any existing task or create a new todo list");
         dbContext.SetRowVersion(list, command.ListRowVersion);
-        dbContext.Tasks.Add(new TaskEntry(command.TaskName, command.GoalDate, Guid.CreateVersion7(), list.Id));
+        dbContext.Tasks.Add(new TaskEntry(command.TaskName, command.GoalDate, list.Id));
         dbContext.TodoLists.Update(list);
         try
         {

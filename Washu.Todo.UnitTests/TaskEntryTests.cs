@@ -7,7 +7,7 @@ public class TaskEntryTests
     [Fact]
     public void Toggle_WhenIncomplete_MarksCompletedAndSetsDateCompleted()
     {
-        var task = new TaskEntry("Task 1", DateTimeOffset.UtcNow.AddDays(1), Guid.CreateVersion7(), Guid.CreateVersion7());
+        var task = new TaskEntry("Task 1", DateTimeOffset.UtcNow.AddDays(1), Guid.CreateVersion7());
 
         task.Toggle();
 
@@ -19,7 +19,7 @@ public class TaskEntryTests
     [Fact]
     public void Toggle_WhenCompleted_MarksIncompleteAndClearsDateCompleted()
     {
-        var task = new TaskEntry("Task 1", DateTimeOffset.UtcNow.AddDays(1), Guid.CreateVersion7(), Guid.CreateVersion7());
+        var task = new TaskEntry("Task 1", DateTimeOffset.UtcNow.AddDays(1), Guid.CreateVersion7());
         task.Toggle();
         task.IsCompleted.Should().BeTrue();
 
@@ -33,7 +33,7 @@ public class TaskEntryTests
     public void ChangeGoalDate_WithDifferentDate_UpdatesGoalDateAndResetsCompletion()
     {
         var initialGoalDate = DateTimeOffset.UtcNow.AddDays(1);
-        var task = new TaskEntry("Task 1", initialGoalDate, Guid.CreateVersion7(), Guid.CreateVersion7());
+        var task = new TaskEntry("Task 1", initialGoalDate, Guid.CreateVersion7());
         task.Toggle();
         task.IsCompleted.Should().BeTrue();
         task.DateCompleted.Should().NotBeNull();
@@ -50,7 +50,7 @@ public class TaskEntryTests
     public void ChangeGoalDate_WithSameDate_DoesNotResetTask()
     {
         var goalDate = DateTimeOffset.UtcNow.AddDays(1);
-        var task = new TaskEntry("Task 1", goalDate, Guid.CreateVersion7(), Guid.CreateVersion7());
+        var task = new TaskEntry("Task 1", goalDate, Guid.CreateVersion7());
         task.Toggle();
         var completedDate = task.DateCompleted;
 

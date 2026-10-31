@@ -24,9 +24,9 @@ public class QueryableExtensionsTests
         var targetListId = Guid.CreateVersion7();
         var otherListId = Guid.CreateVersion7();
 
-        var task1 = new TaskEntry("Task 1", DateTimeOffset.UtcNow.AddDays(1), Guid.CreateVersion7(), targetListId);
-        var task2 = new TaskEntry("Task 2", DateTimeOffset.UtcNow.AddDays(1), Guid.CreateVersion7(), otherListId);
-        var task3 = new TaskEntry("Task 3", DateTimeOffset.UtcNow.AddDays(2), Guid.CreateVersion7(), targetListId);
+        var task1 = new TaskEntry("Task 1", DateTimeOffset.UtcNow.AddDays(1), targetListId);
+        var task2 = new TaskEntry("Task 2", DateTimeOffset.UtcNow.AddDays(1), otherListId);
+        var task3 = new TaskEntry("Task 3", DateTimeOffset.UtcNow.AddDays(2), targetListId);
 
         var query = new List<TaskEntry> { task1, task2, task3 }.AsQueryable();
 
@@ -39,12 +39,11 @@ public class QueryableExtensionsTests
     [Fact]
     public void ByTask_FiltersTasksById()
     {
-        var targetTaskId = Guid.CreateVersion7();
-        var otherTaskId = Guid.CreateVersion7();
         var listId = Guid.CreateVersion7();
 
-        var task1 = new TaskEntry("Task 1", DateTimeOffset.UtcNow.AddDays(1), targetTaskId, listId);
-        var task2 = new TaskEntry("Task 2", DateTimeOffset.UtcNow.AddDays(1), otherTaskId, listId);
+        var task1 = new TaskEntry("Task 1", DateTimeOffset.UtcNow.AddDays(1), listId);
+        var task2 = new TaskEntry("Task 2", DateTimeOffset.UtcNow.AddDays(1), listId);
+        var targetTaskId = task1.Id;
 
         var query = new List<TaskEntry> { task1, task2 }.AsQueryable();
 
