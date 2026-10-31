@@ -42,6 +42,7 @@ public static class AuthenticationBuilderExtensions
             options.ExpireTimeSpan = TimeSpan.FromDays(14);
             options.SlidingExpiration = true;
             options.LoginPath = ApplicationRoutes.SignIn;
+            options.AccessDeniedPath = ApplicationRoutes.AccessDenied;
             options.Cookie.Name = ".Washu.Application";
             options.Events.OnSigningIn = async context =>
             {
@@ -106,6 +107,13 @@ public static class AuthenticationBuilderExtensions
                     await context.HttpContext.SignOutAsync(
                         IdentityConstants.ApplicationScheme);
                 }
+            };
+            options.Events.OnRedirectToAccessDenied = context =>
+            {
+                context.RedirectUri = options.AccessDeniedPath; // no returnUrl query
+
+                context.Response.Redirect(context.RedirectUri);
+                return Task.CompletedTask;
             };
             options.Events.OnRedirectToLogin = context =>
             {

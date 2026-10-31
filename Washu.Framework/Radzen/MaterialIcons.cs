@@ -23,4 +23,5 @@ public static class MaterialIcons
     public const string DeadSadFace = "sentiment_very_dissatisfied";
     public const string Refresh = "refresh";
     public const string Edit = "edit";
+    public const string PersonOff = "person_off";
 }

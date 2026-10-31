@@ -1,0 +1,21 @@
+@attribute [Route(ApplicationRoutes.AccessDenied)]
+@inject NavigationManager NavManager
+<PageTitle>Access Denied</PageTitle>
+
+<RadzenCard class="rz-my-12 rz-mx-auto rz-p-8" style="max-width: 450px;">
+    <RadzenStack AlignItems="AlignItems.Center" Gap="1.5rem" class="rz-text-align-center">
+        <RadzenIcon Icon="@MaterialIcons.PersonOff" Style="font-size: 3rem; color: var(--rz-danger);" />
+        
+        <RadzenStack Gap="0.5rem">
+            <RadzenText TextStyle="TextStyle.DisplayH4">Access Denied</RadzenText>
+            <RadzenText TextStyle="TextStyle.Body1">
+                You are not permitted to enter that page
+            </RadzenText>
+        </RadzenStack>
+
+        <RadzenButton Text="Go back" 
+                      Icon="@MaterialIcons.ArrowBack" 
+                      ButtonStyle="ButtonStyle.Light" 
+                      Click="@(() => NavManager.NavigateTo(ApplicationRoutes.Home))" />
+    </RadzenStack>
+</RadzenCard>

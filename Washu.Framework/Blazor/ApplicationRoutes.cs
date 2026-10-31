@@ -7,5 +7,6 @@ public static class ApplicationRoutes
     public const string NotFound = "/not-found";
     public const string SignIn = "/sign-in";
     public const string ManageAccount = "/manage-account";
+    public const string AccessDenied = "/access-denied";
 }
     

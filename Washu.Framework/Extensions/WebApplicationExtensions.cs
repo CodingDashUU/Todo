@@ -68,13 +68,14 @@ public static class WebApplicationExtensions
             var dbContext = scope.ServiceProvider.GetRequiredService<TDbContext>();
             await dbContext.Database.MigrateAsync();
         }
+
         internal void MapWfHealthChecks() =>
             app.MapHealthChecks("/health-wf", new HealthCheckOptions
             {
                 ResponseWriter = async (context, report) =>
                 {
                     context.Response.ContentType = "application/json";
-        
+
                     var json = new
                     {
                         status = report.Status.ToString(),
@@ -89,13 +90,7 @@ public static class WebApplicationExtensions
 
                     await context.Response.WriteAsJsonAsync(json);
                 }
-            }).AddEndpointFilter(async (context, next) =>
-            {
-                var handler = context.HttpContext.RequestServices.GetRequiredService<HasPermissionHandler>();
-                if (!await handler.HandleAsync(new HasPermissionQuery(CorePermissions.CanCheckSystemHealth)))
-                    return TypedResults.NotFound();
-                return await next(context);
-            });
+            }).RequirePermission(CorePermissions.CanCheckSystemHealth);
 
         internal void MapSignOutEndpoints()
         {
