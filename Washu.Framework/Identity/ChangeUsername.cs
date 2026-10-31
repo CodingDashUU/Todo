@@ -20,11 +20,6 @@ public sealed class ChangeUsernameHandler(IDbContextFactory<ApplicationDbContext
             return ChangeUsernameResult.AccountNotFound;
         }
         dbContext.SetRowVersion(user, command.UserRowVersion);
-        if (await dbContext.Users.AnyAsync(u => u.Username == command.NewName && u.Id != command.UserId, ct))
-        {
-            logger.LogError("User with id {UserId} tried to change username, but it was already taken", command.UserId);
-            return ChangeUsernameResult.UsernameTaken;
-        }
         user.Username = command.NewName;
         
         try
