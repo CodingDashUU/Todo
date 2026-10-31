@@ -56,6 +56,7 @@ public class ApplicationDbContext(DbContextOptions options)
                 t.HasEmailCheckConstraint(p => p.Email);
                 t.HasDateLessThanOrEqualToNullableDateCheckConstraint(u => u.CreationDate, u => u.LastModifiedDate);
                 t.HasDateLessThanOrEqualToNullableDateCheckConstraint(u => u.CreationDate, u => u.LastSignedInDate);
+                t.HasDateLessThanOrEqualToNullableDateCheckConstraint(u => u.CreationDate, u => u.LastSignedOutDate);
             });
             entity.Property(u => u.RowVersion).IsRowVersion();
         });

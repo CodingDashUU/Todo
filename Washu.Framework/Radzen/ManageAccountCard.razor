@@ -123,6 +123,26 @@
                         }
                     </RadzenColumn>
                 </RadzenRow>
+                <div style="height: 3px"/>
+                <RadzenRow AlignItems="AlignItems.Center">
+                    <RadzenColumn Size="12">
+                        <RadzenText TextStyle="TextStyle.Caption" class="rz-color-secondary rz-mb-0">
+                            Last Signed Out
+                        </RadzenText>
+                        @if (LastSignedOutDate.HasValue)
+                        {
+                            <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0 rz-font-weight-bold">
+                                @(LastSignedOutDate.Value.ToString("F")) (@LastSignedOutDate.Value.Humanize())
+                            </RadzenText>
+                        }
+                        else
+                        {
+                            <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0 rz-font-weight-bold">
+                                Never
+                            </RadzenText>
+                        }
+                    </RadzenColumn>
+                </RadzenRow>
             </RadzenStack>
             <!-- Divider using Radzen CSS utility -->
             <hr class="rz-my-0 rz-border-top rz-border-base-300" />
@@ -164,6 +184,7 @@
     private DateTimeOffset CreationDate => User.CreationDate.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
     private DateTimeOffset? LastModifiedDate => User.LastModifiedDate?.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
     private DateTimeOffset? LastSignedInDate => User.LastSignedInDate?.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
+    private DateTimeOffset? LastSignedOutDate => User.LastSignedOutDate?.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
     private static readonly ConfirmOptions ConfirmAccountDeletionOptions = new()
     {
         Icon = MaterialIcons.Delete,
@@ -238,6 +259,7 @@
             CreationDate = user.CreationDate,
             LastModifiedDate = user.LastModifiedDate,
             LastSignedInDate = user.LastSignedInDate,
+            LastSignedOutDate = user.LastSignedOutDate,
             RowVersion = user.RowVersion
         };
     }
@@ -282,6 +304,7 @@
         public DateTimeOffset CreationDate { get; set; } = DateTimeOffset.UtcNow;
         public DateTimeOffset? LastModifiedDate { get; set; } = DateTimeOffset.UtcNow;
         public DateTimeOffset? LastSignedInDate { get; set; } = DateTimeOffset.UtcNow;
+        public DateTimeOffset? LastSignedOutDate { get; set; } = DateTimeOffset.UtcNow;
         public uint RowVersion { get; set; }
     }
 

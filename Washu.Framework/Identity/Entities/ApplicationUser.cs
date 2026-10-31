@@ -16,4 +16,5 @@ public sealed class ApplicationUser(string userName, string email, string google
     public DateTimeOffset CreationDate { get; private init; }
     public DateTimeOffset? LastModifiedDate { get; private init; }
     public DateTimeOffset? LastSignedInDate { get; private init; }
+    public DateTimeOffset? LastSignedOutDate { get; private init; }
 }

@@ -85,6 +85,43 @@ public static class AuthenticationBuilderExtensions
                     .GetRequiredService<ApplicationUserStore>();
                 await userStore.RemoveUserAsync(userId.Value);
             };
+            options.Events.OnSigningOut = async context =>
+            {
+                var logger = context.HttpContext.RequestServices
+                    .GetRequiredService<ILogger<OnSigningIn>>();
+                var userId = context.HttpContext.User.UserId;
+                if (!userId.HasValue)
+                {
+                    logger.LogError(
+                        "No userId found in ClaimsPrincipal for connection {Id}",
+                        context.HttpContext.Connection.Id);
+                    return;
+                }
+                await using var dbContext = await context.HttpContext.RequestServices
+                    .GetRequiredService<IDbContextFactory<ApplicationDbContext>>()
+                    .CreateDbContextAsync();
+                var rowsChanged = await dbContext.Users
+                    .Where(u => u.Id == userId)
+                    .ExecuteUpdateAsync(
+                        s => 
+                            s.SetProperty(u => u.LastSignedOutDate, DateTimeOffset.UtcNow)
+                            );
+                if (rowsChanged != 1)
+                {
+                    await context.HttpContext.SignOutAsync(
+                        IdentityConstants.ApplicationScheme);
+                    logger.LogError(
+                        "Could not update 'LastSignedOutDate' for user with id {UserId}. Rows changed: {RowsChanged}",
+                        userId, rowsChanged);
+                }
+
+                else if (logger.IsEnabled(LogLevel.Information)) 
+                    logger.LogInformation("Updated 'LastSignOutDate' for user with id {UserId}", userId);
+
+                var userStore = context.HttpContext.RequestServices
+                    .GetRequiredService<ApplicationUserStore>();
+                await userStore.RemoveUserAsync(userId.Value);
+            };
             options.Events.OnValidatePrincipal = async context =>
             {
                 var userId = context.Principal?.UserId;

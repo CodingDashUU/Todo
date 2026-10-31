@@ -30,6 +30,7 @@ public sealed class ApplicationUserTests(ApplicationPostgreSqlFixture fixture)
         retrieved.Email.Should().Be(email, "The email of the user received should match the email of the user created");
         retrieved.GoogleSubject.Should().Be(googleSubject,  "The googleSubject of the user received should match the googleSubject of the user created");
         retrieved.LastSignedInDate.Should().BeNull();
+        retrieved.LastSignedOutDate.Should().BeNull();
     }
     [Fact]
     public async Task CitextUniqueConstraint_RejectsInsensitiveDuplicateEmail()
@@ -253,6 +254,30 @@ public sealed class ApplicationUserTests(ApplicationPostgreSqlFixture fixture)
             (await saveAction.Should().ThrowAsync<PostgresException>("The action must throw this specific exception because we updated the property directly instead of calling SaveChangesAsync"))
                 .And
                 .SqlState.Should().Be(PostgresErrorCodes.CheckViolation, "the LastSignedInDate is 1 day less than the CreationDate");
+        }
+    }
+    [Fact]
+    public async Task CreationDateLTELastSignedOutDateCheckConstraint_RejectLastSignedOutDateLessThanCreationDate()
+    {
+        var factory = fixture.CreateDbContextFactory();
+        var username = $"User_{Guid.CreateVersion7():N}";
+        await using (var context = await factory.CreateDbContextAsync())
+        {
+            var user = new ApplicationUser(
+                username,
+                $"{Guid.CreateVersion7():N}@example.com",
+                $"{Guid.CreateVersion7():N}");
+
+            context.Users.Add(user);
+            await context.SaveChangesAsync();
+        }
+        await using (var context = await factory.CreateDbContextAsync())
+        {
+            var saveAction = async () => await context.Users
+                .Where(u => u.Username == username).ExecuteUpdateAsync(s => s.SetProperty(u => u.LastSignedOutDate, DateTimeOffset.UtcNow.AddDays(-1)));
+            (await saveAction.Should().ThrowAsync<PostgresException>("The action must throw this specific exception because we updated the property directly instead of calling SaveChangesAsync"))
+                .And
+                .SqlState.Should().Be(PostgresErrorCodes.CheckViolation, "the LastSignedOutDate is 1 day less than the CreationDate");
         }
     }
 }
