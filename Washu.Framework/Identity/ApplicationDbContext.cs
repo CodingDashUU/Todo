@@ -51,7 +51,7 @@ public class ApplicationDbContext(DbContextOptions options)
             {
                 t.HasMaxLengthCheckConstraint(p => p.Username, 128);
                 t.HasAllowedCharactersCheckConstraint(p => p.Username, UsernameRules.ValidCharacters);
-                t.HasAllowedFirstCharacterCheckConstraint(p => p.Username, Characters.Letters);
+                t.HasAllowedFirstCharacterCheckConstraint(p => p.Username, CharacterSet.Letters);
                 t.HasMaxLengthCheckConstraint(p => p.Email, 255);
                 t.HasEmailCheckConstraint(p => p.Email);
                 t.HasDateLessThanOrEqualToNullableDateCheckConstraint(u => u.CreationDate, u => u.LastModifiedDate);

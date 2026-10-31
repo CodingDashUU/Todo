@@ -8,7 +8,7 @@ public static class UsernameRules
     public const byte MinUsernameLength = 3;
     public const byte MaxUsernameLength = 50;
     
-    public const string ValidCharacters = $"{Characters.Alphanumeric}_-";
+    public const string ValidCharacters = $"{CharacterSet.Alphanumeric}_-";
 }
 public sealed class UsernameValidator : AbstractValidator<string>
 {
