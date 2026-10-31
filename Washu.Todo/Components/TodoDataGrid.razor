@@ -9,7 +9,6 @@
 @using Washu.Todo.Identity
 @inject UserTimeZoneProvider TimeZoneProvider
 @inject IDbContextFactory<TodoDbContext> DbContextFactory
-@inject MessageStore Store
 @inject AuthenticationStateProvider Provider
 @inject NavigationManager NavManager
 @inject CreateListHandler CreateListHandler
@@ -210,6 +209,7 @@
     private Task? _initTask;
     private Guid _userId;
     private bool IsNoListSelected => _selectedList.Id == TodoList.None.Id;
+
     private static readonly ConfirmOptions ConfirmDeleteOptions = new()
     {
         Icon = MaterialIcons.Delete,
@@ -217,6 +217,7 @@
         OkButtonText = "Yes",
         CancelButtonText = "No" 
     };
+
     DateTimeOffset? DateCreatedFilterValue
     {
         get;
@@ -232,30 +233,35 @@
         get;
         set => field = value?.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
     }
+
     private void ToggleEditing() => _isEditing = !_isEditing;
+
     private async Task OnToggleTaskAsync(TaskEntry entry)
     {
         var command = new ToggleTaskCommand(entry.Id, _selectedList.Id, _selectedList.RowVersion);
         var message = await ToggleTaskHandler.HandleAsync(command);
         if (message.Type is not MessageType.Success)
             NotificationService.Show(message, duration: RadzenNotificationConstants.ShortDuration);
-
-        await RefreshCurrentListAsync();
+        
+        await RefreshStateAsync(_selectedList.Id);
     }
+
     private async Task OnDeleteTaskAsync(TaskEntry entry)
     {
         var confirmData = await DialogService.Confirm(
             $"Are you sure you want to delete '{entry.Name}'? You cannot undo this action!", 
             "Confirm Task Deletion", 
             options: ConfirmDeleteOptions);
-        if (!confirmData.HasValue || !confirmData.Value) return;
+            
+        if (confirmData != true) return;
 
         var command = new DeleteTaskCommand(entry.Id, _selectedList.Id, _selectedList.RowVersion);
         var message = await DeleteTaskHandler.HandleAsync(command);
         NotificationService.Show(message);
         
-        await RefreshCurrentListAsync();
+        await RefreshStateAsync(_selectedList.Id);
     }
+
     private async Task OnEditTaskAsync(TaskEntry entry)
     {
         var parameters = new Dictionary<string, object?>(3)
@@ -270,13 +276,15 @@
         var message = await UpdateTaskHandler.HandleAsync(command);
         NotificationService.Show(message);
 
-        await RefreshCurrentListAsync();
+        await RefreshStateAsync(_selectedList.Id);
     }
+
     private static readonly LoadDataArgs DefaultListsLoadDataArgs = new()
     {
         Skip = 0,
         Top = 5
     };
+
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
@@ -292,19 +300,21 @@
         _userId = user.Id;
         _initTask = LoadListsAsync(DefaultListsLoadDataArgs);
     }
+
     private async Task DeleteListAsync()
     {
         var confirmData = await DialogService.Confirm(
             $"Are you sure you want to delete '{_selectedList.Name}'?", 
             "Confirm List Deletion", 
             options: ConfirmDeleteOptions);
-        if (!confirmData.HasValue || !confirmData.Value) return;
+            
+        if (confirmData != true) return;
 
         var command = new DeleteListCommand(_selectedList.Id);
         var message = await DeleteListHandler.HandleAsync(command);
         NotificationService.Show(message);
 
-        await RefreshCurrentListAsync();
+        await RefreshStateAsync();
     }
 
     private async Task CreateListAsync()
@@ -315,8 +325,9 @@
         var message = await CreateListHandler.HandleAsync(command);
         NotificationService.Show(message);
 
-        await RefreshCurrentListAsync();
+        await RefreshStateAsync(); 
     }
+
     private async Task CreateTaskAsync()
     {
         var parameters = new Dictionary<string, object?>(2)
@@ -330,14 +341,17 @@
         var message = await CreateTaskHandler.HandleAsync(command);
         NotificationService.Show(message);
 
-        await RefreshCurrentListAsync();
+        await RefreshStateAsync(_selectedList.Id);
     }
-    private async Task RefreshCurrentListAsync()
+    
+    private async Task RefreshStateAsync(Guid? preferredListId = null)
     {
         await LoadListsAsync(DefaultListsLoadDataArgs);
-        _selectedList = _lists.FirstOrDefault() ?? TodoList.None;
+        
+        var listIdToSelect = preferredListId ?? _selectedList.Id;
+        _selectedList = _lists.FirstOrDefault(l => l.Id == listIdToSelect) ?? _lists.FirstOrDefault() ?? TodoList.None;
+        
         await _grid.Reload();
-        await InvokeAsync(StateHasChanged);
     }
 
     private async Task UpdateListAsync()
@@ -352,19 +366,21 @@
         var message = await UpdateListHandler.HandleAsync(command);
         NotificationService.Show(message);
 
-        await RefreshCurrentListAsync();
+        await RefreshStateAsync(_selectedList.Id);
     }
 
     static bool IsNullOrEmpty(FilterOperator? value)
     {
         return value is FilterOperator.IsEmpty or FilterOperator.IsNotEmpty or FilterOperator.IsNull or FilterOperator.IsNotNull;
     }
+
     void OnListSelected(TodoList newList)
     {
         _selectedList = newList;
         StateHasChanged();
         _grid.FirstPage(forceReload: true);
     }
+
     void OnFilter(DataGridColumnFilterEventArgs<TaskEntry> args)
     {
         if (IsNullOrEmpty(args.Column?.GetFilterOperator()))
@@ -372,6 +388,7 @@
             OnFilterCleared(args);
         }
     }
+
     private void OnFilterCleared(DataGridColumnFilterEventArgs<TaskEntry> args)
     {
         switch (args.Column?.Property)
@@ -388,6 +405,7 @@
         }
         _grid.Reload();
     }
+
     private async Task LoadListsAsync(LoadDataArgs args)
     {
         try
@@ -413,11 +431,14 @@
             {
                 query = query.OrderBy(args.OrderBy);
             }
+            
             _listsCount = await query.CountAsync();
+            
             if (args.Skip is not null)
             {
                 query = query.Skip(args.Skip.Value);
             }
+            
             if (args.Top is not null)
             {
                 query = query.Take(args.Top.Value);
@@ -427,12 +448,14 @@
             {
                 _lists = [TodoList.None];
             }
-
-            _lists = await query.ToListAsync();
+            else
+            {
+                _lists = await query.ToListAsync();
+            }
         }
         catch (Exception)
         {
-            _lists = [];
+            _lists = [TodoList.None];
             _listsCount = 0;
         }
         finally
@@ -441,6 +464,7 @@
             await InvokeAsync(StateHasChanged); 
         }
     }
+
     async Task LoadData(LoadDataArgs args)
     {
         try
@@ -454,10 +478,12 @@
                 _initTask = null;
                 _selectedList = _lists.FirstOrDefault() ?? TodoList.None;
             }
+            
             if (_selectedList.Id == TodoList.None.Id)
             {
                 _tasks = [];
                 _count = 0;
+                _completedTasks = 0;
                 return;
             }
 
@@ -479,15 +505,19 @@
             }
 
             _count = await query.CountAsync();
-            _completedTasks = await query.CountAsync(t => t.IsCompleted);
+            
+            _completedTasks = _count > 0 ? await query.CountAsync(t => t.IsCompleted) : 0;
+
             if (args.Skip is not null)
             {
                 query = query.Skip(args.Skip.Value);
             }
+            
             if (args.Top is not null)
             {
                 query = query.Take(args.Top.Value);
             }
+            
             _tasks = await query.ToListAsync();
 
             if (_tasks.IsNotEmpty && _selectedTasks.IsEmpty)
@@ -499,6 +529,7 @@
         {
             _tasks = [];
             _count = 0;
+            _completedTasks = 0;
         }
         finally
         {
@@ -506,5 +537,6 @@
             await InvokeAsync(StateHasChanged); 
         }
     }
+
     private void Redirect() => NavManager.NavigateTo($"{ApplicationRoutes.SignIn}?returnUrl={ApplicationRoutes.Home}", forceLoad: true);
 }
