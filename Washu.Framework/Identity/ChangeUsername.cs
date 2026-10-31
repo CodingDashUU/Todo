@@ -36,7 +36,8 @@ public sealed class ChangeUsernameHandler(IDbContextFactory<ApplicationDbContext
             logger.LogError(ex, "User with id {UserId} tried to change username, but it was already taken", command.UserId);
             return ChangeUsernameResult.UsernameTaken;
         }
-        logger.LogInformation("User with id {UserId} changed username", command.UserId);
+        if (logger.IsEnabled(LogLevel.Information))
+            logger.LogInformation("User with id {UserId} changed username", command.UserId);
         return ChangeUsernameResult.Success;
     }
 }

@@ -105,10 +105,13 @@ public static class WebApplicationExtensions
                     if (!userId.HasValue)
                         logger.LogWarning("There is no UserId claim for connection {ConnectionId}", context.Connection.Id);
                     await context.SignOutAsync(IdentityConstants.ApplicationScheme);
-                    if (userId.HasValue)
-                        logger.LogInformation("User with id {UserId} signed out", userId);
-                    else logger.LogInformation("User with connection {ConnectionId} signed out",
-                        context.Connection.Id);
+                    if (logger.IsEnabled(LogLevel.Information))
+                    {
+                        if (userId.HasValue)
+                            logger.LogInformation("User with id {UserId} signed out", userId);
+                        else logger.LogInformation("User with connection {ConnectionId} signed out",
+                            context.Connection.Id);   
+                    }
                     var targetUrl = string.IsNullOrWhiteSpace(messageId)
                         ? ApplicationRoutes.SignIn
                         : $"{ApplicationRoutes.SignIn}?messageId={messageId}";
@@ -127,16 +130,19 @@ public static class WebApplicationExtensions
                             .ExecuteUpdateAsync(s =>
                                 s.SetProperty(u => u.SecurityStamp, Guid.CreateVersion7())
                             );
-                        if (rowsChanged == 1)
+                        if (rowsChanged == 1 && logger.IsEnabled(LogLevel.Information))
                             logger.LogInformation("Changed security stamp for user with id {UserId}", userId);
                         await userStore.RemoveUserAsync(userId.Value);
                     }
                     else logger.LogWarning("There is no UserId claim for connection {ConnectionId}", context.Connection.Id);
                     await context.SignOutAsync(IdentityConstants.ApplicationScheme);
-                    if (userId.HasValue)
-                        logger.LogInformation("User with id {UserId} signed out from all sessions", userId);
-                    else logger.LogInformation("User with connection {ConnectionId} signed out",
-                        context.Connection.Id);
+                    if (logger.IsEnabled(LogLevel.Information))
+                    {
+                        if (userId.HasValue)
+                            logger.LogInformation("User with id {UserId} signed out from all sessions", userId);
+                        else logger.LogInformation("User with connection {ConnectionId} signed out",
+                            context.Connection.Id);   
+                    }
                     var targetUrl = string.IsNullOrWhiteSpace(messageId)
                         ? ApplicationRoutes.SignIn
                         : $"{ApplicationRoutes.SignIn}?messageId={messageId}";

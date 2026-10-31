@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 public sealed record AddRolesCommand(List<string> RoleNames);
 
-public sealed partial class AddRolesHandler(IDbContextFactory<ApplicationDbContext> dbFactory, ILogger<AddRolesHandler> logger)
+public sealed class AddRolesHandler(IDbContextFactory<ApplicationDbContext> dbFactory, ILogger<AddRolesHandler> logger)
 {
     public async Task HandleAsync(AddRolesCommand command, CancellationToken ct = default)
     {
@@ -35,13 +35,9 @@ public sealed partial class AddRolesHandler(IDbContextFactory<ApplicationDbConte
         {
             db.Roles.AddRange(newRoles);
             await db.SaveChangesAsync(ct);
-            LogAddedRoles(logger, newRoles.Select(r => r.Name));   
+            if (logger.IsEnabled(LogLevel.Information))
+                logger.LogInformation("Added roles: {@Roles}", newRoles.Select(r => r.Name));   
         }
         
     }
-    [LoggerMessage(
-        EventId = 0, 
-        Level = LogLevel.Information, 
-        Message = "Added roles: {@Roles}")]
-    static partial void LogAddedRoles(ILogger logger, IEnumerable<string> roles);
 }

@@ -75,7 +75,7 @@ public static class AuthenticationBuilderExtensions
                         userId, rowsChanged);
                 }
 
-                else
+                else if (logger.IsEnabled(LogLevel.Information))
                 {
                     logger.LogInformation("Updated 'LastSignInDate' for user with id {UserId}", userId);
                     logger.LogInformation("User with id {UserId} signing in", userId);
