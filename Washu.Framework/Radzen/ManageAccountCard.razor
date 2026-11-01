@@ -58,12 +58,22 @@
                 <!-- Username Box -->
                 <RadzenColumn Size="12" SizeMD="6">
                     <RadzenCard Variant="Variant.Outlined" class="rz-p-4 rz-border-radius-2" Style="border: 1px solid var(--rz-primary-light); background-color: var(--rz-primary-lighter); height: 100%;">
-                        <RadzenText TextStyle="TextStyle.Caption" class="rz-color-primary rz-mb-1 rz-display-block rz-font-weight-semibold">
-                            Username
-                        </RadzenText>
-                        <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0 rz-font-weight-bold">
-                            @User.Username
-                        </RadzenText>
+                        <RadzenStack Gap="1rem" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                            <RadzenStack Gap="0px">
+                                <RadzenText TextStyle="TextStyle.Caption" class="rz-color-primary rz-mb-1 rz-display-block rz-font-weight-semibold">
+                                    Username
+                                </RadzenText>
+                                <RadzenText  TextStyle="TextStyle.Body1" class="rz-mb-0 rz-font-weight-bold">
+                                    @User.Username
+                                </RadzenText>
+                            </RadzenStack>
+                            <RadzenButton Icon="@MaterialIcons.Edit"
+                                          ButtonStyle="ButtonStyle.Primary"
+                                          Variant="Variant.Text"
+                                          Size="ButtonSize.Large"
+                                          Click="@OnChangeUsernameAsync"/>
+                        </RadzenStack>
+                        
                     </RadzenCard>
                 </RadzenColumn>
 
@@ -184,12 +194,6 @@
         <RadzenText TextStyle="TextStyle.Subtitle2" class="rz-color-primary">
             Account Action
         </RadzenText>
-        <RadzenButton Icon="@MaterialIcons.Update" 
-                      Text="Change Username" 
-                      ButtonStyle="ButtonStyle.Primary" 
-                      Variant="Variant.Flat" 
-                      Size="ButtonSize.Small" 
-                      Click="@OnChangeUsernameAsync" />
         <!-- Danger Zone -->
         <RadzenCard Variant="Variant.Filled" 
                     class=" rz-background-color-danger-lighter rz-border-radius-2" 
