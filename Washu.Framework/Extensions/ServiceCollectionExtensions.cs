@@ -17,6 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Notifications;
 using System.Threading.RateLimiting;
+using ZiggyCreatures.Caching.Fusion;
 
 public static class ServiceCollectionExtensions
 {
@@ -49,7 +50,17 @@ public static class ServiceCollectionExtensions
     public IServiceCollection AddFusionCaching()
     {
         services.AddMemoryCache();
-        services.AddFusionCache();
+        services.AddFusionCache().WithDefaultEntryOptions(new FusionCacheEntryOptions
+        {
+            Duration = TimeSpan.FromMinutes(5), 
+            IsFailSafeEnabled = true,
+            FailSafeMaxDuration = TimeSpan.FromHours(2),
+            FailSafeThrottleDuration = TimeSpan.FromSeconds(30),
+            FactorySoftTimeout = TimeSpan.FromMilliseconds(100), 
+            FactoryHardTimeout = TimeSpan.FromSeconds(2), 
+            EagerRefreshThreshold = 0.9f, 
+            JitterMaxDuration = TimeSpan.FromSeconds(2)
+        });
         return services;
     }
     public IServiceCollection AddAppAuthenticationStateProvider() =>
