@@ -6,5 +6,5 @@ public static class IdentityRoutes
     public const string SignOut = $"{Base}/sign-out";
     public const string SignOutFromAllSessions = $"{Base}/sign-out-from-all-sessions";
     public const string ChallengeGoogle = $"{Base}/google";
-    public const string ExternalCallback = $"{Base}/external/callback";
+    public const string GoogleExternalCallback = $"{Base}/google/callback";
 }

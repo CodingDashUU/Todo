@@ -272,7 +272,7 @@ public sealed class ExternalEndpointsTests(ApplicationPostgreSqlFixture fixture)
     [Fact]
     public async Task ExternalCallback_WithoutExternalCookie_RedirectsToSignIn()
     {
-        var response = await _client.GetAsync($"{IdentityRoutes.ExternalCallback}?persistCookie=true&returnUrl=%2Fdashboard");
+        var response = await _client.GetAsync($"{IdentityRoutes.GoogleExternalCallback}?persistCookie=true&returnUrl=%2Fdashboard");
 
         response.StatusCode.Should().Be(HttpStatusCode.Redirect, "callback without external cookie should return redirect");
         response.Headers.Location.Should().NotBeNull("the redirect must contain a Location header");
@@ -293,7 +293,7 @@ public sealed class ExternalEndpointsTests(ApplicationPostgreSqlFixture fixture)
         var extCookie = await SignInExternalAsync(subject, email);
 
         var request = new HttpRequestMessage(HttpMethod.Get,
-            $"{IdentityRoutes.ExternalCallback}?persistCookie=true&returnUrl=%2Fdashboard");
+            $"{IdentityRoutes.GoogleExternalCallback}?persistCookie=true&returnUrl=%2Fdashboard");
         request.Headers.Add("Cookie", extCookie);
 
         var response = await _client.SendAsync(request);
@@ -336,7 +336,7 @@ public sealed class ExternalEndpointsTests(ApplicationPostgreSqlFixture fixture)
         var extCookie = await SignInExternalAsync(subject, email);
 
         var request = new HttpRequestMessage(HttpMethod.Get,
-            $"{IdentityRoutes.ExternalCallback}?persistCookie=false&returnUrl=%2Ftodos");
+            $"{IdentityRoutes.GoogleExternalCallback}?persistCookie=false&returnUrl=%2Ftodos");
         request.Headers.Add("Cookie", extCookie);
 
         var response = await _client.SendAsync(request);
@@ -361,7 +361,7 @@ public sealed class ExternalEndpointsTests(ApplicationPostgreSqlFixture fixture)
         var extCookie = await SignInExternalAsync(subject, email: null);
 
         var request = new HttpRequestMessage(HttpMethod.Get,
-            $"{IdentityRoutes.ExternalCallback}?persistCookie=false&returnUrl=%2Ftodos");
+            $"{IdentityRoutes.GoogleExternalCallback}?persistCookie=false&returnUrl=%2Ftodos");
         request.Headers.Add("Cookie", extCookie);
 
         var response = await _client.SendAsync(request);
@@ -401,7 +401,7 @@ public sealed class ExternalEndpointsTests(ApplicationPostgreSqlFixture fixture)
         var extCookie = await SignInExternalAsync(secondSubject, commonEmail);
 
         var request = new HttpRequestMessage(HttpMethod.Get,
-            $"{IdentityRoutes.ExternalCallback}?persistCookie=false&returnUrl=%2Ftodos");
+            $"{IdentityRoutes.GoogleExternalCallback}?persistCookie=false&returnUrl=%2Ftodos");
         request.Headers.Add("Cookie", extCookie);
 
         var response = await _client.SendAsync(request);
@@ -447,7 +447,7 @@ public sealed class ExternalEndpointsTests(ApplicationPostgreSqlFixture fixture)
             var extCookie = await SignInExternalAsync(subject, email);
 
             var request = new HttpRequestMessage(HttpMethod.Get,
-                $"{IdentityRoutes.ExternalCallback}?persistCookie=false&returnUrl=%2Ftodos");
+                $"{IdentityRoutes.GoogleExternalCallback}?persistCookie=false&returnUrl=%2Ftodos");
             request.Headers.Add("Cookie", extCookie);
 
             var response = await _client.SendAsync(request);
@@ -486,7 +486,7 @@ public sealed class ExternalEndpointsTests(ApplicationPostgreSqlFixture fixture)
         var extCookie = await SignInExternalAsync(subject, email);
 
         var request = new HttpRequestMessage(HttpMethod.Get,
-            $"{IdentityRoutes.ExternalCallback}?persistCookie=false&returnUrl={Uri.EscapeDataString(unsafeUrl)}");
+            $"{IdentityRoutes.GoogleExternalCallback}?persistCookie=false&returnUrl={Uri.EscapeDataString(unsafeUrl)}");
         request.Headers.Add("Cookie", extCookie);
 
         var response = await _client.SendAsync(request);

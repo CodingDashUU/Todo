@@ -25,7 +25,7 @@ public static class ExternalEndpointsExtensions
             var group = app.MapGroup("")
                 .RequireRateLimiting(RateLimiterPolicy.StandardRateLimiter);
             group.MapGet(IdentityRoutes.ChallengeGoogle, ChallengeExternal);
-            group.MapGet(IdentityRoutes.ExternalCallback, ExternalCallback);
+            group.MapGet(IdentityRoutes.GoogleExternalCallback, ExternalCallback);
         }
     }
     private static async Task<IResult> ChallengeExternal(
@@ -39,7 +39,7 @@ public static class ExternalEndpointsExtensions
             && await dbContext.Users.AnyAsync(u => u.Id == userGuid))
             return TypedResults.Redirect(SafeReturnUrl(returnUrl));
         var callbackUrl = QueryHelpers.AddQueryString(
-            IdentityRoutes.ExternalCallback,
+            IdentityRoutes.GoogleExternalCallback,
             new Dictionary<string, string?>
             {
                 ["PersistCookie"] = persistCookie.ToString(),
