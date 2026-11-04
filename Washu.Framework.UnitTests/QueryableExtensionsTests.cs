@@ -1,6 +1,7 @@
 namespace Washu.Framework.UnitTests;
 
 using FluentAssertions;
+using Identity.Entities;
 using Washu.Framework.Extensions;
 using Washu.Framework.Identity;
 using Testing;
@@ -10,6 +11,7 @@ public class QueryableExtensionsTests
     private sealed class FakeOwnedItem : IOwnedByUser
     {
         public Guid UserId { get; init; }
+        public ApplicationUser User => null!;
         public string Title { get; set; } = string.Empty;
     }
 

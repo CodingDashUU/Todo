@@ -1,6 +1,6 @@
 namespace Washu.Framework.Identity.Entities;
 
-public sealed class UserRole
+public sealed class UserRole : IOwnedByUser
 {
     public Guid UserId { get; init; }
     public ApplicationUser User { get; private init; } = null!;

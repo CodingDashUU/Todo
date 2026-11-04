@@ -11,14 +11,16 @@ public sealed class DeleteUserHandler(IDbContextFactory<ApplicationDbContext> fa
     public async Task<DeleteUserResult> HandleAsync(DeleteUserCommand command, CancellationToken ct = default)
     {
         await using var dbContext = await factory.CreateDbContextAsync(ct);
-        var rowsDeleted = await dbContext.Users
+        var user = await dbContext.Users
             .Where(u => u.Id == command.UserId)
-            .ExecuteDeleteAsync(ct);
-        if (rowsDeleted == 0)
+            .FirstOrDefaultAsync(ct);
+        if (user is null)
         {
             logger.LogError("User with id {UserId} could not be deleted because it was not found", command.UserId);
             return DeleteUserResult.AccountNotFound;
         }
+        dbContext.Users.Remove(user);
+        await dbContext.SaveChangesAsync(ct);
         if (logger.IsEnabled(LogLevel.Information))
             logger.LogInformation("User with id {UserId} deleted successfully", command.UserId);
         return DeleteUserResult.Success;

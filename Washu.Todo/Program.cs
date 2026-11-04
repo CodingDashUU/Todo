@@ -14,6 +14,7 @@ builder.Services.AddHealthChecks().AddDbContextCheck<TodoDbContext>();
 builder.Services.AddWfRadzenBlazorServer();
 builder.Services.AddWfIdentityServices();
 builder.Services.AddFusionCaching();
+builder.Services.AddSingleton<IDeleteEntityTask, DeleteTodoListTask>();
 builder.Host.UseSerilog((context, config) => 
     config.ReadFrom.Configuration(context.Configuration));
 builder.Services.AddWfDbContextFactory<TodoDbContext>(builder.Configuration);

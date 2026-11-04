@@ -24,7 +24,7 @@ where TDbContext : ApplicationDbContext
     {
         var services = new ServiceCollection();
         services.AddDbContextFactory<TContext>(options =>
-            options.UseNpgsql(ConnectionString).AddInterceptors([new AuditableEntityInterceptor(), ..interceptors]));
+            options.UseNpgsql(ConnectionString).AddInterceptors([new AuditableEntityInterceptor(), new SoftDeletableEntityInterceptor(), ..interceptors]));
         return services.BuildServiceProvider().GetRequiredService<IDbContextFactory<TContext>>();
     }
 

@@ -4,7 +4,7 @@ using Framework.Identity;
 using Framework.Identity.Entities;
 using Identity;
 
-public class TodoList(Guid userId, string listName) : IOwnedByUser, IAuditableEntity
+public class TodoList(Guid userId, string listName) : IOwnedByUser, IAuditableEntity, ISoftDeletableEntity
 {
     public Guid Id { get; private init; } = Guid.CreateVersion7();
     public Guid UserId { get; init; } = userId;
@@ -22,4 +22,5 @@ public class TodoList(Guid userId, string listName) : IOwnedByUser, IAuditableEn
         Name = "None",
         Tasks = []
     };
+    public bool IsDeleted { get; private init; }
 }

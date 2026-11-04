@@ -12,12 +12,13 @@ public class ApplicationDbContext(DbContextOptions options)
     public DbSet<ApplicationRole> Roles => Set<ApplicationRole>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<UserRole> UserRoles => Set<UserRole>();
-    protected const string Citext = "citext";
+    private const string Citext = "citext";
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasPostgresExtension(Citext);
         modelBuilder.Entity<UserRole>(entity =>
         {
+            entity.HasUserSoftDeleteQueryFilter();
             entity.HasOne(r => r.User)
                 .WithMany()
                 .HasForeignKey(r => r.UserId);
@@ -41,6 +42,7 @@ public class ApplicationDbContext(DbContextOptions options)
         });
         modelBuilder.Entity<ApplicationUser>(entity =>
         {
+            entity.HasSoftDeleteQueryFilter();
             entity.Property(u => u.Username).HasColumnType(Citext);
             entity.Property(u => u.Email).HasColumnType(Citext);
             entity.Property(u => u.GoogleSubject).HasMaxLength(255);

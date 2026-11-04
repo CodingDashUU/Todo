@@ -84,6 +84,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<GetExternalLoginInfoHandler>();
         services.AddSingleton<ApplicationUserStore>();
         services.AddSingleton<ICurrentUser, CurrentUser>();
+        services.AddSingleton<IDeleteEntityTask, DeleteUserTask>();
+        services.AddHostedService<DeleteEntityBackgroundWorker>();
         return services;
     }
     public IServiceCollection AddWfDbContextFactory<TDbContext>(ConfigurationManager configuration, params HashSet<IInterceptor> interceptors)
@@ -100,7 +102,7 @@ public static class ServiceCollectionExtensions
                         maxRetryDelay: TimeSpan.FromSeconds(30),
                         errorCodesToAdd: null
                     ));
-            options.AddInterceptors([new AuditableEntityInterceptor(), ..interceptors]);
+            options.AddInterceptors([new AuditableEntityInterceptor(), new SoftDeletableEntityInterceptor(), ..interceptors]);
         });
     }
     public IServiceCollection AddUserTimeZoneProvider() => services.AddScoped<UserTimeZoneProvider>(sp =>

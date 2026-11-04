@@ -15,6 +15,7 @@ public class TodoDbContext(DbContextOptions<TodoDbContext> options) : Applicatio
         base.OnModelCreating(builder);
         builder.Entity<TodoList>(entity =>
         {
+            entity.HasSoftDeleteQueryFilter();
             entity.HasOne(t => t.User)
                 .WithMany()
                 .HasForeignKey(t => t.UserId);

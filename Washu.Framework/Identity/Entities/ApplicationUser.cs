@@ -2,13 +2,12 @@
 
 using System;
 
-public sealed class ApplicationUser(string userName, string email, string googleSubject) : IAuditableEntity
+public sealed class ApplicationUser(string userName, string email, string googleSubject) : IAuditableEntity, ISoftDeletableEntity
 {
     private ApplicationUser() : this(string.Empty, string.Empty, string.Empty) {}
     public Guid Id { get; private init; } = Guid.CreateVersion7();
 
     public string Username { get; set; } = userName;
-
     public string Email { get; private init; } = email;
     public Guid SecurityStamp { get; private init; } = Guid.CreateVersion7();
     public string GoogleSubject { get; private init; } = googleSubject;
@@ -17,4 +16,5 @@ public sealed class ApplicationUser(string userName, string email, string google
     public DateTimeOffset? LastModifiedDate { get; private init; }
     public DateTimeOffset? LastSignedInDate { get; private init; }
     public DateTimeOffset? LastSignedOutDate { get; private init; }
+    public bool IsDeleted { get; private init; }
 }

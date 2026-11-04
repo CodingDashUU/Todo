@@ -10,6 +10,14 @@ public static class EfCoreBuilderExtensions
     {
         public void HasUniqueIndex(Expression<Func<TEntity, object?>> indexExpression) => entity.HasIndex(indexExpression).IsUnique();
     }
+    extension<TEntity>(EntityTypeBuilder<TEntity> entity) where TEntity : class, ISoftDeletableEntity
+    {
+        public void HasSoftDeleteQueryFilter() => entity.HasQueryFilter(e => !e.IsDeleted);
+    }
+    extension<TEntity>(EntityTypeBuilder<TEntity> entity) where TEntity : class, IOwnedByUser
+    {
+        public void HasUserSoftDeleteQueryFilter() => entity.HasQueryFilter(e => !e.User.IsDeleted);
+    }
     extension<TEntity>(TableBuilder<TEntity> entity) where TEntity : class
     {
         public void HasMaxLengthCheckConstraint(Expression<Func<TEntity, string>> property, ushort maxLength)

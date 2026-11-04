@@ -16,12 +16,15 @@ public sealed class DeleteListHandler(
     public async Task<Message> HandleAsync(DeleteListCommand command)
     {
         await using var dbContext = await factory.CreateDbContextAsync();
-        var rowsDeleted = await dbContext.TodoLists
+        var todoList = await dbContext.TodoLists
             .ForCurrentUser(user)
             .ByTodoList(command.ListId)
-            .ExecuteDeleteAsync();
-        return rowsDeleted == 0
-            ? Message.Error("List Deletion Error", "List was not found")
+            .FirstOrDefaultAsync();
+        if (todoList is null) return Message.Error("List Deletion Error", "List was not found");
+        dbContext.Remove(todoList);
+        var rowsChanged = await dbContext.SaveChangesAsync();
+        return rowsChanged != 1 
+            ? Message.Error("List Deletion Error", "List was not found") 
             : Message.Success("List Deletion Success", "Successfully deleted list");
     }
 }
