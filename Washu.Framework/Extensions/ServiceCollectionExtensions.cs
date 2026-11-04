@@ -85,7 +85,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ApplicationUserStore>();
         services.AddSingleton<ICurrentUser, CurrentUser>();
         services.AddSingleton<IDeleteEntityTask, DeleteUserTask>();
-        services.AddHostedService<DeleteEntityBackgroundWorker>();
+        services.AddHostedService<DeleteEntityWorker>();
         return services;
     }
     public IServiceCollection AddWfDbContextFactory<TDbContext>(ConfigurationManager configuration, params HashSet<IInterceptor> interceptors)

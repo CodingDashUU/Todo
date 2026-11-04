@@ -12,10 +12,15 @@ public class ApplicationDbContext(DbContextOptions options)
     public DbSet<ApplicationRole> Roles => Set<ApplicationRole>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<UserRole> UserRoles => Set<UserRole>();
+    public DbSet<WorkerLastRun> WorkersLastRun => Set<WorkerLastRun>();
     private const string Citext = "citext";
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasPostgresExtension(Citext);
+        modelBuilder.Entity<WorkerLastRun>(entity =>
+        {
+            entity.HasKey(w => w.WorkerName);
+        });
         modelBuilder.Entity<UserRole>(entity =>
         {
             entity.HasUserSoftDeleteQueryFilter();
