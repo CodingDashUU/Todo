@@ -48,6 +48,8 @@
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center">
                 <RadzenFormField Text="Selected Todo List">
                     <RadzenDropDownDataGrid
+                        @ref="_dropDownGrid"
+                        Style="width: 600px"
                         TValue="TodoList"
                         Value="@_selectedList"
                         Count="_listsCount"
@@ -55,7 +57,43 @@
                         Data="@_lists"
                         ValueChanged="OnListSelected"
                         LoadData="LoadListsAsync"
-                        TextProperty="@nameof(TodoList.Name)"/>
+                        AllowColumnResize
+                        AllowSorting
+                        ShowPagingSummary
+                        TextProperty="@nameof(TodoList.Name)">
+                        <FooterTemplate>
+                            <RadzenStack>
+                                <RadzenButton Click="CreateListAsync" Icon="add" Variant="Variant.Outlined" ButtonStyle="ButtonStyle.Success" Text="Add List"/>
+                            </RadzenStack>
+                        </FooterTemplate>
+                        <Columns>
+                            <RadzenDropDownDataGridColumn Property="@nameof(TodoList.Name)" Title="List Name" Width="100px"/>
+                            <RadzenDropDownDataGridColumn Property="@nameof(TodoList.CreationDate)" Title="Created At" Width="100px">
+                                <Template>
+                                    @((context as TodoList)?.CreationDate.ToTimeZone(TimeZoneProvider.TimeZoneInfo).ToString("d MMM yyyy HH:mm:ss"))
+                                </Template>
+                            </RadzenDropDownDataGridColumn>
+                            <RadzenDropDownDataGridColumn Filterable="false" Sortable="false" Width="100px" TextAlign="TextAlign.Center" Frozen="true" Resizable="false">
+                                <Template>
+                                    <RadzenButton
+                                        Variant="Variant.Text"
+                                        Click="_ => CreateTaskAsync((TodoList)context)"
+                                        Icon="add"
+                                        ButtonStyle="ButtonStyle.Success"/>
+                                    <RadzenButton class="big-icon-button"
+                                                  Variant="Variant.Text"
+                                                  ButtonStyle="ButtonStyle.Warning"
+                                                  Click="_ => UpdateListAsync((TodoList)context)"
+                                                  Icon="@MaterialIcons.Edit"/>
+                                    <RadzenButton class="big-icon-button"
+                                                  Variant="Variant.Text"
+                                                  ButtonStyle="ButtonStyle.Danger"
+                                                  Click="_ => DeleteListAsync((TodoList)context)"
+                                                  Icon="@MaterialIcons.Delete"/>
+                                </Template>
+                            </RadzenDropDownDataGridColumn>
+                        </Columns>
+                    </RadzenDropDownDataGrid>
                 </RadzenFormField>
                 <RadzenButton class="big-icon-button"
                               ButtonStyle="@(_isEditing ? ButtonStyle.Success : ButtonStyle.Danger)"
@@ -63,10 +101,6 @@
                               Click="@ToggleEditing"
                               Disabled="IsNoListSelected"
                               Text="@($"Edit Mode: {(_isEditing ? "ON" : "OFF")}")"/>
-                <RadzenButton Click="CreateTaskAsync" Disabled="IsNoListSelected" Icon="add" ButtonStyle="ButtonStyle.Success" Text="Add Task"/>
-                <RadzenButton Click="CreateListAsync" Icon="add" ButtonStyle="ButtonStyle.Success" Text="Add List"/>
-                <RadzenButton Click="DeleteListAsync" Disabled="IsNoListSelected" ButtonStyle="ButtonStyle.Danger" Icon="@MaterialIcons.Delete" Text="Delete List"/>
-                <RadzenButton Click="UpdateListAsync" Disabled="IsNoListSelected" ButtonStyle="ButtonStyle.Warning" Icon="@MaterialIcons.Update" Text="Update List"/>
             <DataGridExportButton DataGrid="_grid" ExcelTitle="@_selectedList.Name" FileName="todo" DisableExportAllScope="@(_count > 999)"/>
         </RadzenStack>
     </HeaderTemplate>
@@ -86,19 +120,21 @@
             <FilterValueTemplate>
                 <RadzenDatePicker TValue="DateTimeOffset?"
                                   ShowTime
-                                  DateFormat="d MMMM yyyy HH:mm:ss"
-                                  @bind-Value="DateCreatedFilterValue"/>
+                                  DateFormat="d MMM yyyy HH:mm:ss"
+                                  @bind-Value="DateCreatedFilterValue"
+                                  AllowClear/>
             </FilterValueTemplate>
             <Template>
-                @context.DateCreated.ToTimeZone(TimeZoneProvider.TimeZoneInfo).ToString("F")
+                @context.DateCreated.ToTimeZone(TimeZoneProvider.TimeZoneInfo).ToString("d MMM yyyy HH:mm:ss")
             </Template>
         </RadzenDataGridColumn>
         <RadzenDataGridColumn Property="@nameof(TaskEntry.GoalDate)" Title="Goal Date" Width="160px" FilterMode="FilterMode.SimpleWithMenu" FilterValue="GoalDateFilterValue">
             <FilterValueTemplate>
                 <RadzenDatePicker TValue="DateTimeOffset?"
                                   ShowTime
-                                  DateFormat="d MMMM yyyy HH:mm:ss"
-                                  @bind-Value="GoalDateFilterValue"/>
+                                  DateFormat="d MMM yyyy HH:mm:ss"
+                                  @bind-Value="GoalDateFilterValue"
+                                  AllowClear/>
             </FilterValueTemplate>
             <Template>
                 <RadzenStack Orientation="Orientation.Horizontal" Gap="1.1rem">
@@ -106,7 +142,7 @@
                     {
                         <RadzenIcon Icon="@MaterialIcons.Target"/>
                     }
-                    @context.GoalDate.ToTimeZone(TimeZoneProvider.TimeZoneInfo).ToString("F")
+                    @context.GoalDate.ToTimeZone(TimeZoneProvider.TimeZoneInfo).ToString("d MMM yyyy HH:mm:ss")
                 </RadzenStack>
             </Template>
         </RadzenDataGridColumn>
@@ -114,8 +150,9 @@
             <FilterValueTemplate>
                 <RadzenDatePicker TValue="DateTimeOffset?"
                                   ShowTime
-                                  DateFormat="d MMMM yyyy HH:mm:ss"
-                                  @bind-Value="DateCompletedFilterValue"/>
+                                  DateFormat="d MMM yyyy HH:mm:ss"
+                                  @bind-Value="DateCompletedFilterValue"
+                                  AllowClear/>
             </FilterValueTemplate>
             <Template>
                 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween">
@@ -135,12 +172,12 @@
                             <RadzenIcon IconColor="var(--rz-warning)" Icon="indeterminate_question_box"/>
                         }
                         <RadzenStack AlignItems="AlignItems.Center" Gap="0.5rem">
-                            @(context.DateCompleted?.ToTimeZone(TimeZoneProvider.TimeZoneInfo).ToString("F") ?? "N/A")
+                            @(context.DateCompleted?.ToTimeZone(TimeZoneProvider.TimeZoneInfo).ToString("d MMM yyyy HH:mm:ss") ?? "N/A")
                             @if (isCompletedButFailedToComplete && !_isEditing)
                             {
                                 <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-danger)">Failed to complete in time (@((context.DateCompleted! - context.GoalDate).Value.Humanize()) late)</RadzenText>
                             }
-                            else if (context.GoalDate < now && !_isEditing)
+                            else if (!context.IsCompleted && context.GoalDate < now && !_isEditing)
                             {
                                 <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-danger)">Overdue (@((now - context.GoalDate).Humanize()) late)</RadzenText>
                             }
@@ -196,6 +233,7 @@
 
 @code {
     RadzenDataGrid<TaskEntry> _grid = null!;
+    RadzenDropDownDataGrid<TodoList> _dropDownGrid = null!;
     bool _isLoading;
     int _count;
     int _completedTasks;
@@ -301,16 +339,16 @@
         _initTask = LoadListsAsync(DefaultListsLoadDataArgs);
     }
 
-    private async Task DeleteListAsync()
+    private async Task DeleteListAsync(TodoList list)
     {
         var confirmData = await DialogService.Confirm(
-            $"Are you sure you want to delete '{_selectedList.Name}'?", 
+            $"Are you sure you want to delete '{list.Name}'?", 
             "Confirm List Deletion", 
             options: ConfirmDeleteOptions);
             
         if (confirmData != true) return;
 
-        var command = new DeleteListCommand(_selectedList.Id);
+        var command = new DeleteListCommand(list.Id);
         var message = await DeleteListHandler.HandleAsync(command);
         NotificationService.Show(message);
 
@@ -328,12 +366,12 @@
         await RefreshStateAsync(); 
     }
 
-    private async Task CreateTaskAsync()
+    private async Task CreateTaskAsync(TodoList list)
     {
         var parameters = new Dictionary<string, object?>(2)
         {
-            [nameof(TaskCreationDialog.ListId)] = _selectedList.Id, 
-            [nameof(TaskCreationDialog.ListVersionId)] = _selectedList.RowVersion
+            [nameof(TaskCreationDialog.ListId)] = list.Id, 
+            [nameof(TaskCreationDialog.ListVersionId)] = list.RowVersion
         };
         var result = await DialogService.OpenAsync<TaskCreationDialog>("Create Task", parameters);
         if (result is not CreateTaskCommand command) return;
@@ -341,7 +379,7 @@
         var message = await CreateTaskHandler.HandleAsync(command);
         NotificationService.Show(message);
 
-        await RefreshStateAsync(_selectedList.Id);
+        await RefreshStateAsync(list.Id);
     }
     
     private async Task RefreshStateAsync(Guid? preferredListId = null)
@@ -354,11 +392,11 @@
         await _grid.Reload();
     }
 
-    private async Task UpdateListAsync()
+    private async Task UpdateListAsync(TodoList list)
     {
         var parameters = new Dictionary<string, object?>(1)
         {
-            [nameof(ListUpdateDialog.OldList)] = _selectedList
+            [nameof(ListUpdateDialog.OldList)] = list
         };
         var result = await DialogService.OpenAsync<ListUpdateDialog>("Update List", parameters);
         if (result is not UpdateListCommand command) return;
@@ -366,7 +404,7 @@
         var message = await UpdateListHandler.HandleAsync(command);
         NotificationService.Show(message);
 
-        await RefreshStateAsync(_selectedList.Id);
+        await RefreshStateAsync(list.Id);
     }
 
     static bool IsNullOrEmpty(FilterOperator? value)

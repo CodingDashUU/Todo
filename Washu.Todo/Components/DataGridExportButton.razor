@@ -1,5 +1,5 @@
 @inject DialogService DialogService
-<RadzenButton Click="OnDialogOpen" Text="Export Data" Icon="@MaterialIcons.FileExport" ButtonStyle="ButtonStyle.Success"/>
+<RadzenButton Click="OnDialogOpen" Text="Export Data" Icon="@MaterialIcons.FileExport" Variant="Variant.Outlined" ButtonStyle="ButtonStyle.Success"/>
 
 @code {
     [Parameter, EditorRequired] public RadzenDataGrid<TaskEntry> DataGrid { get; set; }
