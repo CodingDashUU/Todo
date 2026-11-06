@@ -24,4 +24,6 @@ public static class MaterialIcons
     public const string Refresh = "refresh";
     public const string Edit = "edit";
     public const string PersonOff = "person_off";
+    public const string Add = "add";
+    public const string QuestionBox = "indeterminate_question_box";
 }

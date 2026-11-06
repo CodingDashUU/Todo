@@ -63,7 +63,7 @@
                         TextProperty="@nameof(TodoList.Name)">
                         <FooterTemplate>
                             <RadzenStack>
-                                <RadzenButton Click="CreateListAsync" Icon="add" Variant="Variant.Outlined" ButtonStyle="ButtonStyle.Success" Text="Add List"/>
+                                <RadzenButton Click="CreateListAsync" Icon="@MaterialIcons.Add" Variant="Variant.Outlined" ButtonStyle="ButtonStyle.Success" Text="Add List"/>
                             </RadzenStack>
                         </FooterTemplate>
                         <Columns>
@@ -78,7 +78,7 @@
                                     <RadzenButton
                                         Variant="Variant.Text"
                                         Click="_ => CreateTaskAsync((TodoList)context)"
-                                        Icon="add"
+                                        Icon="@MaterialIcons.Add"
                                         ButtonStyle="ButtonStyle.Success"/>
                                     <RadzenButton class="big-icon-button"
                                                   Variant="Variant.Text"
@@ -169,7 +169,7 @@
                         }
                         else if (!_isEditing)
                         {
-                            <RadzenIcon IconColor="var(--rz-warning)" Icon="indeterminate_question_box"/>
+                            <RadzenIcon IconColor="var(--rz-warning)" Icon="@MaterialIcons.QuestionBox"/>
                         }
                         <RadzenStack AlignItems="AlignItems.Center" Gap="0.5rem">
                             @(context.DateCompleted?.ToTimeZone(TimeZoneProvider.TimeZoneInfo).ToString("d MMM yyyy HH:mm:ss") ?? "N/A")
