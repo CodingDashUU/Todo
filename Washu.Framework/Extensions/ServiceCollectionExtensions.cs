@@ -56,9 +56,8 @@ public static class ServiceCollectionExtensions
             IsFailSafeEnabled = true,
             FailSafeMaxDuration = TimeSpan.FromHours(2),
             FailSafeThrottleDuration = TimeSpan.FromSeconds(30),
-            FactorySoftTimeout = TimeSpan.FromMilliseconds(100), 
+            FactorySoftTimeout = TimeSpan.FromMilliseconds(500), 
             FactoryHardTimeout = TimeSpan.FromSeconds(2), 
-            EagerRefreshThreshold = 0.9f, 
             JitterMaxDuration = TimeSpan.FromSeconds(2)
         });
         return services;

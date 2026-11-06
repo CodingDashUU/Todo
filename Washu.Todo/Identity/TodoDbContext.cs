@@ -31,7 +31,7 @@ public class TodoDbContext(DbContextOptions<TodoDbContext> options) : Applicatio
                 .WithOne()
                 .HasForeignKey(x => x.TodoListId)
                 .OnDelete(DeleteBehavior.Cascade);
-            entity.HasUniqueIndex(t => new { t.UserId, t.Name });
+            entity.HasUniqueIndex(t => new { t.UserId, t.Name }).HasSoftDeleteFilter();
         });
         builder.Entity<TaskEntry>(entity =>
         {

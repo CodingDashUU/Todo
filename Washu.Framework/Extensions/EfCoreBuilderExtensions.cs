@@ -1,6 +1,7 @@
 namespace Washu.Framework.Extensions;
 
 using Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System.Linq.Expressions;
 
@@ -8,7 +9,12 @@ public static class EfCoreBuilderExtensions
 {
     extension<TEntity>(EntityTypeBuilder<TEntity> entity) where TEntity : class
     {
-        public void HasUniqueIndex(Expression<Func<TEntity, object?>> indexExpression) => entity.HasIndex(indexExpression).IsUnique();
+        public IndexBuilder<TEntity> HasUniqueIndex(Expression<Func<TEntity, object?>> indexExpression) => entity.HasIndex(indexExpression).IsUnique();
+    }
+
+    extension<TEntity>(IndexBuilder<TEntity> index) where TEntity : ISoftDeletableEntity
+    {
+        public void HasSoftDeleteFilter() => index.HasFilter($"\"{nameof(ISoftDeletableEntity.IsDeleted)}\" = false");
     }
     extension<TEntity>(EntityTypeBuilder<TEntity> entity) where TEntity : class, ISoftDeletableEntity
     {

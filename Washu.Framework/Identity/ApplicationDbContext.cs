@@ -51,9 +51,9 @@ public class ApplicationDbContext(DbContextOptions options)
             entity.Property(u => u.Username).HasColumnType(Citext);
             entity.Property(u => u.Email).HasColumnType(Citext);
             entity.Property(u => u.GoogleSubject).HasMaxLength(255);
-            entity.HasUniqueIndex(u => u.Username);
-            entity.HasUniqueIndex(u => u.Email);
-            entity.HasUniqueIndex(u => u.GoogleSubject);
+            entity.HasUniqueIndex(u => u.Username).HasSoftDeleteFilter();
+            entity.HasUniqueIndex(u => u.Email).HasSoftDeleteFilter();
+            entity.HasUniqueIndex(u => u.GoogleSubject).HasSoftDeleteFilter();
             entity.ToTable(t =>
             {
                 t.HasMaxLengthCheckConstraint(p => p.Username, 128);
