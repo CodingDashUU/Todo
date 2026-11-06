@@ -16,19 +16,19 @@ public class DeleteEntityWorker(
     private const string WorkerName = nameof(DeleteEntityWorker);
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("Delete Background worker is starting");
-        using var timer = new PeriodicTimer(TimeSpan.FromMinutes(15));
-        while (await timer.WaitForNextTickAsync(stoppingToken))
+        try
         {
-            if (_informationLoggingEnabled)
-                logger.LogInformation("Worker running at: {Time}", DateTimeOffset.UtcNow);
-            await using var dbContext = await dbFactory.CreateDbContextAsync(stoppingToken);
-            var workerLastRun = await dbContext
-                .WorkersLastRun.SingleOrDefaultAsync(w => w.WorkerName == WorkerName,stoppingToken);
-            var lastRun = workerLastRun?.LastRun ?? DateTimeOffset.MinValue;
-            if (DateTimeOffset.UtcNow - lastRun < _runInterval) continue;
-            try
+            logger.LogInformation("Delete Background worker is starting");
+            using var timer = new PeriodicTimer(TimeSpan.FromMinutes(15));
+            while (await timer.WaitForNextTickAsync(stoppingToken))
             {
+                if (_informationLoggingEnabled)
+                    logger.LogInformation("Worker running at: {Time}", DateTimeOffset.UtcNow);
+                await using var dbContext = await dbFactory.CreateDbContextAsync(stoppingToken);
+                var workerLastRun = await dbContext
+                    .WorkersLastRun.SingleOrDefaultAsync(w => w.WorkerName == WorkerName,stoppingToken);
+                var lastRun = workerLastRun?.LastRun ?? DateTimeOffset.MinValue;
+                if (DateTimeOffset.UtcNow - lastRun < _runInterval) continue;
                 if (_informationLoggingEnabled)
                     logger.LogInformation("Interval reached, executing tasks now at: {Time}", DateTimeOffset.UtcNow);
                 var startTime = Stopwatch.GetTimestamp();
@@ -52,10 +52,10 @@ public class DeleteEntityWorker(
                 if (_informationLoggingEnabled)
                     logger.LogInformation("Finished in: {TimeElapsed}ms", elapsed.Milliseconds);
             }
-            catch (OperationCanceledException)
-            {
-                logger.LogInformation("Delete Background worker stopped");
-            }
+        }
+        catch (OperationCanceledException)
+        {
+            logger.LogInformation("Delete Background worker stopped");
         }
     }
 }
