@@ -1,0 +1,7 @@
+<RadzenIcon IconColor="@(IsOn ? "var(--rz-success)" : "var(--rz-danger)")" 
+            Icon="@Icon"
+/>
+@code {
+    [Parameter] public string Icon { get; set; } = string.Empty;
+    [Parameter] public bool IsOn { get; set; }
+}

@@ -1,0 +1,6 @@
+<RadzenIcon IconColor="@(IsOn ? "var(--rz-success)" : "var(--rz-danger)")" 
+            Icon="@(IsOn ? MaterialIcons.CheckCircle : MaterialIcons.Cancel)"
+            />
+@code {
+    [Parameter] public bool IsOn { get; set; }
+}            

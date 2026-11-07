@@ -73,32 +73,20 @@
                             </RadzenDropDownDataGridColumn>
                             <RadzenDropDownDataGridColumn Filterable="false" Sortable="false" Width="100px" TextAlign="TextAlign.Center" Frozen="true" Resizable="false">
                                 <Template>
-                                    <RadzenButton
-                                        Variant="Variant.Text"
-                                        Click="_ => CreateTaskAsync((TodoList)context)"
-                                        Icon="@MaterialIcons.Add"
-                                        ButtonStyle="ButtonStyle.Success"/>
-                                    <RadzenButton class="big-icon-button"
-                                                  Variant="Variant.Text"
-                                                  ButtonStyle="ButtonStyle.Warning"
-                                                  Click="_ => UpdateListAsync((TodoList)context)"
-                                                  Icon="@MaterialIcons.Edit"/>
-                                    <RadzenButton class="big-icon-button"
-                                                  Variant="Variant.Text"
-                                                  ButtonStyle="ButtonStyle.Danger"
-                                                  Click="_ => DeleteListAsync((TodoList)context)"
-                                                  Icon="@MaterialIcons.Delete"/>
+                                    <AddButton Click="_ => CreateTaskAsync(context)"/>
+                                    <EditButton Click="_ => UpdateListAsync(context)"/>
+                                    <DeleteButton Click="_ => DeleteListAsync(context)"/>
                                 </Template>
                             </RadzenDropDownDataGridColumn>
                         </Columns>
                     </RadzenDropDownDataGrid>
                 </RadzenFormField>
-                <RadzenButton class="big-icon-button"
-                              ButtonStyle="@(_isEditing ? ButtonStyle.Success : ButtonStyle.Danger)"
-                              Variant="Variant.Text"
-                              Click="@ToggleEditing"
-                              Disabled="IsNoListSelected"
-                              Text="@($"Edit Mode: {(_isEditing ? "ON" : "OFF")}")"/>
+                <ToggleButton 
+                    IsOn="_isEditing"
+                    Toggle="@ToggleEditing"
+                    ButtonOnText="Edit Mode: ON"
+                    ButtonOffText="Edit Mode: OFF"
+                    IsDisabled="IsNoListSelected"/>
             <DataGridExportButton DataGrid="_grid" ExcelTitle="@_selectedList.Name" FileName="todo" DisableExportAllScope="@(_count > 999)"/>
         </RadzenStack>
     </HeaderTemplate>
@@ -108,34 +96,18 @@
                 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1.1rem">
                     @if (!_isEditing)
                     {
-                        <RadzenIcon IconColor="@(context.IsCompleted ? "var(--rz-success)" : "var(--rz-danger)")" Icon="@MaterialIcons.Task"/>
+                        <IconColourToggle Icon="@MaterialIcons.Task" IsOn="context.IsCompleted"/>
                     }
                     @context.Name
                 </RadzenStack>
             </Template>
         </RadzenDataGridColumn>
-        <RadzenDataGridColumn Property="@nameof(TaskEntry.DateCreated)" Title="Date Created" Width="160px">
-            <FilterValueTemplate>
-                <RadzenDatePicker TValue="DateTimeOffset?"
-                                  ShowTime
-                                  DateFormat="@DateTimeFormat"
-                                  Value="((DateTimeOffset?)context.FilterValue)?.ToTimeZone(TimeZoneProvider.TimeZoneInfo)"
-                                  ValueChanged="async v => { context.FilterValue = v; await _grid.Reload(); }"
-                                  AllowClear/>
-            </FilterValueTemplate>
+        <DateTimeOffsetDataGridColumn Property="@nameof(TaskEntry.DateCreated)" Title="Date Created" Width="160px">
             <Template>
                 @ToTimeZoneAndString(context.DateCreated)
             </Template>
-        </RadzenDataGridColumn>
-        <RadzenDataGridColumn Property="@nameof(TaskEntry.GoalDate)" Title="Goal Date" Width="160px" FilterMode="FilterMode.SimpleWithMenu">
-            <FilterValueTemplate>
-                <RadzenDatePicker TValue="DateTimeOffset?"
-                                  ShowTime
-                                  DateFormat="@DateTimeFormat"
-                                  Value="((DateTimeOffset?)context.FilterValue)?.ToTimeZone(TimeZoneProvider.TimeZoneInfo)"
-                                  ValueChanged="async v => { context.FilterValue = v; await _grid.Reload(); }"
-                                  AllowClear/>
-            </FilterValueTemplate>
+        </DateTimeOffsetDataGridColumn>
+        <DateTimeOffsetDataGridColumn Property="@nameof(TaskEntry.GoalDate)" Title="Goal Date" Width="160px" FilterMode="FilterMode.SimpleWithMenu">
             <Template>
                 <RadzenStack Orientation="Orientation.Horizontal" Gap="1.1rem">
                     @if (!_isEditing)
@@ -145,54 +117,53 @@
                     @ToTimeZoneAndString(context.GoalDate)
                 </RadzenStack>
             </Template>
-        </RadzenDataGridColumn>
-        <RadzenDataGridColumn Property="@nameof(TaskEntry.DateCompleted)" Title="Date Completed" Width="160px" FilterMode="FilterMode.SimpleWithMenu">
-            <FilterValueTemplate>
-                <RadzenDatePicker TValue="DateTimeOffset?"
-                                  ShowTime
-                                  DateFormat="@DateTimeFormat"
-                                  Value="((DateTimeOffset?)context.FilterValue)?.ToTimeZone(TimeZoneProvider.TimeZoneInfo)"
-                                  ValueChanged="async v => { context.FilterValue = v; await _grid.Reload(); }"
-                                  AllowClear/>
-            </FilterValueTemplate>
+        </DateTimeOffsetDataGridColumn>
+        <DateTimeOffsetDataGridColumn Property="@nameof(TaskEntry.DateCompleted)" Title="Date Completed" Width="160px" FilterMode="FilterMode.SimpleWithMenu">
             <Template>
                 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween">
                     @{
-                        var isCompletedButFailedToComplete = context is { IsCompleted: true, DateCompleted: not null } && context.GoalDate < context.DateCompleted;
                         var now = DateTimeOffset.UtcNow;
-                        @if((isCompletedButFailedToComplete || context.GoalDate < now) && !_isEditing)
+                        var state = DetermineCompletionState(context, now);
+                        if (!_isEditing)
                         {
-                            <RadzenIcon IconColor="var(--rz-danger)" Icon="@MaterialIcons.Cancel"/>
-                        }
-                        else if (context.IsCompleted && !_isEditing)
-                        {
-                            <RadzenIcon IconColor="var(--rz-success)" Icon="@MaterialIcons.CheckCircle"/>
-                        }
-                        else if (!_isEditing)
-                        {
-                            <RadzenIcon IconColor="var(--rz-warning)" Icon="@MaterialIcons.QuestionBox"/>
+                            switch (state)
+                            {
+                                case TaskCompletionState.Completed:
+                                    <RadzenIcon IconColor="var(--rz-success)" Icon="@MaterialIcons.CheckCircle"/>
+                                    break;
+                                case TaskCompletionState.NotCompletedInTime or TaskCompletionState.Overdue:
+                                    <RadzenIcon IconColor="var(--rz-danger)" Icon="@MaterialIcons.Cancel"/>
+                                    break;
+                                default:
+                                    <RadzenIcon IconColor="var(--rz-warning)" Icon="@MaterialIcons.QuestionBox"/>
+                                    break;
+                            }   
                         }
                         <RadzenStack AlignItems="AlignItems.Center" Gap="0.5rem">
                             @(context.DateCompleted.HasValue ? ToTimeZoneAndString(context.DateCompleted.Value) : "N/A")
-                            @if (isCompletedButFailedToComplete && !_isEditing)
+                            @if (!_isEditing)
                             {
-                                <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-danger)">Failed to complete in time (@((context.DateCompleted! - context.GoalDate).Value.Humanize()) late)</RadzenText>
-                            }
-                            else if (!context.IsCompleted && context.GoalDate < now && !_isEditing)
-                            {
-                                <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-danger)">Overdue (@((now - context.GoalDate).Humanize()) late)</RadzenText>
+                                switch (state)
+                                {
+                                    case TaskCompletionState.NotCompletedInTime:
+                                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-danger)">Failed to complete in time (@((context.DateCompleted! - context.GoalDate).Value.Humanize()) late)</RadzenText>
+                                        break;
+                                    case TaskCompletionState.Overdue:
+                                        <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-danger)">Overdue (@((now - context.GoalDate).Humanize()) late)</RadzenText>
+                                        break;
+                                }
                             }
                         </RadzenStack>
                         <div/>
                     }
                 </RadzenStack>
             </Template>
-        </RadzenDataGridColumn>
+        </DateTimeOffsetDataGridColumn>
         @if (!_isEditing)
         {
             <RadzenDataGridColumn Property="@nameof(TaskEntry.IsCompleted)" Title="Completed?" TextAlign="TextAlign.Center" Width="75px">
                 <Template>
-                    <RadzenIcon IconColor="@(context.IsCompleted ? "var(--rz-success)" : "var(--rz-danger)")" Icon="@(context.IsCompleted ? MaterialIcons.CheckCircle : MaterialIcons.Cancel)"/>
+                    <IconToggle IsOn="context.IsCompleted"/>
                 </Template>
             </RadzenDataGridColumn>
         }
@@ -200,21 +171,9 @@
         {
             <RadzenDataGridColumn Filterable="false" Sortable="false" Width="100px" TextAlign="TextAlign.Center" Frozen="true" Resizable="false">
                 <Template>
-                    <RadzenButton class="big-icon-button"
-                                  ButtonStyle="@(context.IsCompleted ? ButtonStyle.Success : ButtonStyle.Danger)"
-                                  Variant="Variant.Text"
-                                  Click="_ => OnToggleTaskAsync(context)"
-                                  Icon="@(context.IsCompleted ? MaterialIcons.CheckCircle : MaterialIcons.Cancel)"/>
-                    <RadzenButton class="big-icon-button"
-                                  Variant="Variant.Text"
-                                  ButtonStyle="ButtonStyle.Warning"
-                                  Click="_ => OnEditTaskAsync(context)"
-                                  Icon="@MaterialIcons.Edit"/>
-                    <RadzenButton class="big-icon-button"
-                                  Variant="Variant.Text"
-                                  ButtonStyle="ButtonStyle.Danger"
-                                  Click="_ => OnDeleteTaskAsync(context)"
-                                  Icon="@MaterialIcons.Delete"/>
+                    <IconToggleButton IsOn="context.IsCompleted" Toggle="_ => OnToggleTaskAsync(context)" />
+                    <EditButton Click="_ => OnEditTaskAsync(context)" />
+                    <DeleteButton Click="_ => OnDeleteTaskAsync(context)"/>
                 </Template>
             </RadzenDataGridColumn>
         }
@@ -222,12 +181,10 @@
     <FooterTemplate>
         @if (_count > 0)
         {
-            <RadzenText Style="@("color:" + (_completedTasks / (double)_count) switch
-                               {
-                                   >0.0 and <1.0 => "var(--rz-warning)",
-                                   >=1.0 => "var(--rz-success)",
-                                   _ => "var(--rz-danger)"
-                               })" TextAlign="TextAlign.Center">Completed Tasks: @_completedTasks / @_count (@(Math.Round(_completedTasks / (double)_count * 100.0, 2))%)</RadzenText>
+            var percentage = _completedTasks / (double)_count;
+            <RadzenText Style="@("color:" + DetermineCssVarColour(percentage))" TextAlign="TextAlign.Center">
+                Completed Tasks: @_completedTasks / @_count (@ToRoundedPresentablePercentage(percentage)%)
+            </RadzenText>
         }
     </FooterTemplate>
 </RadzenDataGrid>
@@ -249,9 +206,8 @@
     private Guid _userId;
     private bool IsNoListSelected => _selectedList.Id == TodoList.None.Id;
     private DataGridFilterHelpers<TaskEntry> FilterHelpers => new(_grid);
-    private const string DateTimeFormat = "d MMM yyyy HH:mm:ss";
     private void ToggleEditing() => _isEditing = !_isEditing;
-    private string ToTimeZoneAndString(DateTimeOffset date) => date.ToTimeZone(TimeZoneProvider.TimeZoneInfo).ToString(DateTimeFormat);
+    private string ToTimeZoneAndString(DateTimeOffset date) => date.ToTimeZone(TimeZoneProvider.TimeZoneInfo).ToString(DataGridConstants.DateTimeFormat);
     private async Task OnToggleTaskAsync(TaskEntry entry)
     {
         var command = new ToggleTaskCommand(entry.Id, _selectedList.Id, _selectedList.RowVersion);
@@ -261,7 +217,28 @@
         
         await RefreshStateAsync(_selectedList.Id);
     }
+    private enum TaskCompletionState : byte { NotCompleted, Overdue, NotCompletedInTime, Completed }
+    private static TaskCompletionState DetermineCompletionState(TaskEntry entry, DateTimeOffset now)
+    {
+        var completed = entry is { IsCompleted: true, DateCompleted: not null };
+        var notCompleteInTime = completed && entry.DateCompleted > entry.GoalDate;
+        var overdue = !completed && now > entry.GoalDate;
+    
+        if (overdue) return TaskCompletionState.Overdue;
+        if (!completed) return TaskCompletionState.NotCompleted;
+        return notCompleteInTime 
+            ? TaskCompletionState.NotCompletedInTime 
+            : TaskCompletionState.Completed;
+    }
 
+    private static string DetermineCssVarColour(double percentage) => percentage switch
+    {
+        > 0.0 and < 1.0 => "var(--rz-warning)",
+        >= 1.0 => "var(--rz-success)",
+        _ => "var(--rz-danger)"
+    };
+
+    private static double ToRoundedPresentablePercentage(double percentage) => Math.Round(percentage * 100.0, 2);
     private async Task OnDeleteTaskAsync(TaskEntry entry)
     {
         var confirmData = await DialogService.Confirm(

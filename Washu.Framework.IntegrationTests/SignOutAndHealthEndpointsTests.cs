@@ -19,6 +19,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Notifications;
 using Xunit;
 using ZiggyCreatures.Caching.Fusion;
@@ -51,7 +52,7 @@ public sealed class SignOutAndHealthEndpointsTests(ApplicationPostgreSqlFixture 
             options.UseNpgsql(fixture.ConnectionString));
 
         builder.Services.AddWfIdentityServices();
-
+        builder.Services.RemoveAll<GetUserService>();
         var authBuilder = builder.Services.AddDefaultAuthentication();
         authBuilder.AddWfExternalCookie();
         authBuilder.AddWfApplicationCookie();

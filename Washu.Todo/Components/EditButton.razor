@@ -1,0 +1,9 @@
+<RadzenButton 
+              Variant="Variant.Text"
+              ButtonStyle="ButtonStyle.Warning"
+              Click="Click"
+              Icon="@MaterialIcons.Edit"/>
+              
+@code {
+   [Parameter, EditorRequired] public EventCallback<MouseEventArgs> Click { get; set; }              
+}

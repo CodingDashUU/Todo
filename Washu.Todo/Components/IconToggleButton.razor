@@ -1,0 +1,12 @@
+<RadzenButton 
+    ButtonStyle="@(IsOn ? ButtonStyle.Success : ButtonStyle.Danger)"
+    Variant="Variant.Text"
+    Click="@Toggle"
+    Disabled="IsDisabled"
+    Icon="@(IsOn ? MaterialIcons.CheckCircle : MaterialIcons.Cancel)"/>
+
+@code {
+    [Parameter] public bool IsOn { get; set; }
+    [Parameter, EditorRequired] public EventCallback<MouseEventArgs> Toggle { get; set; }
+    [Parameter] public bool IsDisabled { get; set; }
+}

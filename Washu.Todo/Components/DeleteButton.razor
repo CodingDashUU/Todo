@@ -1,0 +1,8 @@
+<RadzenButton
+              Variant="Variant.Text"
+              ButtonStyle="ButtonStyle.Danger"
+              Click="Click"
+              Icon="@MaterialIcons.Delete"/>
+@code {
+    [Parameter, EditorRequired] public EventCallback<MouseEventArgs> Click { get; set; }              
+}
