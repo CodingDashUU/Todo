@@ -9,8 +9,7 @@
 @using Washu.Todo.Identity
 @inject UserTimeZoneProvider TimeZoneProvider
 @inject IDbContextFactory<TodoDbContext> DbContextFactory
-@inject AuthenticationStateProvider Provider
-@inject NavigationManager NavManager
+@inject GetUserService GetUserService
 @inject CreateListHandler CreateListHandler
 @inject CreateTaskHandler CreateTaskHandler
 @inject ToggleTaskHandler ToggleTaskHandler
@@ -20,7 +19,6 @@
 @inject DeleteListHandler DeleteListHandler
 @inject NotificationService NotificationService
 @inject DialogService DialogService
-@inject ApplicationUserStore UserStore
 <RadzenDataGrid @ref="_grid" 
                 @bind-Value="@_selectedTasks" 
                 TItem="TaskEntry"
@@ -39,8 +37,8 @@
                 Data="@_tasks" 
                 Count="@_count"
                 LoadData="@LoadData" 
-                Filter="OnFilter" 
-                FilterCleared="@OnFilterCleared"
+                Filter="FilterHelpers.OnFilter" 
+                FilterCleared="FilterHelpers.OnFilterCleared"
                 ColumnWidth="300px"
                 IsNullText="Is N/A" 
                 IsNotNullText="Is not N/A">
@@ -70,7 +68,7 @@
                             <RadzenDropDownDataGridColumn Property="@nameof(TodoList.Name)" Title="List Name" Width="100px"/>
                             <RadzenDropDownDataGridColumn Property="@nameof(TodoList.CreationDate)" Title="Created At" Width="100px">
                                 <Template>
-                                    @((context as TodoList)?.CreationDate.ToTimeZone(TimeZoneProvider.TimeZoneInfo).ToString("d MMM yyyy HH:mm:ss"))
+                                    @ToTimeZoneAndString(((TodoList)context).CreationDate)
                                 </Template>
                             </RadzenDropDownDataGridColumn>
                             <RadzenDropDownDataGridColumn Filterable="false" Sortable="false" Width="100px" TextAlign="TextAlign.Center" Frozen="true" Resizable="false">
@@ -116,24 +114,26 @@
                 </RadzenStack>
             </Template>
         </RadzenDataGridColumn>
-        <RadzenDataGridColumn Property="@nameof(TaskEntry.DateCreated)" Title="Date Created" Width="160px" FilterValue="DateCreatedFilterValue">
+        <RadzenDataGridColumn Property="@nameof(TaskEntry.DateCreated)" Title="Date Created" Width="160px">
             <FilterValueTemplate>
                 <RadzenDatePicker TValue="DateTimeOffset?"
                                   ShowTime
-                                  DateFormat="d MMM yyyy HH:mm:ss"
-                                  @bind-Value="DateCreatedFilterValue"
+                                  DateFormat="@DateTimeFormat"
+                                  Value="((DateTimeOffset?)context.FilterValue)?.ToTimeZone(TimeZoneProvider.TimeZoneInfo)"
+                                  ValueChanged="async v => { context.FilterValue = v; await _grid.Reload(); }"
                                   AllowClear/>
             </FilterValueTemplate>
             <Template>
-                @context.DateCreated.ToTimeZone(TimeZoneProvider.TimeZoneInfo).ToString("d MMM yyyy HH:mm:ss")
+                @ToTimeZoneAndString(context.DateCreated)
             </Template>
         </RadzenDataGridColumn>
-        <RadzenDataGridColumn Property="@nameof(TaskEntry.GoalDate)" Title="Goal Date" Width="160px" FilterMode="FilterMode.SimpleWithMenu" FilterValue="GoalDateFilterValue">
+        <RadzenDataGridColumn Property="@nameof(TaskEntry.GoalDate)" Title="Goal Date" Width="160px" FilterMode="FilterMode.SimpleWithMenu">
             <FilterValueTemplate>
                 <RadzenDatePicker TValue="DateTimeOffset?"
                                   ShowTime
-                                  DateFormat="d MMM yyyy HH:mm:ss"
-                                  @bind-Value="GoalDateFilterValue"
+                                  DateFormat="@DateTimeFormat"
+                                  Value="((DateTimeOffset?)context.FilterValue)?.ToTimeZone(TimeZoneProvider.TimeZoneInfo)"
+                                  ValueChanged="async v => { context.FilterValue = v; await _grid.Reload(); }"
                                   AllowClear/>
             </FilterValueTemplate>
             <Template>
@@ -142,16 +142,17 @@
                     {
                         <RadzenIcon Icon="@MaterialIcons.Target"/>
                     }
-                    @context.GoalDate.ToTimeZone(TimeZoneProvider.TimeZoneInfo).ToString("d MMM yyyy HH:mm:ss")
+                    @ToTimeZoneAndString(context.GoalDate)
                 </RadzenStack>
             </Template>
         </RadzenDataGridColumn>
-        <RadzenDataGridColumn Property="@nameof(TaskEntry.DateCompleted)" Title="Date Completed" Width="160px" FilterMode="FilterMode.SimpleWithMenu" FilterValue="DateCompletedFilterValue">
+        <RadzenDataGridColumn Property="@nameof(TaskEntry.DateCompleted)" Title="Date Completed" Width="160px" FilterMode="FilterMode.SimpleWithMenu">
             <FilterValueTemplate>
                 <RadzenDatePicker TValue="DateTimeOffset?"
                                   ShowTime
-                                  DateFormat="d MMM yyyy HH:mm:ss"
-                                  @bind-Value="DateCompletedFilterValue"
+                                  DateFormat="@DateTimeFormat"
+                                  Value="((DateTimeOffset?)context.FilterValue)?.ToTimeZone(TimeZoneProvider.TimeZoneInfo)"
+                                  ValueChanged="async v => { context.FilterValue = v; await _grid.Reload(); }"
                                   AllowClear/>
             </FilterValueTemplate>
             <Template>
@@ -172,7 +173,7 @@
                             <RadzenIcon IconColor="var(--rz-warning)" Icon="@MaterialIcons.QuestionBox"/>
                         }
                         <RadzenStack AlignItems="AlignItems.Center" Gap="0.5rem">
-                            @(context.DateCompleted?.ToTimeZone(TimeZoneProvider.TimeZoneInfo).ToString("d MMM yyyy HH:mm:ss") ?? "N/A")
+                            @(context.DateCompleted.HasValue ? ToTimeZoneAndString(context.DateCompleted.Value) : "N/A")
                             @if (isCompletedButFailedToComplete && !_isEditing)
                             {
                                 <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-danger)">Failed to complete in time (@((context.DateCompleted! - context.GoalDate).Value.Humanize()) late)</RadzenText>
@@ -247,33 +248,10 @@
     private Task? _initTask;
     private Guid _userId;
     private bool IsNoListSelected => _selectedList.Id == TodoList.None.Id;
-
-    private static readonly ConfirmOptions ConfirmDeleteOptions = new()
-    {
-        Icon = MaterialIcons.Delete,
-        IconColor = "var(--rz-danger)",
-        OkButtonText = "Yes",
-        CancelButtonText = "No" 
-    };
-
-    DateTimeOffset? DateCreatedFilterValue
-    {
-        get;
-        set => field = value?.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
-    }
-    DateTimeOffset? GoalDateFilterValue
-    {
-        get;
-        set => field = value?.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
-    }
-    DateTimeOffset? DateCompletedFilterValue
-    {
-        get;
-        set => field = value?.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
-    }
-
+    private DataGridFilterHelpers<TaskEntry> FilterHelpers => new(_grid);
+    private const string DateTimeFormat = "d MMM yyyy HH:mm:ss";
     private void ToggleEditing() => _isEditing = !_isEditing;
-
+    private string ToTimeZoneAndString(DateTimeOffset date) => date.ToTimeZone(TimeZoneProvider.TimeZoneInfo).ToString(DateTimeFormat);
     private async Task OnToggleTaskAsync(TaskEntry entry)
     {
         var command = new ToggleTaskCommand(entry.Id, _selectedList.Id, _selectedList.RowVersion);
@@ -289,7 +267,7 @@
         var confirmData = await DialogService.Confirm(
             $"Are you sure you want to delete '{entry.Name}'? You cannot undo this action!", 
             "Confirm Task Deletion", 
-            options: ConfirmDeleteOptions);
+            options: RadzenDialogConstants.ConfirmDeleteOptions);
             
         if (confirmData != true) return;
 
@@ -326,16 +304,8 @@
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        var state = await Provider.GetAuthenticationStateAsync();
-        if (state.User.UserId is not { } userId
-            || state.User.SecurityStamp is not { } securityStamp
-            || await UserStore.GetOrSetUserAsync(userId) is not { } user
-            || user.SecurityStamp != securityStamp)
-        {
-            Redirect();
-            return;
-        }
-        _userId = user.Id;
+        var info = await GetUserService.GetOrRedirectAsync(ApplicationRoutes.ManageAccount);
+        _userId = info.Id;
         _initTask = LoadListsAsync(DefaultListsLoadDataArgs);
     }
 
@@ -344,7 +314,7 @@
         var confirmData = await DialogService.Confirm(
             $"Are you sure you want to delete '{list.Name}'?", 
             "Confirm List Deletion", 
-            options: ConfirmDeleteOptions);
+            options: RadzenDialogConstants.ConfirmDeleteOptions);
             
         if (confirmData != true) return;
 
@@ -407,41 +377,11 @@
         await RefreshStateAsync(list.Id);
     }
 
-    static bool IsNullOrEmpty(FilterOperator? value)
-    {
-        return value is FilterOperator.IsEmpty or FilterOperator.IsNotEmpty or FilterOperator.IsNull or FilterOperator.IsNotNull;
-    }
-
     void OnListSelected(TodoList newList)
     {
         _selectedList = newList;
         StateHasChanged();
         _grid.FirstPage(forceReload: true);
-    }
-
-    void OnFilter(DataGridColumnFilterEventArgs<TaskEntry> args)
-    {
-        if (IsNullOrEmpty(args.Column?.GetFilterOperator()))
-        {
-            OnFilterCleared(args);
-        }
-    }
-
-    private void OnFilterCleared(DataGridColumnFilterEventArgs<TaskEntry> args)
-    {
-        switch (args.Column?.Property)
-        {
-            case nameof(TaskEntry.DateCreated):
-                DateCreatedFilterValue = null;
-                break;
-            case nameof(TaskEntry.DateCompleted):    
-                DateCompletedFilterValue = null;
-                break;
-            case nameof(TaskEntry.GoalDate):
-                GoalDateFilterValue = null;
-                break;
-        }
-        _grid.Reload();
     }
 
     private async Task LoadListsAsync(LoadDataArgs args)
@@ -452,48 +392,22 @@
             await InvokeAsync(StateHasChanged);
             
             await using var context = await DbContextFactory.CreateDbContextAsync();
-            var query = context.TodoLists
+            var query = await context.TodoLists
                 .AsNoTracking()
                 .Where(t => t.UserId == _userId)
                 .OrderByDescending(e => e.LastModifiedDate.HasValue)
                 .ThenByDescending(e => e.LastModifiedDate)
                 .ThenByDescending(e => e.CreationDate)
-                .AsQueryable();
-            
-            if (!string.IsNullOrEmpty(args.Filter))
-            {
-                query = query.Where(t => t.Name.ToLower().Contains(args.Filter.ToLower()));
-            }
-
-            if (!string.IsNullOrEmpty(args.OrderBy))
-            {
-                query = query.OrderBy(args.OrderBy);
-            }
-            
-            _listsCount = await query.CountAsync();
-            
-            if (args.Skip is not null)
-            {
-                query = query.Skip(args.Skip.Value);
-            }
-            
-            if (args.Top is not null)
-            {
-                query = query.Take(args.Top.Value);
-            }
-
-            if (_listsCount == 0)
-            {
-                _lists = [];
-            }
-            else
-            {
-                _lists = await query.ToListAsync();
-            }
+                .AsQueryable()
+                .ApplyDataGridDropDownFiltersAsync(args, async queryable =>
+                {
+                    _listsCount = await queryable.CountAsync();
+                });
+            _lists = _listsCount == 0 ? [] : await query.ToListAsync();
         }
         catch (Exception)
         {
-            _lists = [TodoList.None];
+            _lists = [];
             _listsCount = 0;
         }
         finally
@@ -526,37 +440,18 @@
             }
 
             await using var context = await DbContextFactory.CreateDbContextAsync();
-            var query = context.Tasks
+            var query = await context.Tasks
                 .AsNoTracking()
                 .ForTodoList(_selectedList.Id)
                 .OrderByDescending(e => e.DateCreated)
-                .AsQueryable();
-
-            if (!string.IsNullOrEmpty(args.Filter))
-            {
-                query = query.Where(args.Filter);
-            }
-
-            if (!string.IsNullOrEmpty(args.OrderBy))
-            {
-                query = query.OrderBy(args.OrderBy);
-            }
-
-            _count = await query.CountAsync();
+                .AsQueryable()
+                .ApplyDataGridFiltersAsync(args, async queryable =>
+                {
+                    _count = await queryable.CountAsync();
+                    _completedTasks = _count > 0 ? await queryable.CountAsync(t => t.IsCompleted) : 0;
+                });
             
-            _completedTasks = _count > 0 ? await query.CountAsync(t => t.IsCompleted) : 0;
-
-            if (args.Skip is not null)
-            {
-                query = query.Skip(args.Skip.Value);
-            }
-            
-            if (args.Top is not null)
-            {
-                query = query.Take(args.Top.Value);
-            }
-            
-            _tasks = await query.ToListAsync();
+            _tasks = _count == 0 ? [] : await query.ToListAsync();
 
             if (_tasks.IsNotEmpty && _selectedTasks.IsEmpty)
             {
@@ -575,6 +470,4 @@
             await InvokeAsync(StateHasChanged); 
         }
     }
-
-    private void Redirect() => NavManager.NavigateTo($"{ApplicationRoutes.SignIn}?returnUrl={ApplicationRoutes.Home}", forceLoad: true);
 }

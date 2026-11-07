@@ -8,7 +8,7 @@
 @inject MessageStore Store
 @inject DialogService DialogService
 @inject UserTimeZoneProvider TimeZoneProvider
-
+@inject GetUserService GetUserService
 <RadzenCard Variant="Variant.Outlined" class="rz-p-4 rz-p-md-6" Style="margin: 0 auto;">
     <RadzenStack Gap="1.5rem">
         
@@ -281,28 +281,8 @@
 
     private async Task RefreshUserAsync()
     {
-        var state = await Context;
-        if (state.User.UserId is not { } userId
-            || state.User.SecurityStamp is not { } securityStamp
-            || await UserStore.GetOrSetUserAsync(userId) is not { } user
-            || user.SecurityStamp != securityStamp)
-        {
-            Redirect();
-            return;
-        }
-        User = new ApplicationUserInfo
-        {
-            Id = user.Id,
-            Username = user.Username,
-            Email = user.Email,
-            CreationDate = user.CreationDate,
-            LastModifiedDate = user.LastModifiedDate,
-            LastSignedInDate = user.LastSignedInDate,
-            LastSignedOutDate = user.LastSignedOutDate,
-            RowVersion = user.RowVersion
-        };
+        User = await GetUserService.GetOrRedirectAsync(ApplicationRoutes.ManageAccount);
     }
-    private void Redirect() => NavManager.NavigateTo($"{ApplicationRoutes.SignIn}?returnUrl={ApplicationRoutes.Home}", forceLoad: true);
     private void SignOut() => NavManager.NavigateTo(IdentityRoutes.SignOut, forceLoad: true);
 
     private void SignOutFromAllSessions()
@@ -334,17 +314,5 @@
         await UserStore.RemoveUserAsync(User.Id);
         var id = Store.Store(message);
         NavManager.NavigateTo($"{IdentityRoutes.SignOut}?messageId={id}", forceLoad: true);
-    }
-
-    private sealed class ApplicationUserInfo
-    {
-        public Guid Id { get; set; }
-        public string Username { get; set; } = "UNKNOWN";
-        public string Email { get; set; } = "UNKNOWN";
-        public DateTimeOffset CreationDate { get; set; } = DateTimeOffset.UtcNow;
-        public DateTimeOffset? LastModifiedDate { get; set; } = DateTimeOffset.UtcNow;
-        public DateTimeOffset? LastSignedInDate { get; set; } = DateTimeOffset.UtcNow;
-        public DateTimeOffset? LastSignedOutDate { get; set; } = DateTimeOffset.UtcNow;
-        public uint RowVersion { get; set; }
     }
 }
