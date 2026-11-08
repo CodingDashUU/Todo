@@ -1,5 +1,6 @@
 namespace Washu.Framework.IntegrationTests;
 
+using Extensions;
 using Fixtures;
 using FluentAssertions;
 using Identity;
@@ -86,5 +87,18 @@ public class AuditableEntityTests(ApplicationPostgreSqlFixture fixture)
                 .And
                 .SqlState.Should().Be(PostgresErrorCodes.CheckViolation, "the LastModifiedDate is 1 day less than the CreationDate");
         }
+    }
+
+    [Fact]
+    public async Task SetRowVersion_SetsOriginalValueForConcurrencyCheck()
+    {
+        var user = new ApplicationUser($"User_{Guid.CreateVersion7():N}", $"{Guid.CreateVersion7():N}@example.com", $"sub_{Guid.CreateVersion7():N}");
+        await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
+        context.Users.Add(user);
+        await context.SaveChangesAsync();
+
+        context.SetRowVersion(user, 999u);
+        var entryOriginal = context.Entry(user).Property(nameof(IAuditableEntity.RowVersion)).OriginalValue;
+        entryOriginal.Should().Be(999u);
     }
 }

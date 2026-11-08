@@ -268,4 +268,47 @@ public sealed class SignOutAndHealthEndpointsTests(ApplicationPostgreSqlFixture 
         statusProp.GetString().Should().Be("Healthy");
         jsonDoc.RootElement.TryGetProperty("checks", out _).Should().BeTrue();
     }
+
+    [Fact]
+    public async Task HealthEndpoint_WhenAnonymous_RedirectsToAccessDenied()
+    {
+        var response = await _client.GetAsync("/health-wf");
+        response.StatusCode.Should().Be(HttpStatusCode.Redirect);
+        response.Headers.Location!.OriginalString.Should().Be(ApplicationRoutes.AccessDenied);
+    }
+
+    [Fact]
+    public async Task HealthEndpoint_WhenUserLacksCanCheckSystemHealthPermission_RedirectsToAccessDenied()
+    {
+        var user = new ApplicationUser($"RegularUser_{Guid.CreateVersion7():N}", $"{Guid.CreateVersion7():N}@example.com", $"sub_{Guid.CreateVersion7():N}");
+        await using (var db = await fixture.CreateDbContextFactory().CreateDbContextAsync())
+        {
+            db.Users.Add(user);
+            await db.SaveChangesAsync();
+        }
+
+        var cookie = await SignInAppAsync(user.Id, user.SecurityStamp);
+        var request = new HttpRequestMessage(HttpMethod.Get, "/health-wf");
+        request.Headers.Add("Cookie", cookie);
+
+        var response = await _client.SendAsync(request);
+        response.StatusCode.Should().Be(HttpStatusCode.Redirect);
+        response.Headers.Location!.OriginalString.Should().Be(ApplicationRoutes.AccessDenied);
+    }
+
+    [Fact]
+    public async Task SeedRolesAsync_SeedsRolesSuccessfullyIntoDatabase()
+    {
+        var role1 = $"SeededRole1_{Guid.CreateVersion7():N}";
+        var role2 = $"SeededRole2_{Guid.CreateVersion7():N}";
+
+        await _app.SeedRolesAsync([role1, role2]);
+
+        await using var db = await fixture.CreateDbContextFactory().CreateDbContextAsync();
+        var exists1 = await db.Roles.AnyAsync(r => r.Name == role1);
+        var exists2 = await db.Roles.AnyAsync(r => r.Name == role2);
+
+        exists1.Should().BeTrue();
+        exists2.Should().BeTrue();
+    }
 }
