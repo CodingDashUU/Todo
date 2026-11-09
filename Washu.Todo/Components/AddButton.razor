@@ -1,9 +1,12 @@
 <RadzenButton
-    Variant="Variant.Text"
+    Variant="Outlined ? Variant.Outlined : Variant.Text"
     Click="Click"
+    Text="@Text"
     Icon="@MaterialIcons.Add"
     ButtonStyle="ButtonStyle.Success"/>
               
 @code {
+    [Parameter] public string Text { get; set; } = string.Empty;
+    [Parameter] public bool Outlined { get; set; }
     [Parameter, EditorRequired] public EventCallback<MouseEventArgs> Click { get; set; }              
 }

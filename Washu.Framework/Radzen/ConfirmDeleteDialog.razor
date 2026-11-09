@@ -1,0 +1,35 @@
+@inject DialogService DialogService
+
+<RadzenStack Gap="1.5rem">
+                
+    <!-- Main Question -->
+    <RadzenText TextStyle="TextStyle.Body1" Class="rz-m-0">
+        @Text
+    </RadzenText>
+    <RadzenText TextStyle="TextStyle.Body1" TextAlign="TextAlign.Center"
+                Style="color: var(--rz-danger); font-weight: 600; margin: 0; line-height: 1.2;">
+        Warning: You cannot undo this action!
+    </RadzenText>
+    <!-- Action Buttons -->
+    <RadzenStack Orientation="Orientation.Horizontal">
+        <RadzenButton Text="Cancel" 
+                      Click="() => DialogService.Close(false)" 
+                      ButtonStyle="ButtonStyle.Base" 
+                      Style="width: 53%"
+                      Variant="Variant.Outlined"
+                      Size="ButtonSize.Medium" />
+                                  
+        <RadzenButton Text="Delete" 
+                      Click="() => DialogService.Close(true)" 
+                      ButtonStyle="ButtonStyle.Danger" 
+                      Icon="@MaterialIcons.Delete" 
+                      Style="width: 53%"
+                      Variant="Variant.Outlined"
+                      Size="ButtonSize.Medium" />
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    [Parameter, EditorRequired] public string Text { get; set; }
+
+}

@@ -35,6 +35,7 @@
                                    DataGridExportMode.Excel => ButtonStyle.Success,
                                    _ => ButtonStyle.Warning
                                })"
+                  Variant="Variant.Outlined"
                   Text="@($"Export as {_model.ExportMode.Humanize()}")"
                   Click="OnDialogClose"/>
 </RadzenStack>

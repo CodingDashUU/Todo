@@ -195,7 +195,7 @@
             Account Action
         </RadzenText>
         <!-- Danger Zone -->
-        <RadzenCard Variant="Variant.Filled" 
+        <RadzenCard Variant="Variant.Filled"
                     class=" rz-background-color-danger-lighter rz-border-radius-2" 
                     Style="border: 1px solid var(--rz-danger-light);">
             <RadzenStack>
@@ -224,14 +224,6 @@
     private DateTimeOffset? LastModifiedDate => User.LastModifiedDate?.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
     private DateTimeOffset? LastSignedInDate => User.LastSignedInDate?.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
     private DateTimeOffset? LastSignedOutDate => User.LastSignedOutDate?.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
-    private static readonly ConfirmOptions ConfirmAccountDeletionOptions = new()
-    {
-        Icon = MaterialIcons.Delete,
-        IconColor = "var(--rz-danger)",
-        OkButtonText = "Yes",
-        CancelButtonText = "No" 
-    };
-
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
@@ -297,11 +289,10 @@
             [nameof(ConfirmAccountDeletionDialog.Email)] = User.Email,
             [nameof(ConfirmAccountDeletionDialog.UserId)] = User.Id
         };
-        var confirmData = await DialogService.Confirm(
-            "Are you sure you want to delete your account? You cannot undo this action!", 
-            "Confirm Account Deletion", 
-            options: ConfirmAccountDeletionOptions);
-        if (!confirmData.HasValue || !confirmData.Value) return;
+        var confirmData = await DialogService.ConfirmDelete(
+            "Confirm Account Deletion",
+            "Are you sure you want to delete your account? You cannot undo this action!");
+        if (!confirmData) return;
         var data = await DialogService.OpenAsync<ConfirmAccountDeletionDialog>("Confirm Account Deletion", parameters);
         if (data is not DeleteUserCommand command) return;
         var result = await DeleteUserHandler.HandleAsync(command);

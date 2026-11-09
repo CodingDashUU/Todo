@@ -61,7 +61,7 @@
                         TextProperty="@nameof(TodoList.Name)">
                         <FooterTemplate>
                             <RadzenStack>
-                                <RadzenButton Click="CreateListAsync" Icon="@MaterialIcons.Add" Variant="Variant.Outlined" ButtonStyle="ButtonStyle.Success" Text="Add List"/>
+                                <AddButton Text="Add List" Outlined Click="CreateListAsync"/>
                             </RadzenStack>
                         </FooterTemplate>
                         <Columns>
@@ -241,10 +241,9 @@
     private static double ToRoundedPresentablePercentage(double percentage) => Math.Round(percentage * 100.0, 2);
     private async Task OnDeleteTaskAsync(TaskEntry entry)
     {
-        var confirmData = await DialogService.Confirm(
-            $"Are you sure you want to delete '{entry.Name}'? You cannot undo this action!", 
-            "Confirm Task Deletion", 
-            options: RadzenDialogConstants.ConfirmDeleteOptions);
+        var confirmData = await DialogService.ConfirmDelete(
+            "Confirm Task Deletion",
+            $"Are you sure you want to delete {entry.Name}? You cannot undo this action!");
             
         if (confirmData != true) return;
 
@@ -288,12 +287,10 @@
 
     private async Task DeleteListAsync(TodoList list)
     {
-        var confirmData = await DialogService.Confirm(
-            $"Are you sure you want to delete '{list.Name}'?", 
-            "Confirm List Deletion", 
-            options: RadzenDialogConstants.ConfirmDeleteOptions);
+        var confirmData = 
+        await DialogService.ConfirmDelete("Confirm List Deletion", $"Are you sure you want to delete '{list.Name}'?");
             
-        if (confirmData != true) return;
+        if (!confirmData) return;
 
         var command = new DeleteListCommand(list.Id);
         var message = await DeleteListHandler.HandleAsync(command);
