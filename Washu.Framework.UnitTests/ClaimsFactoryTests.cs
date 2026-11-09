@@ -16,7 +16,7 @@ public class ClaimsFactoryTests
             $"{Guid.CreateVersion7():N}@example.com",
             $"{Guid.CreateVersion7():N}");
         
-        var principal = ApplicationClaimsPrincipalFactory.Create(user);
+        var principal = ClaimsPrincipal.Create(user);
         
         principal.Should().NotBeNull("The factory should never return null");
         principal.UserId.Should().Be(user.Id, "The NameIdentifier value should match the userid of the user passed in");

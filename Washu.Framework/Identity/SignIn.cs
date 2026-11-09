@@ -1,6 +1,7 @@
 namespace Washu.Framework.Identity;
 
 using Entities;
+using Extensions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -18,7 +19,7 @@ public sealed class SignInHandler(
                       throw new InvalidOperationException("An active HttpContext is required");
 
         var authenticationProperties = new AuthenticationProperties { IsPersistent = command.IsPersistent };
-        var userPrincipal = ApplicationClaimsPrincipalFactory.Create(command.User);
+        var userPrincipal = ClaimsPrincipal.Create(command.User);
 
         if (command.AuthenticationMethod is not null
             && userPrincipal.Identity is ClaimsIdentity identity)

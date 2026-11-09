@@ -1,5 +1,7 @@
 namespace Washu.Framework.Extensions;
 
+using Identity.Entities;
+using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
 
 public static class ClaimsExtensions
@@ -21,6 +23,16 @@ public static class ClaimsExtensions
                     || !Guid.TryParse(securityStamp, out var securityStampGuid)) return null;
                 return securityStampGuid;
             }
+        }
+        public static ClaimsPrincipal Create(ApplicationUser user)
+        {
+            var identity = new ClaimsIdentity(IdentityConstants.ApplicationScheme);
+
+            identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()));
+            identity.AddClaim(new Claim(
+                "SecurityStamp", 
+                user.SecurityStamp.ToString()));
+            return new ClaimsPrincipal(identity);
         }
     }
 }
