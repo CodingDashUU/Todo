@@ -22,13 +22,13 @@ try
     
     builder.Host.UseSerilog((_, _, configuration) => configuration
         .MinimumLevel.Information()
-        
         .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+        .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Information)
         .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
         .MinimumLevel.Override("System", LogEventLevel.Warning)
-        .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
         .MinimumLevel.Override("Microsoft.AspNetCore.Components.RenderTree.Renderer", LogEventLevel.Error)
         .MinimumLevel.Override("Microsoft.AspNetCore.SignalR", LogEventLevel.Warning)
+        .MinimumLevel.Override("ZiggyCreatures.Caching.Fusion.FusionCache", LogEventLevel.Warning)
         .Enrich.FromLogContext()
         .Enrich.WithMachineName()
         .Enrich.WithProcessName()

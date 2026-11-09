@@ -14,8 +14,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Serilog;
-using Serilog.Events;
 
 public static class WebApplicationExtensions
 {
@@ -49,15 +47,6 @@ public static class WebApplicationExtensions
             app.UseRateLimiter();
             app.UseAuthentication();
             app.UseAuthorization();
-            // 3. Add Serilog request logging middleware (logs HTTP requests cleanly with Status Code & Elapsed Time)
-            app.UseSerilogRequestLogging(options =>
-            {
-                // Customize the message template
-                options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
-        
-                // Emit debug-level events instead of info for healthy infrastructure paths (like health checks)
-                options.GetLevel = (_, _, ex) => ex != null ? LogEventLevel.Error : LogEventLevel.Information;
-            });
             app.MapExternalEndpoints();
             app.MapWfHealthChecks();
             app.MapSignOutEndpoints();
