@@ -11,7 +11,7 @@ public sealed record CreateTaskCommand(Guid ListId, uint ListRowVersion, string 
 
 public sealed class CreateTaskHandler(
     IDbContextFactory<TodoDbContext> dbContextFactory,
-    ICurrentUser user
+    CurrentUser user
     )
 {
     public async Task<Message> HandleAsync(CreateTaskCommand command)

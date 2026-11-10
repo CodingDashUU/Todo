@@ -6,6 +6,7 @@ using Testing;
 using Washu.Framework.Identity.Entities;
 using Framework.Notifications;
 using Features;
+using Framework.Identity;
 using Identity;
 
 [Collection(TodoPostgreSqlTestCollection.Name)]
@@ -29,7 +30,7 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
         await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var user = await CreateTestUserAsync(context);
 
-        var handler = new CreateListHandler(factory, new MockCurrentUser(user.Id));
+        var handler = new CreateListHandler(factory, CurrentUser.CreateMock(user.Id));
         var listName = $"List{Guid.CreateVersion7():N}";
 
         // 1. Create list successfully
@@ -53,13 +54,12 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
         await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var user1 = await CreateTestUserAsync(context);
         var user2 = await CreateTestUserAsync(context);
-
-        var handler1 = new CreateListHandler(factory, new MockCurrentUser(user1.Id));
-        var handler2 = new CreateListHandler(factory, new MockCurrentUser(user2.Id));
         const string sharedListName = "Shared Work";
 
-        var result1 = await handler1.HandleAsync(new CreateListCommand(sharedListName));
-        var result2 = await handler2.HandleAsync(new CreateListCommand(sharedListName));
+        var result1 = await new CreateListHandler(factory, CurrentUser.CreateMock(user1.Id))
+            .HandleAsync(new CreateListCommand(sharedListName));
+        var result2 = await new CreateListHandler(factory, CurrentUser.CreateMock(user2.Id))
+            .HandleAsync(new CreateListCommand(sharedListName));
 
         result1.Type.Should().Be(MessageType.Success);
         result2.Type.Should().Be(MessageType.Success);
@@ -84,7 +84,7 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
         context.TodoLists.Add(list);
         await context.SaveChangesAsync();
 
-        var handler = new UpdateListHandler(factory, new MockCurrentUser(user.Id));
+        var handler = new UpdateListHandler(factory, CurrentUser.CreateMock(user.Id));
 
         // 1. Attempt update with wrong RowVersion
         var staleResult = await handler.HandleAsync(new UpdateListCommand(list.Id, 99, "New Name"));
@@ -109,7 +109,7 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
         await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var user = await CreateTestUserAsync(context);
 
-        var handler = new UpdateListHandler(factory, new MockCurrentUser(user.Id));
+        var handler = new UpdateListHandler(factory, CurrentUser.CreateMock(user.Id));
         var nonExistentListId = Guid.CreateVersion7();
 
         var result = await handler.HandleAsync(new UpdateListCommand(nonExistentListId, 99, "New Name"));
@@ -130,7 +130,7 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
         context.TodoLists.AddRange(list1, list2);
         await context.SaveChangesAsync();
 
-        var handler = new UpdateListHandler(factory, new MockCurrentUser(user.Id));
+        var handler = new UpdateListHandler(factory, CurrentUser.CreateMock(user.Id));
 
         // Attempt to rename list1 to "List Two" which already exists for this user
         var result = await handler.HandleAsync(new UpdateListCommand(list1.Id, list1.RowVersion, "List Two"));
@@ -151,7 +151,7 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
         context.TodoLists.Add(list);
         await context.SaveChangesAsync();
 
-        var handler = new UpdateListHandler(factory, new MockCurrentUser(otherUser.Id));
+        var handler = new UpdateListHandler(factory, CurrentUser.CreateMock(otherUser.Id));
 
         var result = await handler.HandleAsync(new UpdateListCommand(list.Id, list.RowVersion, "Stolen List"));
 
@@ -174,7 +174,7 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
         context.TodoLists.Add(list);
         await context.SaveChangesAsync();
 
-        var handler = new DeleteListHandler(factory, new MockCurrentUser(user.Id));
+        var handler = new DeleteListHandler(factory, CurrentUser.CreateMock(user.Id));
 
         var result = await handler.HandleAsync(new DeleteListCommand(list.Id));
         result.Type.Should().Be(MessageType.Success);
@@ -191,7 +191,7 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
         await using var context = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var user = await CreateTestUserAsync(context);
 
-        var handler = new DeleteListHandler(factory, new MockCurrentUser(user.Id));
+        var handler = new DeleteListHandler(factory, CurrentUser.CreateMock(user.Id));
 
         var result = await handler.HandleAsync(new DeleteListCommand(Guid.CreateVersion7()));
 
@@ -211,7 +211,7 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
         context.TodoLists.Add(list);
         await context.SaveChangesAsync();
 
-        var handler = new DeleteListHandler(factory, new MockCurrentUser(otherUser.Id));
+        var handler = new DeleteListHandler(factory, CurrentUser.CreateMock(otherUser.Id));
 
         var result = await handler.HandleAsync(new DeleteListCommand(list.Id));
 
@@ -238,7 +238,7 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
         context.TodoLists.Add(list);
         await context.SaveChangesAsync();
 
-        var handler = new CreateTaskHandler(factory, new MockCurrentUser(user.Id));
+        var handler = new CreateTaskHandler(factory, CurrentUser.CreateMock(user.Id));
         var goalDate = DateTimeOffset.UtcNow.AddDays(2);
 
         // 1. Successful creation
@@ -268,7 +268,7 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
         context.TodoLists.AddRange(list1, list2);
         await context.SaveChangesAsync();
 
-        var handler = new CreateTaskHandler(factory, new MockCurrentUser(user.Id));
+        var handler = new CreateTaskHandler(factory, CurrentUser.CreateMock(user.Id));
         const string taskName = "Common Task";
         var goalDate = DateTimeOffset.UtcNow.AddDays(1);
 
@@ -283,7 +283,7 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
     public async Task CreateTaskHandler_ReturnsError_WhenListDoesNotExist()
     {
         var factory = fixture.CreateDbContextFactory<TodoDbContext>();
-        var handler = new CreateTaskHandler(factory, new MockCurrentUser(Guid.CreateVersion7()));
+        var handler = new CreateTaskHandler(factory, CurrentUser.CreateMock(Guid.CreateVersion7()));
 
         var result = await handler.HandleAsync(new CreateTaskCommand(Guid.CreateVersion7(), 99, "Ghost Task", DateTimeOffset.UtcNow.AddDays(1)));
 
@@ -302,7 +302,7 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
         context.TodoLists.Add(list);
         await context.SaveChangesAsync();
 
-        var handler = new CreateTaskHandler(factory, new MockCurrentUser(user.Id));
+        var handler = new CreateTaskHandler(factory, CurrentUser.CreateMock(user.Id));
         const int wrongVersion = 99;
 
         var result = await handler.HandleAsync(new CreateTaskCommand(list.Id, wrongVersion, "Task 1", DateTimeOffset.UtcNow.AddDays(1)));
@@ -328,7 +328,7 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
         context.TodoLists.Add(list);
         await context.SaveChangesAsync();
 
-        var handler = new ToggleTaskHandler(factory, new MockCurrentUser(user.Id));
+        var handler = new ToggleTaskHandler(factory, CurrentUser.CreateMock(user.Id));
 
         // 1. Toggle to completed
         var result1 = await handler.HandleAsync(new ToggleTaskCommand(task.Id, list.Id, list.RowVersion));
@@ -355,7 +355,7 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
     public async Task ToggleTaskHandler_ReturnsError_WhenListDoesNotExist()
     {
         var factory = fixture.CreateDbContextFactory<TodoDbContext>();
-        var handler = new ToggleTaskHandler(factory, new MockCurrentUser(Guid.CreateVersion7()));
+        var handler = new ToggleTaskHandler(factory, CurrentUser.CreateMock(Guid.CreateVersion7()));
 
         var result = await handler.HandleAsync(new ToggleTaskCommand(Guid.CreateVersion7(), Guid.CreateVersion7(), 99));
 
@@ -376,7 +376,7 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
         context.TodoLists.Add(list);
         await context.SaveChangesAsync();
 
-        var handler = new ToggleTaskHandler(factory, new MockCurrentUser(user.Id));
+        var handler = new ToggleTaskHandler(factory, CurrentUser.CreateMock(user.Id));
 
         var result = await handler.HandleAsync(new ToggleTaskCommand(task.Id, list.Id, 99));
 
@@ -395,7 +395,7 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
         context.TodoLists.Add(list);
         await context.SaveChangesAsync();
 
-        var handler = new ToggleTaskHandler(factory, new MockCurrentUser(user.Id));
+        var handler = new ToggleTaskHandler(factory, CurrentUser.CreateMock(user.Id));
 
         var result = await handler.HandleAsync(new ToggleTaskCommand(Guid.CreateVersion7(), list.Id, list.RowVersion));
 
@@ -420,7 +420,7 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
         context.TodoLists.Add(list);
         await context.SaveChangesAsync();
 
-        var handler = new UpdateTaskHandler(factory, new MockCurrentUser(user.Id));
+        var handler = new UpdateTaskHandler(factory, CurrentUser.CreateMock(user.Id));
         var newGoalDate = DateTimeOffset.UtcNow.AddDays(4);
 
         var result = await handler.HandleAsync(new UpdateTaskCommand(task.Id, "Updated Task Name", newGoalDate, list.Id, list.RowVersion));
@@ -446,7 +446,7 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
         context.TodoLists.Add(list);
         await context.SaveChangesAsync();
 
-        var handler = new UpdateTaskHandler(factory, new MockCurrentUser(user.Id));
+        var handler = new UpdateTaskHandler(factory, CurrentUser.CreateMock(user.Id));
 
         await using var readContext = await fixture.CreateDbContextFactory().CreateDbContextAsync();
         var persistedTask = await readContext.Tasks.FirstAsync(t => t.Id == task.Id);
@@ -471,7 +471,7 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
         context.TodoLists.Add(list);
         await context.SaveChangesAsync();
 
-        var handler = new UpdateTaskHandler(factory, new MockCurrentUser(user.Id));
+        var handler = new UpdateTaskHandler(factory, CurrentUser.CreateMock(user.Id));
 
         // Attempt to rename task1 to "Task Two"
         var result = await handler.HandleAsync(new UpdateTaskCommand(task1.Id, "Task Two", task1.GoalDate, list.Id, list.RowVersion));
@@ -484,7 +484,7 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
     public async Task UpdateTaskHandler_ReturnsError_WhenListDoesNotExist()
     {
         var factory = fixture.CreateDbContextFactory<TodoDbContext>();
-        var handler = new UpdateTaskHandler(factory, new MockCurrentUser(Guid.CreateVersion7()));
+        var handler = new UpdateTaskHandler(factory, CurrentUser.CreateMock(Guid.CreateVersion7()));
 
         var result = await handler.HandleAsync(new UpdateTaskCommand(Guid.CreateVersion7(), "Name", DateTimeOffset.UtcNow.AddDays(1), Guid.CreateVersion7(), 99));
 
@@ -505,7 +505,7 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
         context.TodoLists.Add(list);
         await context.SaveChangesAsync();
 
-        var handler = new UpdateTaskHandler(factory, new MockCurrentUser(user.Id));
+        var handler = new UpdateTaskHandler(factory, CurrentUser.CreateMock(user.Id));
 
         var result = await handler.HandleAsync(new UpdateTaskCommand(task.Id, "New Name", task.GoalDate, list.Id, 99));
 
@@ -524,7 +524,7 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
         context.TodoLists.Add(list);
         await context.SaveChangesAsync();
 
-        var handler = new UpdateTaskHandler(factory, new MockCurrentUser(user.Id));
+        var handler = new UpdateTaskHandler(factory, CurrentUser.CreateMock(user.Id));
 
         var result = await handler.HandleAsync(new UpdateTaskCommand(Guid.CreateVersion7(), "New Name", DateTimeOffset.UtcNow.AddDays(1), list.Id, list.RowVersion));
 
@@ -549,7 +549,7 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
         context.TodoLists.Add(list);
         await context.SaveChangesAsync();
 
-        var handler = new DeleteTaskHandler(factory, new MockCurrentUser(user.Id));
+        var handler = new DeleteTaskHandler(factory, CurrentUser.CreateMock(user.Id));
 
         var result = await handler.HandleAsync(new DeleteTaskCommand(task.Id, list.Id, list.RowVersion));
         result.Type.Should().Be(MessageType.Success);
@@ -566,7 +566,7 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
     public async Task DeleteTaskHandler_ReturnsError_WhenListDoesNotExist()
     {
         var factory = fixture.CreateDbContextFactory<TodoDbContext>();
-        var handler = new DeleteTaskHandler(factory, new MockCurrentUser(Guid.CreateVersion7()));
+        var handler = new DeleteTaskHandler(factory, CurrentUser.CreateMock(Guid.CreateVersion7()));
 
         var result = await handler.HandleAsync(new DeleteTaskCommand(Guid.CreateVersion7(), Guid.CreateVersion7(), 99));
 
@@ -587,7 +587,7 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
         context.TodoLists.Add(list);
         await context.SaveChangesAsync();
 
-        var handler = new DeleteTaskHandler(factory, new MockCurrentUser(user.Id));
+        var handler = new DeleteTaskHandler(factory, CurrentUser.CreateMock(user.Id));
 
         var result = await handler.HandleAsync(new DeleteTaskCommand(task.Id, list.Id, 99));
 
@@ -606,7 +606,7 @@ public class TodoHandlersTests(TodoPostgreSqlFixture fixture)
         context.TodoLists.Add(list);
         await context.SaveChangesAsync();
 
-        var handler = new DeleteTaskHandler(factory, new MockCurrentUser(user.Id));
+        var handler = new DeleteTaskHandler(factory, CurrentUser.CreateMock(user.Id));
 
         var result = await handler.HandleAsync(new DeleteTaskCommand(Guid.CreateVersion7(), list.Id, list.RowVersion));
 

@@ -10,7 +10,7 @@ public sealed record DeleteTaskCommand(Guid TaskId, Guid ListId, uint ListRowVer
 
 public sealed class DeleteTaskHandler(
     IDbContextFactory<TodoDbContext> factory,
-    ICurrentUser user
+    CurrentUser user
     )
 {
     public async Task<Message> HandleAsync(DeleteTaskCommand command)

@@ -2,6 +2,8 @@ namespace Washu.Framework.UnitTests;
 
 using FluentAssertions;
 using Identity.Entities;
+using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
 using Washu.Framework.Extensions;
 using Washu.Framework.Identity;
 using Testing;
@@ -27,8 +29,7 @@ public class QueryableExtensionsTests
             new() { UserId = otherUserId, Title = "Other User Item" },
             new() { UserId = targetUserId, Title = "Target Item 2" }
         }.AsQueryable();
-
-        var currentUser = new MockCurrentUser(targetUserId);
+        var currentUser = CurrentUser.CreateMock(targetUserId);
 
         var filtered = items.ForCurrentUser(currentUser).ToList();
 
@@ -44,7 +45,7 @@ public class QueryableExtensionsTests
             new() { UserId = Guid.CreateVersion7(), Title = "Item" }
         }.AsQueryable();
 
-        var currentUser = new MockCurrentUser(null);
+        var currentUser = CurrentUser.CreateMock(null);
 
         var act = () => items.ForCurrentUser(currentUser);
 

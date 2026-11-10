@@ -83,7 +83,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<GetExternalLoginInfoHandler>();
         services.AddSingleton<ApplicationUserStore>();
         services.AddScoped<GetUserService>();
-        services.AddSingleton<ICurrentUser, CurrentUser>();
+        services.AddSingleton<CurrentUser>();
         services.AddSingleton<IDeleteEntityTask, DeleteUserTask>();
         services.AddHostedService<DeleteEntityWorker>();
         return services;

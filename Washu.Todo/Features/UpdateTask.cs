@@ -11,7 +11,7 @@ public sealed record UpdateTaskCommand(Guid TaskId, string NewTaskName, DateTime
 
 public sealed class UpdateTaskHandler(
     IDbContextFactory<TodoDbContext> factory,
-    ICurrentUser user
+    CurrentUser user
     )
 {
     public async Task<Message> HandleAsync(UpdateTaskCommand command)

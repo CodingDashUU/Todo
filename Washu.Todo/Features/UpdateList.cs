@@ -10,7 +10,7 @@ using Npgsql;
 public sealed record UpdateListCommand(Guid ListId, uint ListRowVersion, string NewListName);
 public sealed class UpdateListHandler(
     IDbContextFactory<TodoDbContext> factory,
-    ICurrentUser user
+    CurrentUser user
     )
 {
     public async Task<Message> HandleAsync(UpdateListCommand command)

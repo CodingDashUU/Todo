@@ -10,7 +10,7 @@ public sealed record ToggleTaskCommand(Guid TaskId, Guid ListId, uint ListRowVer
 
 public sealed class ToggleTaskHandler(
     IDbContextFactory<TodoDbContext> factory,
-    ICurrentUser user
+    CurrentUser user
     )
 {
     public async Task<Message> HandleAsync(ToggleTaskCommand command)

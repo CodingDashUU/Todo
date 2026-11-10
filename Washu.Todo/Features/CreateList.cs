@@ -10,7 +10,7 @@ using TodoList = TodoList;
 public sealed record CreateListCommand(string ListName);
 public sealed class CreateListHandler(
     IDbContextFactory<TodoDbContext> dbContextFactory,
-    ICurrentUser user
+    CurrentUser user
     )
 {
     public async Task<Message> HandleAsync(CreateListCommand command)

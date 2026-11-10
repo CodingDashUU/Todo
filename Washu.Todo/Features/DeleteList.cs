@@ -10,7 +10,7 @@ public sealed record DeleteListCommand(Guid ListId);
 
 public sealed class DeleteListHandler(
     IDbContextFactory<TodoDbContext> factory,
-    ICurrentUser user
+    CurrentUser user
     )
 {
     public async Task<Message> HandleAsync(DeleteListCommand command)
