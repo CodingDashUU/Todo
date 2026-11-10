@@ -1,3 +1,10 @@
+using FluentValidation;
+using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Hosting;
+using Serilog;
+using Serilog.Events;
+using Serilog.Formatting.Json;
+using Washu.Framework.Extensions;
 namespace Washu.Framework.Extensions;
 
 using AspNetCore;
@@ -121,6 +128,12 @@ public static class ServiceCollectionExtensions
             return new UserTimeZoneProvider();
         }
     });
+
+    public IServiceCollection AddDeleteEntityTask<TEntityTask>()
+    where TEntityTask : class, IDeleteEntityTask
+    {
+        return services.AddSingleton<IDeleteEntityTask, TEntityTask>();
+    }
     public IServiceCollection AddWfRateLimiting() => services.AddRateLimiter(options =>
             {
                 options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -206,6 +219,44 @@ public static class ServiceCollectionExtensions
                     options.ClientTimeoutInterval = TimeSpan.FromSeconds(30);
                     options.KeepAliveInterval = TimeSpan.FromSeconds(15);
                 });
+        }
+    }
+
+    extension(ConfigureHostBuilder host)
+    {
+        public void UseWfLogging()
+        {
+            host.UseSerilog((_, _, configuration) => configuration
+                .MinimumLevel.Information()
+                .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+                .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Information)
+                .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
+                .MinimumLevel.Override("System", LogEventLevel.Warning)
+                .MinimumLevel.Override("Microsoft.AspNetCore.Components.RenderTree.Renderer", LogEventLevel.Error)
+                .MinimumLevel.Override("Microsoft.AspNetCore.SignalR", LogEventLevel.Warning)
+                .MinimumLevel.Override("ZiggyCreatures.Caching.Fusion.FusionCache", LogEventLevel.Warning)
+                .Enrich.FromLogContext()
+                .Enrich.WithMachineName()
+                .Enrich.WithProcessName()
+                .Enrich.WithProcessId()
+                .Enrich.WithEnvironmentName()
+        
+                .WriteTo.Console(outputTemplate: 
+                    "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
+        
+                .WriteTo.File(
+                    path: "logs/app-log-.txt",
+                    rollingInterval: RollingInterval.Day,
+                    restrictedToMinimumLevel: LogEventLevel.Information,
+                    retainedFileCountLimit: 30)
+        
+                .WriteTo.File(
+                    new JsonFormatter(renderMessage: true), 
+                    path: "logs/app-json-log-.json",
+                    rollingInterval: RollingInterval.Day,
+                    restrictedToMinimumLevel: LogEventLevel.Information,
+                    retainedFileCountLimit: 30)
+            );
         }
     }
     

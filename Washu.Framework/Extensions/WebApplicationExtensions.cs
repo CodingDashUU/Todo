@@ -1,3 +1,9 @@
+using FluentValidation;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Serilog;
+using Serilog.Events;
+using Serilog.Formatting.Json;
+
 namespace Washu.Framework.Extensions;
 
 using AspNetCore;
@@ -89,7 +95,6 @@ public static class WebApplicationExtensions
                     await context.Response.WriteAsJsonAsync(json);
                 }
             }).RequirePermission(CorePermissions.CanCheckSystemHealth);
-
         internal void MapSignOutEndpoints()
         {
             app.MapGet(IdentityRoutes.SignOut, async (HttpContext context, ILogger<SignOut> logger, [FromQuery] string? messageId) =>
@@ -145,6 +150,68 @@ public static class WebApplicationExtensions
                 .RequireRateLimiting(RateLimiterPolicy.StandardRateLimiter);
         }
     }
+
+    extension(WebApplication)
+    {
+        public static async Task BuildAndRunApplicationAsync<TDbContext, TApp>(
+            string[] args,
+            Action<WfApplicationOptions>? configureOptions = null)
+            where TDbContext : ApplicationDbContext
+            where TApp : ComponentBase
+        {
+            var options = new WfApplicationOptions();
+            configureOptions?.Invoke(options);
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+                .WriteTo.Console()
+                .CreateBootstrapLogger();
+
+            try
+            {
+                Log.Information("Application is starting...");
+                var builder = WebApplication.CreateBuilder(args);
+                ValidatorOptions.Global.DefaultRuleLevelCascadeMode = CascadeMode.Stop;
+                builder.Host.UseWfLogging();
+                builder.Services.AddHttpContextAccessor();
+                builder.Services.AddWfRateLimiting();
+                builder.Services.AddHealthChecks().AddDbContextCheck<TDbContext>();
+                builder.Services.AddWfDbContextFactory<TDbContext>(builder.Configuration);
+                builder.Services.AddWfRadzenBlazorServer();
+                builder.Services.AddWfIdentityServices();
+                builder.Services.AddFusionCaching();
+                builder.Services.AddUserTimeZoneProvider();
+                builder.Services.AddCascadingAuthenticationState();
+                builder.Services.AddAppAuthenticationStateProvider();
+                builder.Services.AddNoOpAntiforgeryProvider();
+                builder.Services
+                    .AddDefaultAuthentication()
+                    .AddWfExternalCookie()
+                    .AddWfApplicationCookie()
+                    .AddWfGoogle(builder.Configuration);
+                options.RegisterAdditionalServices?.Invoke(builder);
+                var app = builder.Build();
+                await app.MigrateAsync<TDbContext>();
+                app.UseWfPipeline();
+                app.MapWfRazorComponents<TApp>();
+                await app.SeedRolesAsync([.. InitialUserRoles.Roles]);
+                await app.SeedPermissionsAsync();
+                await app.RunAsync();
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex, "Application terminated unexpectedly due to an exception during startup");
+            }
+            finally
+            { 
+                await Log.CloseAndFlushAsync();
+            }
+        }
+    }
+}
+public class WfApplicationOptions
+{
+    public Action<WebApplicationBuilder>? RegisterAdditionalServices { get; set; }
 }
 file abstract class SignOut;
 file abstract class SignOutFromAllSessions;
