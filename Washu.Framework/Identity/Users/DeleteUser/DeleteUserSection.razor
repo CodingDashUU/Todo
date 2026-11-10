@@ -1,0 +1,61 @@
+@using System.ComponentModel
+@using global::Radzen
+@using global::Radzen.Blazor
+@using Washu.Framework.AspNetCore
+@using Washu.Framework.Identity.Users.FindUser
+@using Washu.Framework.Notifications
+@using Washu.Framework.Radzen
+@using Washu.Framework.Radzen.Identity
+@inject DialogService DialogService
+@inject CachedFindUserHandler CachedFindUserHandler
+@inject MessageStore Store
+@inject NavigationManager NavManager
+@inject DeleteUserHandler DeleteUserHandler
+
+<RadzenCard Variant="Variant.Filled"
+            class=" rz-background-color-danger-lighter rz-border-radius-2" 
+            Style="border: 1px solid var(--rz-danger-light);">
+    <RadzenStack>
+        <RadzenText TextStyle="TextStyle.H6" class="rz-color-danger-dark">
+            Danger Zone
+        </RadzenText>
+        <RadzenText TextStyle="TextStyle.Caption" class="rz-color-danger">
+            Permanently delete your account and all associated data.
+        </RadzenText>
+        <RadzenButton Icon="@MaterialIcons.Delete" 
+                      Text="Delete Account" 
+                      ButtonStyle="ButtonStyle.Danger" 
+                      Variant="Variant.Filled" 
+                      Size="ButtonSize.Small" 
+                      Click="@DeleteAccountAsync" />
+    </RadzenStack>
+</RadzenCard>
+
+@code {
+    [Parameter, EditorRequired] public ApplicationUserInfo User { get; set; } 
+    
+    public async Task DeleteAccountAsync()
+    {
+        var parameters = new Dictionary<string, object?>(2)
+        {
+            [nameof(ConfirmAccountDeletionDialog.Email)] = User.Email,
+            [nameof(ConfirmAccountDeletionDialog.UserId)] = User.Id
+        };
+        var confirmData = await DialogService.ConfirmDelete(
+            "Confirm Account Deletion",
+            "Are you sure you want to delete your account? You cannot undo this action!");
+        if (!confirmData) return;
+        var data = await DialogService.OpenAsync<ConfirmAccountDeletionDialog>("Confirm Account Deletion", parameters);
+        if (data is not DeleteUserCommand command) return;
+        var result = await DeleteUserHandler.HandleAsync(command);
+        var message = result switch
+        {
+            DeleteUserResult.AccountNotFound => Message.Error("Identity Error", "Account not found"),
+            DeleteUserResult.Success => Message.Success("Identity Success", "Successfully deleted account"),
+            _ => throw new ArgumentOutOfRangeException()
+        };
+        await CachedFindUserHandler.RemoveUserAsync(User.Id);
+        var id = Store.Store(message);
+        NavManager.NavigateTo($"{IdentityRoutes.SignOut}?messageId={id}", forceLoad: true);
+    }
+}

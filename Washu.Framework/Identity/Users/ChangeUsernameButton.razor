@@ -1,0 +1,65 @@
+@using global::Radzen
+@using global::Radzen.Blazor
+@using Washu.Framework.AspNetCore
+@using Washu.Framework.Identity.Users.FindUser
+@using Washu.Framework.Notifications
+@using Washu.Framework.Radzen
+@using Washu.Framework.Radzen.Identity
+@using Washu.Framework.Radzen.Notifications
+@inject DialogService DialogService
+@inject CachedFindUserHandler CachedFindUserHandler
+@inject MessageStore Store
+@inject NavigationManager NavManager
+@inject ChangeUsernameHandler ChangeUsernameHandler
+@inject NotificationService NotificationService
+<RadzenButton Icon="@MaterialIcons.Edit"
+              ButtonStyle="ButtonStyle.Primary"
+              Variant="Variant.Text"
+              Size="ButtonSize.Large"
+              Click="@OnChangeUsernameAsync"/>
+              
+@code {
+    [Parameter, EditorRequired] public ApplicationUserInfo User { get; set; }
+    [Parameter, EditorRequired] public Func<Task> OnRefreshUserAsync { get; set; }
+    private async Task OnChangeUsernameAsync()
+    {
+        var parameters = new Dictionary<string, object?>(3)
+        {
+            [nameof(ChangeUsernameDialog.OldUsername)] = User.Username,
+            [nameof(ChangeUsernameDialog.UserId)] = User.Id,
+            [nameof(ChangeUsernameDialog.UserVersionId)] = User.RowVersion
+        };
+        var data = await DialogService.OpenAsync<ChangeUsernameDialog>("Change Username", parameters);
+        if (data is not ChangeUsernameCommand command) return;
+        var result = await ChangeUsernameHandler.HandleAsync(command);
+        switch (result)
+        {
+            case ChangeUsernameResult.AccountNotFound:
+            {
+                var id = Store.Store(Message.Error("Identity Error", "Account not found"));
+                await CachedFindUserHandler.RemoveUserAsync(User.Id);
+                NavManager.NavigateTo($"{IdentityRoutes.SignOut}?messageId={id}", forceLoad: true);
+                return;
+            }
+            case ChangeUsernameResult.UserAlreadyModified:
+                NotificationService.Show(Message.Error("Identity Error", "Account already modified"));
+                await OnRefreshUserAsync();
+                return;
+        }
+
+        var message = result switch
+        {
+            ChangeUsernameResult.UsernameTaken => Message.Error("Identity Error", "Username taken"),
+            ChangeUsernameResult.Success => Message.Success("Identity Success", "Successfully changed username"),
+            _ => throw new ArgumentOutOfRangeException()
+        };
+        NotificationService.Show(message);
+        if (message.Type is MessageType.Success)
+        {
+            await CachedFindUserHandler.RemoveUserAsync(User.Id);
+            await OnRefreshUserAsync();
+        }
+    }
+                  
+
+}

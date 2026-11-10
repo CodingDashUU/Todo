@@ -1,15 +1,9 @@
 @using Humanizer
 @using Washu.Framework.Extensions
+@using Washu.Framework.Identity.Login
 @using Washu.Framework.Identity.Users
 @using Washu.Framework.Identity.Users.DeleteUser
 @using Washu.Framework.Identity.Users.FindUser
-@inject ChangeUsernameHandler ChangeUsernameHandler
-@inject DeleteUserHandler DeleteUserHandler
-@inject NotificationService NotificationService
-@inject NavigationManager NavManager
-@inject CachedFindUserHandler CachedFindUserHandler
-@inject MessageStore Store
-@inject DialogService DialogService
 @inject UserTimeZoneProvider TimeZoneProvider
 @inject GetUserService GetUserService
 <RadzenCard Variant="Variant.Outlined" class="rz-p-4 rz-p-md-6" Style="margin: 0 auto;">
@@ -32,20 +26,7 @@
             </RadzenStack>
         </RadzenStack>
         
-        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" Wrap="FlexWrap.Wrap">
-            <RadzenButton Icon="@MaterialIcons.Logout" 
-                          Text="Sign Out" 
-                          ButtonStyle="ButtonStyle.Base" 
-                          Variant="Variant.Outlined" 
-                          Size="ButtonSize.Small" 
-                          Click="@SignOut" />
-            <RadzenButton Icon="@MaterialIcons.Logout" 
-                          Text="Sign Out From All Sessions" 
-                          ButtonStyle="ButtonStyle.Base" 
-                          Variant="Variant.Outlined" 
-                          Size="ButtonSize.Small" 
-                          Click="@SignOutFromAllSessions" />
-        </RadzenStack>
+        <SignOutSection/>
 
         <!-- Divider -->
         <hr class="rz-my-0 rz-border-top rz-border-base-300" />
@@ -70,11 +51,7 @@
                                     @User.Username
                                 </RadzenText>
                             </RadzenStack>
-                            <RadzenButton Icon="@MaterialIcons.Edit"
-                                          ButtonStyle="ButtonStyle.Primary"
-                                          Variant="Variant.Text"
-                                          Size="ButtonSize.Large"
-                                          Click="@OnChangeUsernameAsync"/>
+                            <ChangeUsernameButton User="User" OnRefreshUserAsync="RefreshUserAsync"/>
                         </RadzenStack>
                         
                     </RadzenCard>
@@ -198,24 +175,7 @@
             Account Action
         </RadzenText>
         <!-- Danger Zone -->
-        <RadzenCard Variant="Variant.Filled"
-                    class=" rz-background-color-danger-lighter rz-border-radius-2" 
-                    Style="border: 1px solid var(--rz-danger-light);">
-            <RadzenStack>
-                <RadzenText TextStyle="TextStyle.H6" class="rz-color-danger-dark">
-                    Danger Zone
-                </RadzenText>
-                <RadzenText TextStyle="TextStyle.Caption" class="rz-color-danger">
-                    Permanently delete your account and all associated data.
-                </RadzenText>
-                <RadzenButton Icon="@MaterialIcons.Delete" 
-                              Text="Delete Account" 
-                              ButtonStyle="ButtonStyle.Danger" 
-                              Variant="Variant.Filled" 
-                              Size="ButtonSize.Small" 
-                              Click="@DeleteAccountAsync" />
-            </RadzenStack>
-        </RadzenCard>
+        <DeleteUserSection User="User" />
 
     </RadzenStack>
 </RadzenCard>
@@ -232,81 +192,11 @@
         await base.OnInitializedAsync();
         await RefreshUserAsync();
     }
-
-    private async Task OnChangeUsernameAsync()
-    {
-        var parameters = new Dictionary<string, object?>(3)
-        {
-            [nameof(ChangeUsernameDialog.OldUsername)] = User.Username,
-            [nameof(ChangeUsernameDialog.UserId)] = User.Id,
-            [nameof(ChangeUsernameDialog.UserVersionId)] = User.RowVersion
-        };
-        var data = await DialogService.OpenAsync<ChangeUsernameDialog>("Change Username", parameters);
-        if (data is not ChangeUsernameCommand command) return;
-        var result = await ChangeUsernameHandler.HandleAsync(command);
-        switch (result)
-        {
-            case ChangeUsernameResult.AccountNotFound:
-            {
-                var id = Store.Store(Message.Error("Identity Error", "Account not found"));
-                await CachedFindUserHandler.RemoveUserAsync(User.Id);
-                NavManager.NavigateTo($"{IdentityRoutes.SignOut}?messageId={id}", forceLoad: true);
-                return;
-            }
-            case ChangeUsernameResult.UserAlreadyModified:
-                NotificationService.Show(Message.Error("Identity Error", "Account already modified"));
-                await RefreshUserAsync();
-                return;
-        }
-
-        var message = result switch
-        {
-            ChangeUsernameResult.UsernameTaken => Message.Error("Identity Error", "Username taken"),
-            ChangeUsernameResult.Success => Message.Success("Identity Success", "Successfully changed username"),
-            _ => throw new ArgumentOutOfRangeException()
-        };
-        NotificationService.Show(message);
-        if (message.Type is MessageType.Success)
-        {
-            await CachedFindUserHandler.RemoveUserAsync(User.Id);
-            await RefreshUserAsync();
-        }
-        StateHasChanged();
-    }
-
+    
     private async Task RefreshUserAsync()
     {
         User = await GetUserService.GetOrRedirectAsync(ApplicationRoutes.ManageAccount);
-    }
-    private void SignOut() => NavManager.NavigateTo(IdentityRoutes.SignOut, forceLoad: true);
-
-    private void SignOutFromAllSessions()
-    {
-        NavManager.NavigateTo(IdentityRoutes.SignOutFromAllSessions, forceLoad: true);
+        await InvokeAsync(StateHasChanged);
     }
     
-    private async Task DeleteAccountAsync()
-    {
-        var parameters = new Dictionary<string, object?>(2)
-        {
-            [nameof(ConfirmAccountDeletionDialog.Email)] = User.Email,
-            [nameof(ConfirmAccountDeletionDialog.UserId)] = User.Id
-        };
-        var confirmData = await DialogService.ConfirmDelete(
-            "Confirm Account Deletion",
-            "Are you sure you want to delete your account? You cannot undo this action!");
-        if (!confirmData) return;
-        var data = await DialogService.OpenAsync<ConfirmAccountDeletionDialog>("Confirm Account Deletion", parameters);
-        if (data is not DeleteUserCommand command) return;
-        var result = await DeleteUserHandler.HandleAsync(command);
-        var message = result switch
-        {
-            DeleteUserResult.AccountNotFound => Message.Error("Identity Error", "Account not found"),
-            DeleteUserResult.Success => Message.Success("Identity Success", "Successfully deleted account"),
-            _ => throw new ArgumentOutOfRangeException()
-        };
-        await CachedFindUserHandler.RemoveUserAsync(User.Id);
-        var id = Store.Store(message);
-        NavManager.NavigateTo($"{IdentityRoutes.SignOut}?messageId={id}", forceLoad: true);
-    }
 }

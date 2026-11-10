@@ -1,0 +1,28 @@
+@using global::Radzen
+@using global::Radzen.Blazor
+@using Washu.Framework.AspNetCore
+@using Washu.Framework.Radzen
+@inject NavigationManager NavManager
+<RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" Wrap="FlexWrap.Wrap">
+    <RadzenButton Icon="@MaterialIcons.Logout" 
+                  Text="Sign Out" 
+                  ButtonStyle="ButtonStyle.Base" 
+                  Variant="Variant.Outlined" 
+                  Size="ButtonSize.Small" 
+                  Click="@SignOut" />
+    <RadzenButton Icon="@MaterialIcons.Logout" 
+                  Text="Sign Out From All Sessions" 
+                  ButtonStyle="ButtonStyle.Base" 
+                  Variant="Variant.Outlined" 
+                  Size="ButtonSize.Small" 
+                  Click="@SignOutFromAllSessions" />
+</RadzenStack>
+
+@code {
+    private void SignOut() => NavManager.NavigateTo(IdentityRoutes.SignOut, forceLoad: true);
+
+    private void SignOutFromAllSessions()
+    {
+        NavManager.NavigateTo(IdentityRoutes.SignOutFromAllSessions, forceLoad: true);
+    }
+}
