@@ -1,3 +1,4 @@
+@using System.Diagnostics
 @using Microsoft.EntityFrameworkCore
 @using System.Linq.Dynamic.Core 
 @using Humanizer
@@ -368,7 +369,7 @@
             await using var context = await DbContextFactory.CreateDbContextAsync();
             var query = await context.TodoLists
                 .AsNoTracking()
-                .Where(t => t.UserId == _userId)
+                .ForUser(_userId)
                 .OrderByDescending(e => e.LastModifiedDate.HasValue)
                 .ThenByDescending(e => e.LastModifiedDate)
                 .ThenByDescending(e => e.CreationDate)
