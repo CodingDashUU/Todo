@@ -1,3 +1,5 @@
+using Washu.Framework.Identity.Persistence;
+
 namespace Washu.Framework.IntegrationTests.Fixtures;
 
 using Identity;

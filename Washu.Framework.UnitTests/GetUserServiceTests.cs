@@ -1,3 +1,6 @@
+using Washu.Framework.Identity.Users;
+using Washu.Framework.Identity.Users.FindUser;
+
 namespace Washu.Framework.UnitTests;
 
 using System.Security.Claims;
@@ -7,7 +10,6 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Washu.Framework.Blazor;
 using Washu.Framework.Identity;
-using Washu.Framework.Identity.Entities;
 using ZiggyCreatures.Caching.Fusion;
 
 public class GetUserServiceTests
@@ -34,7 +36,7 @@ public class GetUserServiceTests
     private static (GetUserService Service, TestNavigationManager NavManager, IFusionCache Cache) CreateService(AuthenticationState authState)
     {
         var cache = new FusionCache(new FusionCacheOptions());
-        var userStore = new ApplicationUserStore(cache, null!);
+        var userStore = new CachedFindUserHandler(cache, null!);
         var navManager = new TestNavigationManager();
         var provider = new TestAuthStateProvider(authState);
         var service = new GetUserService(provider, userStore, navManager);

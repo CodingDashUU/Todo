@@ -1,8 +1,10 @@
+using Washu.Framework.Identity.Permissions;
+using Washu.Framework.Identity.Roles;
+
 namespace Washu.Framework.IntegrationTests;
 
 using Fixtures;
 using FluentAssertions;
-using Identity.Entities;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Xunit;

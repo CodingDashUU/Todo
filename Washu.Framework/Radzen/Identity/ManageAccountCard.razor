@@ -1,0 +1,312 @@
+@using Humanizer
+@using Washu.Framework.Extensions
+@using Washu.Framework.Identity.Users
+@using Washu.Framework.Identity.Users.DeleteUser
+@using Washu.Framework.Identity.Users.FindUser
+@inject ChangeUsernameHandler ChangeUsernameHandler
+@inject DeleteUserHandler DeleteUserHandler
+@inject NotificationService NotificationService
+@inject NavigationManager NavManager
+@inject CachedFindUserHandler CachedFindUserHandler
+@inject MessageStore Store
+@inject DialogService DialogService
+@inject UserTimeZoneProvider TimeZoneProvider
+@inject GetUserService GetUserService
+<RadzenCard Variant="Variant.Outlined" class="rz-p-4 rz-p-md-6" Style="margin: 0 auto;">
+    <RadzenStack Gap="1.5rem">
+        
+        <!-- Header & Profile Overview -->
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem" Wrap="FlexWrap.Wrap">
+            <RadzenGravatar Email="@User.Email" 
+                            Size="64" 
+                            class="rz-border-radius-circle" 
+                            Style="border: 2px solid var(--rz-primary-light);" />
+
+            <RadzenStack Gap="0.25rem" class="rz-flex-grow-1">
+                <RadzenText TextStyle="TextStyle.H5" TagName="TagName.H2" class="rz-mb-0 wrapped-text">
+                    @User.Username
+                </RadzenText>
+                <RadzenText TextStyle="TextStyle.Body2" class="rz-color-secondary">
+                    @User.Email
+                </RadzenText>
+            </RadzenStack>
+        </RadzenStack>
+        
+        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" Wrap="FlexWrap.Wrap">
+            <RadzenButton Icon="@MaterialIcons.Logout" 
+                          Text="Sign Out" 
+                          ButtonStyle="ButtonStyle.Base" 
+                          Variant="Variant.Outlined" 
+                          Size="ButtonSize.Small" 
+                          Click="@SignOut" />
+            <RadzenButton Icon="@MaterialIcons.Logout" 
+                          Text="Sign Out From All Sessions" 
+                          ButtonStyle="ButtonStyle.Base" 
+                          Variant="Variant.Outlined" 
+                          Size="ButtonSize.Small" 
+                          Click="@SignOutFromAllSessions" />
+        </RadzenStack>
+
+        <!-- Divider -->
+        <hr class="rz-my-0 rz-border-top rz-border-base-300" />
+
+        <!-- Profile Details Section -->
+        <RadzenStack Gap="0.5rem">
+            <RadzenText TextStyle="TextStyle.Subtitle2" class="rz-color-primary rz-mb-0">
+                Account Information
+            </RadzenText>
+
+            <!-- 2-Column Row for Username & Email -->
+            <RadzenRow Gap="1rem" AlignItems="AlignItems.Stretch">
+                <!-- Username Box -->
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenCard Variant="Variant.Outlined" class="rz-p-4 rz-border-radius-2" Style="border: 1px solid var(--rz-primary-light); background-color: var(--rz-primary-lighter); height: 100%;">
+                        <RadzenStack Gap="1rem" Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                            <RadzenStack Gap="0px">
+                                <RadzenText TextStyle="TextStyle.Caption" class="rz-color-primary rz-mb-1 rz-display-block rz-font-weight-semibold">
+                                    Username
+                                </RadzenText>
+                                <RadzenText  TextStyle="TextStyle.Body1" class="rz-mb-0 rz-font-weight-bold">
+                                    @User.Username
+                                </RadzenText>
+                            </RadzenStack>
+                            <RadzenButton Icon="@MaterialIcons.Edit"
+                                          ButtonStyle="ButtonStyle.Primary"
+                                          Variant="Variant.Text"
+                                          Size="ButtonSize.Large"
+                                          Click="@OnChangeUsernameAsync"/>
+                        </RadzenStack>
+                        
+                    </RadzenCard>
+                </RadzenColumn>
+
+                <!-- Email Box -->
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenCard Variant="Variant.Outlined" class="rz-p-4 rz-border-radius-2" Style="border: 1px solid var(--rz-primary-light); background-color: var(--rz-primary-lighter); height: 100%;">
+                        <RadzenText TextStyle="TextStyle.Caption" class="rz-color-primary rz-mb-1 rz-display-block rz-font-weight-semibold">
+                            Email Address
+                        </RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body1" class="rz-mb-0 rz-font-weight-bold">
+                            @User.Email
+                        </RadzenText>
+                    </RadzenCard>
+                </RadzenColumn>
+            </RadzenRow>
+        </RadzenStack>
+
+        <!-- Dates / History Section -->
+        <RadzenStack Gap="0.5rem">
+            <RadzenText TextStyle="TextStyle.Subtitle2" class="rz-color-primary rz-mb-0 rz-mt-2">
+                Account History
+            </RadzenText>
+
+            <!-- 2-Column Row for Dates -->
+            <RadzenRow Gap="1rem" AlignItems="AlignItems.Stretch">
+                <!-- Account Created -->
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenCard Variant="Variant.Outlined" class="rz-p-3 rz-border-radius-2" Style="border: 1px solid var(--rz-base-300); height: 100%;">
+                        <RadzenText TextStyle="TextStyle.Caption" class="rz-color-secondary rz-mb-1 rz-display-block rz-font-weight-semibold">
+                            Account Created
+                        </RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body2" class="rz-mb-0 rz-font-weight-bold">
+                            @CreationDate.ToString("F")
+                        </RadzenText>
+                        <RadzenText TextStyle="TextStyle.Caption" class="rz-color-secondary rz-mb-0">
+                            @CreationDate.Humanize()
+                        </RadzenText>
+                    </RadzenCard>
+                </RadzenColumn>
+
+                <!-- Last Modified -->
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenCard Variant="Variant.Outlined" class="rz-p-3 rz-border-radius-2" Style="border: 1px solid var(--rz-base-300); height: 100%;">
+                        <RadzenText TextStyle="TextStyle.Caption" class="rz-color-secondary rz-mb-1 rz-display-block rz-font-weight-semibold">
+                            Last Modified
+                        </RadzenText>
+                        @if (LastModifiedDate.HasValue)
+                        {
+                            <RadzenText TextStyle="TextStyle.Body2" class="rz-mb-0 rz-font-weight-bold">
+                                @LastModifiedDate.Value.ToString("F")
+                            </RadzenText>
+                            <RadzenText TextStyle="TextStyle.Caption" class="rz-color-secondary rz-mb-0">
+                                @LastModifiedDate.Value.Humanize()
+                            </RadzenText>
+                        }
+                        else
+                        {
+                            <RadzenText TextStyle="TextStyle.Body2" class="rz-mb-0 rz-font-weight-bold rz-color-secondary">
+                                Never
+                            </RadzenText>
+                        }
+                    </RadzenCard>
+                </RadzenColumn>
+
+                <!-- Last Signed In -->
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenCard Variant="Variant.Outlined" class="rz-p-3 rz-border-radius-2" Style="border: 1px solid var(--rz-base-300); height: 100%;">
+                        <RadzenText TextStyle="TextStyle.Caption" class="rz-color-secondary rz-mb-1 rz-display-block rz-font-weight-semibold">
+                            Last Signed In
+                        </RadzenText>
+                        @if (LastSignedInDate.HasValue)
+                        {
+                            <RadzenText TextStyle="TextStyle.Body2" class="rz-mb-0 rz-font-weight-bold">
+                                @LastSignedInDate.Value.ToString("F")
+                            </RadzenText>
+                            <RadzenText TextStyle="TextStyle.Caption" class="rz-color-secondary rz-mb-0">
+                                @LastSignedInDate.Value.Humanize()
+                            </RadzenText>
+                        }
+                        else
+                        {
+                            <RadzenText TextStyle="TextStyle.Body2" class="rz-mb-0 rz-font-weight-bold rz-color-secondary">
+                                Never
+                            </RadzenText>
+                        }
+                    </RadzenCard>
+                </RadzenColumn>
+
+                <!-- Last Signed Out -->
+                <RadzenColumn Size="12" SizeMD="6">
+                    <RadzenCard Variant="Variant.Outlined" class="rz-p-3 rz-border-radius-2" Style="border: 1px solid var(--rz-base-300); height: 100%;">
+                        <RadzenText TextStyle="TextStyle.Caption" class="rz-color-secondary rz-mb-1 rz-display-block rz-font-weight-semibold">
+                            Last Signed Out
+                        </RadzenText>
+                        @if (LastSignedOutDate.HasValue)
+                        {
+                            <RadzenText TextStyle="TextStyle.Body2" class="rz-mb-0 rz-font-weight-bold">
+                                @LastSignedOutDate.Value.ToString("F")
+                            </RadzenText>
+                            <RadzenText TextStyle="TextStyle.Caption" class="rz-color-secondary rz-mb-0">
+                                @LastSignedOutDate.Value.Humanize()
+                            </RadzenText>
+                        }
+                        else
+                        {
+                            <RadzenText TextStyle="TextStyle.Body2" class="rz-mb-0 rz-font-weight-bold rz-color-secondary">
+                                Never
+                            </RadzenText>
+                        }
+                    </RadzenCard>
+                </RadzenColumn>
+            </RadzenRow>
+        </RadzenStack>
+
+        <!-- Divider -->
+        <hr class="rz-my-0 rz-border-top rz-border-base-300 rz-mt-2" />
+
+        <RadzenText TextStyle="TextStyle.Subtitle2" class="rz-color-primary">
+            Account Action
+        </RadzenText>
+        <!-- Danger Zone -->
+        <RadzenCard Variant="Variant.Filled"
+                    class=" rz-background-color-danger-lighter rz-border-radius-2" 
+                    Style="border: 1px solid var(--rz-danger-light);">
+            <RadzenStack>
+                <RadzenText TextStyle="TextStyle.H6" class="rz-color-danger-dark">
+                    Danger Zone
+                </RadzenText>
+                <RadzenText TextStyle="TextStyle.Caption" class="rz-color-danger">
+                    Permanently delete your account and all associated data.
+                </RadzenText>
+                <RadzenButton Icon="@MaterialIcons.Delete" 
+                              Text="Delete Account" 
+                              ButtonStyle="ButtonStyle.Danger" 
+                              Variant="Variant.Filled" 
+                              Size="ButtonSize.Small" 
+                              Click="@DeleteAccountAsync" />
+            </RadzenStack>
+        </RadzenCard>
+
+    </RadzenStack>
+</RadzenCard>
+
+@code {
+    [CascadingParameter] public required Task<AuthenticationState> Context { get; set; }
+    private ApplicationUserInfo User { get; set; } = new();
+    private DateTimeOffset CreationDate => User.CreationDate.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
+    private DateTimeOffset? LastModifiedDate => User.LastModifiedDate?.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
+    private DateTimeOffset? LastSignedInDate => User.LastSignedInDate?.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
+    private DateTimeOffset? LastSignedOutDate => User.LastSignedOutDate?.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        await RefreshUserAsync();
+    }
+
+    private async Task OnChangeUsernameAsync()
+    {
+        var parameters = new Dictionary<string, object?>(3)
+        {
+            [nameof(ChangeUsernameDialog.OldUsername)] = User.Username,
+            [nameof(ChangeUsernameDialog.UserId)] = User.Id,
+            [nameof(ChangeUsernameDialog.UserVersionId)] = User.RowVersion
+        };
+        var data = await DialogService.OpenAsync<ChangeUsernameDialog>("Change Username", parameters);
+        if (data is not ChangeUsernameCommand command) return;
+        var result = await ChangeUsernameHandler.HandleAsync(command);
+        switch (result)
+        {
+            case ChangeUsernameResult.AccountNotFound:
+            {
+                var id = Store.Store(Message.Error("Identity Error", "Account not found"));
+                await CachedFindUserHandler.RemoveUserAsync(User.Id);
+                NavManager.NavigateTo($"{IdentityRoutes.SignOut}?messageId={id}", forceLoad: true);
+                return;
+            }
+            case ChangeUsernameResult.UserAlreadyModified:
+                NotificationService.Show(Message.Error("Identity Error", "Account already modified"));
+                await RefreshUserAsync();
+                return;
+        }
+
+        var message = result switch
+        {
+            ChangeUsernameResult.UsernameTaken => Message.Error("Identity Error", "Username taken"),
+            ChangeUsernameResult.Success => Message.Success("Identity Success", "Successfully changed username"),
+            _ => throw new ArgumentOutOfRangeException()
+        };
+        NotificationService.Show(message);
+        if (message.Type is MessageType.Success)
+        {
+            await CachedFindUserHandler.RemoveUserAsync(User.Id);
+            await RefreshUserAsync();
+        }
+        StateHasChanged();
+    }
+
+    private async Task RefreshUserAsync()
+    {
+        User = await GetUserService.GetOrRedirectAsync(ApplicationRoutes.ManageAccount);
+    }
+    private void SignOut() => NavManager.NavigateTo(IdentityRoutes.SignOut, forceLoad: true);
+
+    private void SignOutFromAllSessions()
+    {
+        NavManager.NavigateTo(IdentityRoutes.SignOutFromAllSessions, forceLoad: true);
+    }
+    
+    private async Task DeleteAccountAsync()
+    {
+        var parameters = new Dictionary<string, object?>(2)
+        {
+            [nameof(ConfirmAccountDeletionDialog.Email)] = User.Email,
+            [nameof(ConfirmAccountDeletionDialog.UserId)] = User.Id
+        };
+        var confirmData = await DialogService.ConfirmDelete(
+            "Confirm Account Deletion",
+            "Are you sure you want to delete your account? You cannot undo this action!");
+        if (!confirmData) return;
+        var data = await DialogService.OpenAsync<ConfirmAccountDeletionDialog>("Confirm Account Deletion", parameters);
+        if (data is not DeleteUserCommand command) return;
+        var result = await DeleteUserHandler.HandleAsync(command);
+        var message = result switch
+        {
+            DeleteUserResult.AccountNotFound => Message.Error("Identity Error", "Account not found"),
+            DeleteUserResult.Success => Message.Success("Identity Success", "Successfully deleted account"),
+            _ => throw new ArgumentOutOfRangeException()
+        };
+        await CachedFindUserHandler.RemoveUserAsync(User.Id);
+        var id = Store.Store(message);
+        NavManager.NavigateTo($"{IdentityRoutes.SignOut}?messageId={id}", forceLoad: true);
+    }
+}

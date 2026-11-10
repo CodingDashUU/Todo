@@ -1,3 +1,5 @@
+using Washu.Framework.Identity.Users;
+
 namespace Washu.Framework.UnitTests;
 
 using FluentAssertions;

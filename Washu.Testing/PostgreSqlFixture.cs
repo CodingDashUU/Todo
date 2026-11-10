@@ -1,3 +1,7 @@
+using Washu.Framework.Entities.AuditEntity;
+using Washu.Framework.Entities.SoftDeleteEntity;
+using Washu.Framework.Identity.Persistence;
+
 namespace Washu.Testing;
 
 using Microsoft.EntityFrameworkCore;

@@ -1,9 +1,10 @@
+using Washu.Framework.Identity.Users;
+
 namespace Washu.Framework.UnitTests;
 
 using Extensions;
 using FluentAssertions;
 using Identity;
-using Identity.Entities;
 using System.Security.Claims;
 
 public class ClaimsFactoryTests

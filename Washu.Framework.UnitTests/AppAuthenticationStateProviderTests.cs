@@ -1,3 +1,6 @@
+using Washu.Framework.Identity.Users;
+using Washu.Framework.Identity.Users.FindUser;
+
 namespace Washu.Framework.UnitTests;
 
 using System.Reflection;
@@ -8,7 +11,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Washu.Framework.Blazor;
 using Washu.Framework.Identity;
-using Washu.Framework.Identity.Entities;
 using ZiggyCreatures.Caching.Fusion;
 
 public class AppAuthenticationStateProviderTests
@@ -35,7 +37,7 @@ public class AppAuthenticationStateProviderTests
 
         // Dummy FindUserHandler (not invoked when values are primed in cache)
         services.AddScoped<FindUserHandler>(_ => null!);
-        services.AddScoped(sp => new ApplicationUserStore(sp.GetRequiredService<IFusionCache>(), sp.GetService<FindUserHandler>()!));
+        services.AddScoped(sp => new CachedFindUserHandler(sp.GetRequiredService<IFusionCache>(), sp.GetService<FindUserHandler>()!));
 
         var sp = services.BuildServiceProvider();
         var scopeFactory = sp.GetRequiredService<IServiceScopeFactory>();

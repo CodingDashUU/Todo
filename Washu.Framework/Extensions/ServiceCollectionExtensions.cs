@@ -4,7 +4,17 @@ using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Events;
 using Serilog.Formatting.Json;
+using Washu.Framework.Entities.AuditEntity;
+using Washu.Framework.Entities.SoftDeleteEntity;
 using Washu.Framework.Extensions;
+using Washu.Framework.Identity.Login;
+using Washu.Framework.Identity.Permissions;
+using Washu.Framework.Identity.Persistence;
+using Washu.Framework.Identity.Roles;
+using Washu.Framework.Identity.Users;
+using Washu.Framework.Identity.Users.DeleteUser;
+using Washu.Framework.Identity.Users.FindUser;
+
 namespace Washu.Framework.Extensions;
 
 using AspNetCore;
@@ -88,7 +98,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<SignInHandler>();
         services.AddSingleton<HasPermissionHandler>();
         services.AddSingleton<GetExternalLoginInfoHandler>();
-        services.AddSingleton<ApplicationUserStore>();
+        services.AddSingleton<CachedFindUserHandler>();
         services.AddScoped<GetUserService>();
         services.AddSingleton<CurrentUser>();
         services.AddSingleton<IDeleteEntityTask, DeleteUserTask>();

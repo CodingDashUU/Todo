@@ -1,3 +1,6 @@
+using Washu.Framework.Identity.Users;
+using Washu.Framework.Identity.Users.FindUser;
+
 namespace Washu.Framework.Blazor;
 
 using Extensions;
@@ -22,8 +25,8 @@ internal sealed class AppAuthenticationStateProvider(
         if (principal.UserId is not {} userId) return false;
         if (principal.SecurityStamp is not { } securityStamp) return false;
         await using var scope = scopeFactory.CreateAsyncScope();
-        var userStore = scope.ServiceProvider.GetRequiredService<ApplicationUserStore>();
-        var user = await userStore.GetOrSetUserAsync(userId);
+        var userStore = scope.ServiceProvider.GetRequiredService<CachedFindUserHandler>();
+        var user = await userStore.HandleAsync(userId);
         if (user is null) return false;
         return securityStamp == user.SecurityStamp;
     }

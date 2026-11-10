@@ -1,0 +1,83 @@
+﻿using Microsoft.EntityFrameworkCore;
+using Washu.Framework.BackgroundJobs;
+using Washu.Framework.Constants;
+using Washu.Framework.Extensions;
+using Washu.Framework.Identity.Permissions;
+using Washu.Framework.Identity.Roles;
+using Washu.Framework.Identity.Users;
+
+namespace Washu.Framework.Identity.Persistence;
+
+public class ApplicationDbContext(DbContextOptions options)
+    : DbContext(options)
+{
+    public DbSet<ApplicationUser> Users => Set<ApplicationUser>();
+    public DbSet<ApplicationRole> Roles => Set<ApplicationRole>();
+    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+    public DbSet<UserRole> UserRoles => Set<UserRole>();
+    public DbSet<WorkerLastRun> WorkersLastRun => Set<WorkerLastRun>();
+    private const string Citext = "citext";
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.HasPostgresExtension(Citext);
+        modelBuilder.Entity<WorkerLastRun>(entity =>
+        {
+            entity.HasKey(w => w.WorkerName);
+        });
+        modelBuilder.Entity<UserRole>(entity =>
+        {
+            entity.HasUserSoftDeleteQueryFilter();
+            entity.HasOne(r => r.User)
+                .WithMany()
+                .HasForeignKey(r => r.UserId);
+            entity.HasOne(u => u.Role)
+                .WithMany()
+                .HasForeignKey(u => u.RoleId);
+            entity.HasKey(u => new { u.UserId, u.RoleId });
+        });
+        modelBuilder.Entity<RolePermission>(entity =>
+        {
+            entity.HasOne(rp => rp.Role)
+                .WithMany(r => r.Permissions)
+                .HasForeignKey(u => u.RoleId);
+            entity.HasKey(u => u.Id);
+            entity.Property(rp => rp.Name).HasColumnType(Citext);
+            entity.HasUniqueIndex(u => u.Name);
+            entity.ToTable(t =>
+            {
+                t.HasMaxLengthCheckConstraint(p => p.Name, 64);
+            });
+        });
+        modelBuilder.Entity<ApplicationUser>(entity =>
+        {
+            entity.HasSoftDeleteQueryFilter();
+            entity.Property(u => u.Username).HasColumnType(Citext);
+            entity.Property(u => u.Email).HasColumnType(Citext);
+            entity.Property(u => u.GoogleSubject).HasMaxLength(255);
+            entity.HasUniqueIndex(u => u.Username).HasSoftDeleteFilter();
+            entity.HasUniqueIndex(u => u.Email).HasSoftDeleteFilter();
+            entity.HasUniqueIndex(u => u.GoogleSubject).HasSoftDeleteFilter();
+            entity.ToTable(t =>
+            {
+                t.HasMaxLengthCheckConstraint(p => p.Username, 128);
+                t.HasAllowedCharactersCheckConstraint(p => p.Username, UsernameRules.ValidCharacters);
+                t.HasAllowedFirstCharacterCheckConstraint(p => p.Username, CharacterSet.Letters);
+                t.HasMaxLengthCheckConstraint(p => p.Email, 255);
+                t.HasEmailCheckConstraint(p => p.Email);
+                t.HasDateLessThanOrEqualToNullableDateCheckConstraint(u => u.CreationDate, u => u.LastModifiedDate);
+                t.HasDateLessThanOrEqualToNullableDateCheckConstraint(u => u.CreationDate, u => u.LastSignedInDate);
+                t.HasDateLessThanOrEqualToNullableDateCheckConstraint(u => u.CreationDate, u => u.LastSignedOutDate);
+            });
+            entity.Property(u => u.RowVersion).IsRowVersion();
+        });
+        modelBuilder.Entity<ApplicationRole>(entity =>
+        {
+            entity.Property(u => u.Name).HasColumnType(Citext);
+            entity.HasUniqueIndex(u => u.Name);
+            entity.ToTable(t =>
+            {
+                t.HasMaxLengthCheckConstraint(p => p.Name, 128);
+            });
+        });
+    }
+}

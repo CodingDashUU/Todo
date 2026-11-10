@@ -1,9 +1,13 @@
+using Washu.Framework.Identity.Roles;
+using Washu.Framework.Identity.Users;
+using Washu.Framework.Identity.Users.DeleteUser;
+using Washu.Framework.Identity.Users.FindUser;
+
 namespace Washu.Framework.IntegrationTests;
 
 using Fixtures;
 using FluentAssertions;
 using Identity;
-using Identity.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Notifications;

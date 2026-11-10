@@ -1,9 +1,12 @@
+using Washu.Framework.Identity.Users;
+using Washu.Todo.Lists;
+using Washu.Todo.Lists.Features;
+using Washu.Todo.Persistence;
+
 namespace Washu.Todo.IntegrationTests;
 
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using Washu.Framework.Identity.Entities;
-using Washu.Todo.Identity;
 using Xunit;
 
 [Collection(TodoPostgreSqlTestCollection.Name)]

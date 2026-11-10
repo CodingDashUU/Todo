@@ -1,3 +1,5 @@
+using Washu.Framework.Identity.Permissions;
+
 namespace Washu.Framework.Extensions;
 
 using Identity;

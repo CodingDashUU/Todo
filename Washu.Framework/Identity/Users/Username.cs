@@ -1,0 +1,28 @@
+using FluentValidation;
+using Washu.Framework.Constants;
+
+namespace Washu.Framework.Identity.Users;
+
+public static class UsernameRules
+{
+    public const byte MinUsernameLength = 3;
+    public const byte MaxUsernameLength = 50;
+    
+    public const string ValidCharacters = $"{CharacterSet.Alphanumeric}_-";
+}
+public sealed class UsernameValidator : AbstractValidator<string>
+{
+    private static readonly HashSet<char> ValidChars = [.. UsernameRules.ValidCharacters];
+
+    public UsernameValidator() =>
+        RuleFor(u => u)
+            .Cascade(CascadeMode.Stop)
+            .NotEmpty().WithMessage("Name is required")
+            .Length(UsernameRules.MinUsernameLength, UsernameRules.MaxUsernameLength).WithMessage($"Name must be between {UsernameRules.MinUsernameLength} and {UsernameRules.MaxUsernameLength} characters")
+            .Must(HasValidCharacters).WithMessage("Name may only contain alphanumeric, '_' and/or '-' characters")
+            .Must(StartsWithAlphaCharacters).WithMessage("Name must start with a lower-, or uppercase character");
+    private static bool HasValidCharacters(string name) => name.All(ValidChars.Contains);
+
+    private static bool StartsWithAlphaCharacters(string name) =>
+        char.IsAsciiLetter(name[0]);
+}

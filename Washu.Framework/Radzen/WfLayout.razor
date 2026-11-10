@@ -1,5 +1,7 @@
 @using Washu.Framework.Extensions
-@inject ApplicationUserStore UserStore
+@using Washu.Framework.Identity.Users
+@using Washu.Framework.Identity.Users.FindUser
+@inject CachedFindUserHandler CachedFindUserHandler
 
 <QueryNotificationHandler />
 <RadzenLayout>
@@ -87,7 +89,7 @@
     {
         var state = await Context;
         if (state.User.UserId is not {} userGuid) return;
-        _email = (await UserStore.GetOrSetUserAsync(userGuid))?.Email ?? "";
+        _email = (await CachedFindUserHandler.HandleAsync(userGuid))?.Email ?? "";
     }
     protected override void OnParametersSet()
     {

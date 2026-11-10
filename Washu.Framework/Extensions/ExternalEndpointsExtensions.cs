@@ -1,3 +1,8 @@
+using Washu.Framework.Identity.Login;
+using Washu.Framework.Identity.Persistence;
+using Washu.Framework.Identity.Roles;
+using Washu.Framework.Identity.Users;
+
 namespace Washu.Framework.Extensions;
 
 using Identity;
@@ -13,7 +18,6 @@ using Npgsql;
 using System.Security.Claims;
 using AspNetCore;
 using Blazor;
-using Identity.Entities;
 using Notifications;
 
 public static class ExternalEndpointsExtensions

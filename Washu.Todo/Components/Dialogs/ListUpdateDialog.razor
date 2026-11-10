@@ -1,6 +1,6 @@
 @using FluentValidation
-@using Washu.Todo.Features
-@using TodoList = Washu.Todo.TodoList
+@using Washu.Todo.Lists
+@using TodoList = Washu.Todo.Lists.Features.TodoList
 @inject DialogService DialogService
 <ApplicationForm
     Model="_model"
@@ -10,7 +10,7 @@
     <RadzenFormField Text="New List Name">
         <RadzenTextBox Name="@nameof(Model.NewListName)" 
                        @bind-Value="_model.NewListName"
-                       MaxLength="TodoRules.ListName.MaximumLength" />
+                       MaxLength="ListName.MaximumLength" />
     </RadzenFormField>
 </ApplicationForm>
 @code {

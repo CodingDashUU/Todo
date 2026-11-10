@@ -3,13 +3,17 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Serilog;
 using Serilog.Events;
 using Serilog.Formatting.Json;
+using Washu.Framework.Identity.Permissions;
+using Washu.Framework.Identity.Persistence;
+using Washu.Framework.Identity.Roles;
+using Washu.Framework.Identity.Users;
+using Washu.Framework.Identity.Users.FindUser;
 
 namespace Washu.Framework.Extensions;
 
 using AspNetCore;
 using Blazor;
 using Identity;
-using Identity.Entities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components;
@@ -116,7 +120,7 @@ public static class WebApplicationExtensions
                     return TypedResults.Redirect(targetUrl);
                 })
                 .RequireRateLimiting(RateLimiterPolicy.StandardRateLimiter);
-            app.MapGet(IdentityRoutes.SignOutFromAllSessions, async (HttpContext context, ILogger<SignOutFromAllSessions> logger, ApplicationUserStore userStore, IDbContextFactory<ApplicationDbContext> factory,[FromQuery] string? messageId) =>
+            app.MapGet(IdentityRoutes.SignOutFromAllSessions, async (HttpContext context, ILogger<SignOutFromAllSessions> logger, CachedFindUserHandler cachedFindUserHandler, IDbContextFactory<ApplicationDbContext> factory,[FromQuery] string? messageId) =>
                 {
                     var userId = context.User.UserId;
 
@@ -130,7 +134,7 @@ public static class WebApplicationExtensions
                             );
                         if (rowsChanged == 1 && logger.IsEnabled(LogLevel.Information))
                             logger.LogInformation("Changed security stamp for user with id {UserId}", userId);
-                        await userStore.RemoveUserAsync(userId.Value);
+                        await cachedFindUserHandler.RemoveUserAsync(userId.Value);
                     }
                     else logger.LogWarning("There is no UserId claim for connection {ConnectionId}", context.Connection.Id);
                     await context.SignOutAsync(IdentityConstants.ApplicationScheme);

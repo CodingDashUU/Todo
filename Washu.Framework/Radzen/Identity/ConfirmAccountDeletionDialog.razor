@@ -1,0 +1,54 @@
+@using FluentValidation
+@using Washu.Framework.Identity.Users
+@using Washu.Framework.Identity.Users.DeleteUser
+@inject DialogService DialogService
+<ApplicationForm
+    Model="_model"
+    Validator="Validator"
+    HandleValidSubmit="CloseDialog"
+    SubmitButtonConfig="DeleteAccountButtonConfig"
+>
+    <RadzenFormField Text="Type your email to confirm deletion">
+        <Start>
+            <RadzenIcon Icon="@MaterialIcons.Email"/>
+        </Start>
+        <ChildContent>
+            <RadzenTextBox @bind-Value="@_model.Email" MaxLength="255"/>
+        </ChildContent>
+    </RadzenFormField>
+</ApplicationForm>
+
+@code {
+    private readonly Model _model = new();
+    ConfirmAccountDeletionValidator Validator => new(Email);
+    [Parameter, EditorRequired] public Guid UserId { get; set; }
+    [Parameter, EditorRequired] public string Email { get; set; }
+
+    public SubmitButtonConfig DeleteAccountButtonConfig { get; set; } = new()
+    {
+        ButtonText = "Delete Account!",
+        ButtonStyle = ButtonStyle.Danger,
+        ButtonIcon = MaterialIcons.Delete
+    };
+
+    private void CloseDialog()
+    {
+        var command = new DeleteUserCommand(UserId);
+        DialogService.Close(command);
+    }
+    private class Model
+    {
+        public string Email { get; set; } = "";
+    }
+
+    private class ConfirmAccountDeletionValidator : AbstractValidator<Model>
+    {
+        public ConfirmAccountDeletionValidator(string email)
+        {
+            RuleFor(x => x.Email)
+                .NotEmpty().WithMessage("Email is required")
+                .EmailAddress().WithMessage("Invalid email")
+                .Must(x => x.Equals(email, StringComparison.InvariantCultureIgnoreCase)).WithMessage("Incorrect email");
+        }
+    }
+}

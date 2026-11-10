@@ -1,10 +1,13 @@
+using Washu.Framework.Identity.Permissions;
+using Washu.Framework.Identity.Roles;
+using Washu.Framework.Identity.Users;
+
 namespace Washu.Framework.IntegrationTests;
 
 using System.Security.Claims;
 using Fixtures;
 using FluentAssertions;
 using Identity;
-using Identity.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Xunit;

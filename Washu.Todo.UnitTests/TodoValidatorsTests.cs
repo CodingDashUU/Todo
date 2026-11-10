@@ -1,3 +1,6 @@
+using Washu.Todo.Lists;
+using Washu.Todo.Tasks;
+
 namespace Washu.Todo.UnitTests;
 
 using FluentAssertions;
@@ -39,7 +42,7 @@ public class TodoValidatorsTests
     {
         var result = _listNameValidator.Validate(name);
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.ErrorMessage == $"List name must be between {TodoRules.ListName.MinimumLength} and {TodoRules.ListName.MaximumLength} characters");
+        result.Errors.Should().Contain(e => e.ErrorMessage == $"List name must be between {ListName.MinimumLength} and {ListName.MaximumLength} characters");
     }
 
     [Theory]
@@ -89,7 +92,7 @@ public class TodoValidatorsTests
     {
         var result = _taskNameValidator.Validate(name);
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.ErrorMessage == $"Task name must be between {TodoRules.TaskName.MinimumLength} and {TodoRules.TaskName.MaximumLength} characters");
+        result.Errors.Should().Contain(e => e.ErrorMessage == $"Task name must be between {TaskName.MinimumLength} and {TaskName.MaximumLength} characters");
     }
 
     [Theory]

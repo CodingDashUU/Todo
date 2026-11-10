@@ -1,3 +1,5 @@
+using Washu.Framework.Entities.AuditEntity;
+
 namespace Washu.Framework.Extensions;
 
 using Identity;

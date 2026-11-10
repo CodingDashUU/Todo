@@ -1,3 +1,7 @@
+using Washu.Framework.Identity.Persistence;
+using Washu.Framework.Identity.Users;
+using Washu.Framework.Identity.Users.FindUser;
+
 namespace Washu.Framework.Extensions;
 
 using Blazor;
@@ -82,7 +86,7 @@ public static class AuthenticationBuilderExtensions
                     logger.LogInformation("User with id {UserId} signing in", userId);
                 }
                 var userStore = context.HttpContext.RequestServices
-                    .GetRequiredService<ApplicationUserStore>();
+                    .GetRequiredService<CachedFindUserHandler>();
                 await userStore.RemoveUserAsync(userId.Value);
             };
             options.Events.OnSigningOut = async context =>
@@ -119,7 +123,7 @@ public static class AuthenticationBuilderExtensions
                     logger.LogInformation("Updated 'LastSignOutDate' for user with id {UserId}", userId);
 
                 var userStore = context.HttpContext.RequestServices
-                    .GetRequiredService<ApplicationUserStore>();
+                    .GetRequiredService<CachedFindUserHandler>();
                 await userStore.RemoveUserAsync(userId.Value);
             };
             options.Events.OnValidatePrincipal = async context =>
@@ -134,8 +138,8 @@ public static class AuthenticationBuilderExtensions
                     return;
                 }
                 var userStore = context.HttpContext.RequestServices
-                    .GetRequiredService<ApplicationUserStore>();
-                var user = await userStore.GetOrSetUserAsync(userId.Value);
+                    .GetRequiredService<CachedFindUserHandler>();
+                var user = await userStore.HandleAsync(userId.Value);
                 if (user is null 
                     || context.Principal?.SecurityStamp is null 
                     || context.Principal?.SecurityStamp != user.SecurityStamp)

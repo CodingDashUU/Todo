@@ -1,3 +1,9 @@
+using Washu.Framework.Identity.Login;
+using Washu.Framework.Identity.Persistence;
+using Washu.Framework.Identity.Roles;
+using Washu.Framework.Identity.Users;
+using Washu.Framework.Identity.Users.FindUser;
+
 namespace Washu.Framework.IntegrationTests;
 
 using AspNetCore;
@@ -5,7 +11,6 @@ using Blazor;
 using Fixtures;
 using FluentAssertions;
 using Identity;
-using Identity.Entities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Builder;

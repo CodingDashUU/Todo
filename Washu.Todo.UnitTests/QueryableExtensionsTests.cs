@@ -1,3 +1,6 @@
+using Washu.Todo.Lists.Features;
+using Washu.Todo.Tasks;
+using Washu.Todo.Extensions;
 namespace Washu.Todo.UnitTests;
 
 using FluentAssertions;

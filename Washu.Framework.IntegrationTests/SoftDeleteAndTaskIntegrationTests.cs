@@ -1,9 +1,12 @@
+using Washu.Framework.Identity.Roles;
+using Washu.Framework.Identity.Users;
+using Washu.Framework.Identity.Users.DeleteUser;
+
 namespace Washu.Framework.IntegrationTests;
 
 using Fixtures;
 using FluentAssertions;
 using Identity;
-using Identity.Entities;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Xunit;

@@ -1,3 +1,6 @@
+using Washu.Framework.Entities.SoftDeleteEntity;
+using Washu.Framework.Identity.Users;
+
 namespace Washu.Framework.Extensions;
 
 using Identity;

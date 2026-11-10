@@ -1,10 +1,12 @@
+using Washu.Framework.Entities.AuditEntity;
+using Washu.Framework.Identity.Users;
+
 namespace Washu.Framework.IntegrationTests;
 
 using Extensions;
 using Fixtures;
 using FluentAssertions;
 using Identity;
-using Identity.Entities;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 

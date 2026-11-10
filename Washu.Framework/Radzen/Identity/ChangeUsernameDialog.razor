@@ -1,0 +1,56 @@
+@using FluentValidation
+@using Washu.Framework.Identity.Users
+@inject DialogService DialogService
+<ApplicationForm
+    Model="_model"
+    Validator="Validator"
+    SubmitButtonConfig="ChangeUsernameButtonConfig"
+    HandleValidSubmit="CloseDialog"
+>
+    <RadzenFormField Text="New Username">
+        <Start>
+            <RadzenIcon Icon="@MaterialIcons.AccountCircle"/>
+        </Start>
+        <ChildContent>
+            <RadzenTextBox @bind-Value="@_model.Username" MaxLength="UsernameRules.MaxUsernameLength"/>
+        </ChildContent>
+    </RadzenFormField>
+</ApplicationForm>
+
+@code {
+    private ChangeUsernameModel _model = new();
+    private ChangeUsernameValidator Validator => new(OldUsername);
+    [Parameter, EditorRequired] public string OldUsername { get; set; }
+    [Parameter, EditorRequired] public Guid UserId { get; set; }
+    [Parameter, EditorRequired] public uint UserVersionId { get; set; }
+    private static readonly SubmitButtonConfig ChangeUsernameButtonConfig = new()
+    {
+        ButtonText = "Update Username",
+        ButtonIcon = MaterialIcons.Update
+    };
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        _model.Username = OldUsername;
+    }
+
+    private void CloseDialog()
+    {
+        var command = new ChangeUsernameCommand(UserId, UserVersionId, _model.Username);
+        DialogService.Close(command);
+    }
+    private class ChangeUsernameModel
+    {
+        public string Username { get; set; } = string.Empty;
+    }
+
+    private class ChangeUsernameValidator : AbstractValidator<ChangeUsernameModel>
+    {
+        public ChangeUsernameValidator(string username)
+        {
+            RuleFor(x => x.Username)
+                .SetValidator(new UsernameValidator())
+                .Must(x => !x.Equals(username, StringComparison.InvariantCultureIgnoreCase)).WithMessage("New username cannot be equivalent to the old one");
+        }
+    }
+}
