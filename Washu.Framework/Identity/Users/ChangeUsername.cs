@@ -6,6 +6,8 @@ using Washu.Framework.Identity.Persistence;
 
 namespace Washu.Framework.Identity.Users;
 
+using DeleteUser;
+
 public sealed record ChangeUsernameCommand(Guid UserId, uint UserRowVersion, string NewName);
 
 public sealed class ChangeUsernameHandler(IDbContextFactory<ApplicationDbContext> factory, ILogger<ChangeUsernameHandler> logger)
@@ -17,7 +19,7 @@ public sealed class ChangeUsernameHandler(IDbContextFactory<ApplicationDbContext
         if (user is null)
         {
             logger.LogError("User with id {UserId} not found", command.UserId);
-            return ChangeUsernameResult.AccountNotFound;
+            return new AccountNotFound();
         }
         dbContext.SetRowVersion(user, command.UserRowVersion);
         user.Username = command.NewName;
@@ -29,17 +31,28 @@ public sealed class ChangeUsernameHandler(IDbContextFactory<ApplicationDbContext
         catch (DbUpdateConcurrencyException ex)
         {
             logger.LogError(ex, "User with id {UserId} has already been modified by another session", command.UserId);
-            return ChangeUsernameResult.UserAlreadyModified;
+            return new UserAlreadyModified();
         }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException{ SqlState: PostgresErrorCodes.UniqueViolation })
         {
             logger.LogError(ex, "User with id {UserId} tried to change username, but it was already taken", command.UserId);
-            return ChangeUsernameResult.UsernameTaken;
+            return new UsernameTaken();
         }
         if (logger.IsEnabled(LogLevel.Information))
             logger.LogInformation("User with id {UserId} changed username", command.UserId);
-        return ChangeUsernameResult.Success;
+        return new ChangeUsernameSuccess();
     }
 }
 
-public enum ChangeUsernameResult : byte { Success, UsernameTaken, UserAlreadyModified, AccountNotFound }
+public readonly struct ChangeUsernameSuccess
+{
+    public const string Message = "Successfully changed username";
+}
+
+public readonly struct UsernameTaken
+{
+    public const string Message = "The username specified is already taken";
+}
+
+
+public readonly union ChangeUsernameResult(ChangeUsernameSuccess, UsernameTaken, UserAlreadyModified, AccountNotFound);

@@ -5,6 +5,9 @@ using Washu.Framework.Extensions;
 
 namespace Washu.Framework.Identity.Users.FindUser;
 
+using System.Diagnostics.CodeAnalysis;
+
+[SuppressMessage("Usage", "BL0013:AuthenticationStateProvider.GetAuthenticationStateAsync used without subscribing to AuthenticationStateChanged")]
 public class GetUserService(
     AuthenticationStateProvider provider,
     CachedFindUserHandler cachedFindUserHandler,

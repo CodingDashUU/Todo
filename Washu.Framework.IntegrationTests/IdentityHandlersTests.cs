@@ -78,7 +78,7 @@ public sealed class IdentityHandlersTests(ApplicationPostgreSqlFixture fixture)
 
         var newUsername = $"NewName_{Guid.NewGuid():N}";
         var result = await handler.HandleAsync(new ChangeUsernameCommand(user.Id, user.RowVersion, newUsername));
-        result.Should().Be(ChangeUsernameResult.Success);
+        result.Value.Should().BeOfType<ChangeUsernameSuccess>();
         await using (var context = await fixture.CreateDbContextFactory().CreateDbContextAsync())
         {
             var updatedUser = await context.Users.FindAsync(user.Id);
@@ -104,7 +104,7 @@ public sealed class IdentityHandlersTests(ApplicationPostgreSqlFixture fixture)
         }
 
         var result = await handler.HandleAsync(new ChangeUsernameCommand(user2.Id, user2.RowVersion, existingUsername));
-        result.Should().Be(ChangeUsernameResult.UsernameTaken, "The handler should fail");
+        result.Value.Should().BeOfType<UsernameTaken>("The handler should fail");
     }
     
     [Fact]
@@ -126,7 +126,7 @@ public sealed class IdentityHandlersTests(ApplicationPostgreSqlFixture fixture)
             await context.SaveChangesAsync();
         }
         var result = await handler.HandleAsync(new ChangeUsernameCommand(user.Id, user.RowVersion, $"NewName_{Guid.NewGuid():N}"));
-        result.Should().Be(ChangeUsernameResult.AccountNotFound, "The handler should fail");
+        result.Value.Should().BeOfType<AccountNotFound>("The handler should fail");
     }
 
     [Fact] public async Task ChangeUsernameHandler_ShouldFailWhenUserAlreadyModified()
@@ -146,7 +146,7 @@ public sealed class IdentityHandlersTests(ApplicationPostgreSqlFixture fixture)
         await handler.HandleAsync(new ChangeUsernameCommand(user.Id, user.RowVersion, username2));
         var username3 = $"User3_{Guid.NewGuid():N}";
         var result = await handler.HandleAsync(new ChangeUsernameCommand(user.Id, user.RowVersion, username3));
-        result.Should().Be(ChangeUsernameResult.UserAlreadyModified, "The handler should fail");
+        result.Value.Should().BeOfType<UserAlreadyModified>("The handler should fail");
     }
     [Fact]
     public async Task DeleteUserHandler_ShouldRemoveUserFromDatabase()
@@ -162,7 +162,7 @@ public sealed class IdentityHandlersTests(ApplicationPostgreSqlFixture fixture)
         }
 
         var result = await handler.HandleAsync(new DeleteUserCommand(user.Id));
-        result.Should().Be(DeleteUserResult.Success, "The handler should succeed");
+        result.Value.Should().BeOfType<DeleteUserSuccess>("The handler should succeed");
 
         await using (var context = await fixture.CreateDbContextFactory().CreateDbContextAsync())
         {
@@ -180,7 +180,7 @@ public sealed class IdentityHandlersTests(ApplicationPostgreSqlFixture fixture)
         var nonExistentId = Guid.NewGuid();
         var result = await handler.HandleAsync(new DeleteUserCommand(nonExistentId));
 
-        result.Should().Be(DeleteUserResult.AccountNotFound, "The handler should report error when account does not exist");
+        result.Value.Should().BeOfType<AccountNotFound>("The handler should report error when account does not exist");
     }
 
     [Fact]

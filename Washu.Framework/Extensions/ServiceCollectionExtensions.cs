@@ -140,10 +140,9 @@ public static class ServiceCollectionExtensions
     });
 
     public IServiceCollection AddDeleteEntityTask<TEntityTask>()
-    where TEntityTask : class, IDeleteEntityTask
-    {
-        return services.AddSingleton<IDeleteEntityTask, TEntityTask>();
-    }
+    where TEntityTask : class, IDeleteEntityTask =>
+        services.AddSingleton<IDeleteEntityTask, TEntityTask>();
+
     public IServiceCollection AddWfRateLimiting() => services.AddRateLimiter(options =>
             {
                 options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -234,8 +233,7 @@ public static class ServiceCollectionExtensions
 
     extension(ConfigureHostBuilder host)
     {
-        public void UseWfLogging()
-        {
+        public void UseWfLogging() =>
             host.UseSerilog((_, _, configuration) => configuration
                 .MinimumLevel.Information()
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
@@ -267,7 +265,6 @@ public static class ServiceCollectionExtensions
                     restrictedToMinimumLevel: LogEventLevel.Information,
                     retainedFileCountLimit: 30)
             );
-        }
     }
     
 }

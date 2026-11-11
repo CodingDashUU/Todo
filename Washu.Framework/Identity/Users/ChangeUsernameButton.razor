@@ -1,6 +1,7 @@
 @using global::Radzen
 @using global::Radzen.Blazor
 @using Washu.Framework.AspNetCore
+@using Washu.Framework.Identity.Users.DeleteUser
 @using Washu.Framework.Identity.Users.FindUser
 @using Washu.Framework.Notifications
 @using Washu.Framework.Radzen
@@ -34,23 +35,23 @@
         var result = await ChangeUsernameHandler.HandleAsync(command);
         switch (result)
         {
-            case ChangeUsernameResult.AccountNotFound:
+            case AccountNotFound:
             {
-                var id = Store.Store(Message.Error("Identity Error", "Account not found"));
+                var id = Store.Store(Message.Error("Identity Error", AccountNotFound.Message));
                 await CachedFindUserHandler.RemoveUserAsync(User.Id);
                 NavManager.NavigateTo($"{IdentityRoutes.SignOut}?messageId={id}", forceLoad: true);
                 return;
             }
-            case ChangeUsernameResult.UserAlreadyModified:
-                NotificationService.Show(Message.Error("Identity Error", "Account already modified"));
+            case UserAlreadyModified:
+                NotificationService.Show(Message.Error("Identity Error", UserAlreadyModified.Message));
                 await OnRefreshUserAsync();
                 return;
         }
 
         var message = result switch
         {
-            ChangeUsernameResult.UsernameTaken => Message.Error("Identity Error", "Username taken"),
-            ChangeUsernameResult.Success => Message.Success("Identity Success", "Successfully changed username"),
+            UsernameTaken => Message.Error("Identity Error", UsernameTaken.Message),
+            ChangeUsernameSuccess => Message.Success("Identity Success", ChangeUsernameSuccess.Message),
             _ => throw new ArgumentOutOfRangeException()
         };
         NotificationService.Show(message);

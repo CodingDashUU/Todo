@@ -29,7 +29,8 @@
             _isDarkMode = !_isDarkMode;
             var newThemeMode = _isDarkMode ? "dark" : "light";
             var newTheme = _isDarkMode ? "material-dark" : "material";
-            await JS.InvokeVoidAsync("setThemeCookie", newThemeMode);
+            try { await JS.InvokeVoidAsync("setThemeCookie", newThemeMode); }
+            catch (Exception) { }
             ThemeService.SetTheme(newTheme);
         }
 

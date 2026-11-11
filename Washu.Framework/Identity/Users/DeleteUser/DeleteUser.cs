@@ -17,15 +17,19 @@ public sealed class DeleteUserHandler(IDbContextFactory<ApplicationDbContext> fa
         if (user is null)
         {
             logger.LogError("User with id {UserId} could not be deleted because it was not found", command.UserId);
-            return DeleteUserResult.AccountNotFound;
+            return new AccountNotFound();
         }
         dbContext.Users.Remove(user);
         await dbContext.SaveChangesAsync(ct);
         if (logger.IsEnabled(LogLevel.Information))
             logger.LogInformation("User with id {UserId} deleted successfully", command.UserId);
-        return DeleteUserResult.Success;
+        return new DeleteUserSuccess();
     }
 }
 
-public enum DeleteUserResult : byte { Success, AccountNotFound }
+public readonly struct DeleteUserSuccess
+{
+    public const string Message = "Successfully deleted account";
+}
+public readonly union DeleteUserResult(DeleteUserSuccess, AccountNotFound);
 

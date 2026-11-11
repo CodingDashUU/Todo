@@ -364,7 +364,6 @@
     void OnListSelected(TodoList newList)
     {
         _selectedList = newList;
-        StateHasChanged();
         _grid.FirstPage(forceReload: true);
     }
 
