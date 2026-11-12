@@ -152,11 +152,11 @@ public sealed class SoftDeleteAndTaskIntegrationTests(ApplicationPostgreSqlFixtu
 
         // Execute background cleanup task
         var task = new DeleteUserTask();
-        (string EntityName, int RowsDeleted) result;
-        await using (var context = await factory.CreateDbContextAsync()) result = await task.ExecuteAsync(context);
+        int rowsChanged;
+        await using (var context = await factory.CreateDbContextAsync()) rowsChanged = await task.ExecuteAsync(context);
 
-        result.EntityName.Should().Be(nameof(ApplicationUser));
-        result.RowsDeleted.Should().BeGreaterThanOrEqualTo(1);
+        task.EntityName.Should().Be(nameof(ApplicationUser));
+        rowsChanged.Should().BeGreaterThanOrEqualTo(1);
 
         // Verify softDeletedUser is completely erased from table
         await using (var verifyContext = await factory.CreateDbContextAsync())

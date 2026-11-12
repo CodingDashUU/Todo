@@ -22,7 +22,7 @@ public class ApplicationDbContext(DbContextOptions options)
         modelBuilder.HasPostgresExtension(Citext);
         modelBuilder.Entity<WorkerLastRun>(entity =>
         {
-            entity.HasKey(w => w.WorkerName);
+            entity.HasKey(w => new { w.WorkerName, w.TaskName });
         });
         modelBuilder.Entity<UserRole>(entity =>
         {

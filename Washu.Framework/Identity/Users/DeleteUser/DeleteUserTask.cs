@@ -6,10 +6,10 @@ namespace Washu.Framework.Identity.Users.DeleteUser;
 
 public sealed class DeleteUserTask : IDeleteEntityTask
 {
-    public async Task<(string EntityName, int RowsDeleted)> ExecuteAsync(ApplicationDbContext dbContext,
-        CancellationToken ctx = default)
-    {
-        var rowsDeleted = await dbContext.Users.IgnoreQueryFilters().Where(u => u.IsDeleted).ExecuteDeleteAsync(ctx);
-        return (nameof(ApplicationUser), rowsDeleted);
-    }
+    public string EntityName => nameof(ApplicationUser);
+    public TimeSpan RunInterval => TimeSpan.FromHours(2);
+    
+    public async Task<int> ExecuteAsync(ApplicationDbContext dbContext,
+        CancellationToken ctx = default) =>
+        await dbContext.Users.IgnoreQueryFilters().Where(u => u.IsDeleted).ExecuteDeleteAsync(ctx);
 }

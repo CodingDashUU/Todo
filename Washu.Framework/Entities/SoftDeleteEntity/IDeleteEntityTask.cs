@@ -4,5 +4,8 @@ namespace Washu.Framework.Entities.SoftDeleteEntity;
 
 public interface IDeleteEntityTask
 {
-    Task<(string EntityName, int RowsDeleted)> ExecuteAsync(ApplicationDbContext dbContext, CancellationToken ctx = default);
+    string EntityName { get; }
+    TimeSpan RunInterval { get; }
+    string TaskName => $"Delete{EntityName}";
+    Task<int> ExecuteAsync(ApplicationDbContext dbContext, CancellationToken ctx = default);
 }

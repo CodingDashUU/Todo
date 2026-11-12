@@ -7,10 +7,10 @@ namespace Washu.Todo.Lists;
 
 public sealed class DeleteTodoListTask : IDeleteEntityTask
 {
-    public async Task<(string EntityName, int RowsDeleted)> ExecuteAsync(ApplicationDbContext dbContext,
-        CancellationToken ctx = default)
-    {
-        var rowsDeleted = await dbContext.Set<TodoList>().IgnoreQueryFilters().Where(u => u.IsDeleted).ExecuteDeleteAsync(ctx);
-        return (nameof(TodoList), rowsDeleted);
-    }
+    public string EntityName => nameof(TodoList);
+    public TimeSpan RunInterval => TimeSpan.FromHours(3); 
+
+    public async Task<int> ExecuteAsync(ApplicationDbContext dbContext,
+        CancellationToken ctx = default) =>
+        await dbContext.Set<TodoList>().IgnoreQueryFilters().Where(u => u.IsDeleted).ExecuteDeleteAsync(ctx);
 }

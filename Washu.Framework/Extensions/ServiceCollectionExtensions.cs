@@ -112,7 +112,7 @@ public static class ServiceCollectionExtensions
         return services.AddDbContextFactory<ApplicationDbContext, TDbContext>(options =>
         {
             options.UseNpgsql(
-                connectionString,
+                connectionString, 
                 npgsqlOptions =>
                     npgsqlOptions.EnableRetryOnFailure(
                         maxRetryCount: 5,

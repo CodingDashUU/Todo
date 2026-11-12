@@ -62,11 +62,11 @@ public class DeleteTodoListTaskTests(TodoPostgreSqlFixture fixture)
 
         // Execute background cleanup task
         var task = new DeleteTodoListTask();
-        (string EntityName, int RowsDeleted) result;
-        await using (var context = await factory.CreateDbContextAsync()) result = await task.ExecuteAsync(context);
+        int rowsChanged;
+        await using (var context = await factory.CreateDbContextAsync()) rowsChanged = await task.ExecuteAsync(context);
 
-        result.EntityName.Should().Be(nameof(TodoList));
-        result.RowsDeleted.Should().BeGreaterThanOrEqualTo(1);
+        task.EntityName.Should().Be(nameof(TodoList));
+        rowsChanged.Should().BeGreaterThanOrEqualTo(1);
 
         // Verify hard deletion in Postgres
         await using (var verifyContext = await factory.CreateDbContextAsync())
