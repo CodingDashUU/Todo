@@ -14,6 +14,7 @@ namespace Washu.Framework.Extensions;
 using AspNetCore;
 using Blazor;
 using Identity;
+using Identity.Users.DeleteUser;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components;
@@ -24,6 +25,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using TickerQ.DependencyInjection;
 
 public static class WebApplicationExtensions
 {
@@ -35,15 +37,18 @@ public static class WebApplicationExtensions
             var addRolesHandler = serviceScope.ServiceProvider.GetRequiredService<AddRolesHandler>();
             await addRolesHandler.HandleAsync(new AddRolesCommand(roles));
         }
-        public async Task SeedPermissionsAsync()
+        public async Task SeedPermissionsAsync(params IEnumerable<PermissionRequest> perms)
         {
             await using var serviceScope = app.Services.CreateAsyncScope();
             await using var dbContext = await serviceScope.ServiceProvider
                 .GetRequiredService<IDbContextFactory<ApplicationDbContext>>()
                 .CreateDbContextAsync();
-            if (await dbContext.RolePermissions.AnyAsync(rp => rp.Name == CorePermissions.CanCheckSystemHealth)) return;
-            var role = dbContext.Roles.First(r  => r.Name == InitialUserRoles.Admin);
-            dbContext.RolePermissions.Add(new RolePermission(CorePermissions.CanCheckSystemHealth, role.Id));
+            foreach (var req in perms)
+            {
+                if (await dbContext.RolePermissions.AnyAsync(rp => rp.Name == req.Permission)) continue;
+                var role = dbContext.Roles.First(r  => r.Name == req.Role);
+                dbContext.RolePermissions.Add(new RolePermission(req.Permission, role.Id));
+            }
             await dbContext.SaveChangesAsync();
         }
         public void UseWfPipeline()
@@ -163,8 +168,6 @@ public static class WebApplicationExtensions
             where TDbContext : ApplicationDbContext
             where TApp : ComponentBase
         {
-            var options = new WfApplicationOptions();
-            configureOptions?.Invoke(options);
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
@@ -175,6 +178,16 @@ public static class WebApplicationExtensions
             {
                 Log.Information("Application is starting...");
                 var builder = WebApplication.CreateBuilder(args);
+                
+                var options = new WfApplicationOptions();
+                configureOptions?.Invoke(options);
+                if (string.IsNullOrEmpty(options.ApplicationName))
+                {
+                    Log.Error(
+                        $"Property {nameof(WfApplicationOptions)}.{nameof(WfApplicationOptions.ApplicationName)} cannot be empty"
+                        );
+                    return;
+                }
                 ValidatorOptions.Global.DefaultRuleLevelCascadeMode = CascadeMode.Stop;
                 builder.Host.UseWfLogging();
                 builder.Services.AddHttpContextAccessor();
@@ -193,13 +206,21 @@ public static class WebApplicationExtensions
                     .AddWfExternalCookie()
                     .AddWfApplicationCookie()
                     .AddWfGoogle(builder.Configuration);
+                builder.Services.AddWfTickerQ<TDbContext>(
+                    options.ApplicationName,
+                    builder.Configuration,
+                    [new CronJobRequest(nameof(DeleteUserJob), "0 5 * * SUN"), ..options.CronJobs]
+                    );
                 options.RegisterAdditionalServices?.Invoke(builder);
                 var app = builder.Build();
                 await app.MigrateAsync<TDbContext>();
                 app.UseWfPipeline();
+                app.UseTickerQ();
                 app.MapWfRazorComponents<TApp>();
                 await app.SeedRolesAsync([.. InitialUserRoles.Roles]);
-                await app.SeedPermissionsAsync();
+                await app.SeedPermissionsAsync(
+                    new PermissionRequest(CorePermissions.CanCheckSystemHealth, InitialUserRoles.Admin), 
+                    new PermissionRequest(CorePermissions.CanCheckBackgroundJobDashboard, InitialUserRoles.Admin));
                 await app.RunAsync();
             }
             catch (Exception ex)
@@ -215,6 +236,8 @@ public static class WebApplicationExtensions
 }
 public class WfApplicationOptions
 {
+    public string ApplicationName { get; set; } = string.Empty;
+    public List<CronJobRequest> CronJobs { get; set; } = [];
     public Action<WebApplicationBuilder>? RegisterAdditionalServices { get; set; }
 }
 file abstract class SignOut;

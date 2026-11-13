@@ -142,7 +142,7 @@ public sealed class SignOutAndHealthEndpointsTests(ApplicationPostgreSqlFixture 
             }
 
         // First seeding
-        await _app.SeedPermissionsAsync();
+        await _app.SeedPermissionsAsync([new PermissionRequest(CorePermissions.CanCheckSystemHealth, InitialUserRoles.Admin)]);
 
         await using (var db = await fixture.CreateDbContextFactory().CreateDbContextAsync())
         {

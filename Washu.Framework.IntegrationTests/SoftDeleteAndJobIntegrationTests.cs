@@ -8,11 +8,13 @@ using Fixtures;
 using FluentAssertions;
 using Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Npgsql;
+using TickerQ.Utilities.Base;
 using Xunit;
 
 [Collection(PostgreSqlTestCollection.Name)]
-public sealed class SoftDeleteAndTaskIntegrationTests(ApplicationPostgreSqlFixture fixture)
+public sealed class SoftDeleteAndJobIntegrationTests(ApplicationPostgreSqlFixture fixture)
 {
     [Fact]
     public async Task SoftDeleteInterceptor_SetsIsDeleted_AndHidesUserFromDefaultQueryFilter()
@@ -151,13 +153,8 @@ public sealed class SoftDeleteAndTaskIntegrationTests(ApplicationPostgreSqlFixtu
         }
 
         // Execute background cleanup task
-        var task = new DeleteUserTask();
-        int rowsChanged;
-        await using (var context = await factory.CreateDbContextAsync()) rowsChanged = await task.ExecuteAsync(context);
-
-        task.EntityName.Should().Be(nameof(ApplicationUser));
-        rowsChanged.Should().BeGreaterThanOrEqualTo(1);
-
+        var task = new DeleteUserJob(factory, new NullLogger<DeleteUserJob>());
+        await task.ExecuteAsync(new TickerFunctionContext());
         // Verify softDeletedUser is completely erased from table
         await using (var verifyContext = await factory.CreateDbContextAsync())
         {

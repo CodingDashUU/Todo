@@ -14,6 +14,9 @@
         <PackageReference Include="Serilog.Enrichers.Thread" />
         <PackageReference Include="Serilog.Sinks.Console" />
         <PackageReference Include="Serilog.Sinks.File" />
+        <PackageReference Include="TickerQ" />
+        <PackageReference Include="TickerQ.Dashboard" />
+        <PackageReference Include="TickerQ.EntityFrameworkCore" />
         <PackageReference Include="ZiggyCreatures.FusionCache" />
     </ItemGroup>
     <ItemGroup>

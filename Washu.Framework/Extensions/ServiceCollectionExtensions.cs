@@ -34,6 +34,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Notifications;
 using System.Threading.RateLimiting;
+using TickerQ.Dashboard.DependencyInjection;
+using TickerQ.DependencyInjection;
+using TickerQ.EntityFrameworkCore.Customizer;
+using TickerQ.EntityFrameworkCore.DependencyInjection;
 using ZiggyCreatures.Caching.Fusion;
 
 public static class ServiceCollectionExtensions
@@ -101,8 +105,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<CachedFindUserHandler>();
         services.AddScoped<GetUserService>();
         services.AddSingleton<CurrentUser>();
-        services.AddSingleton<IDeleteEntityTask, DeleteUserTask>();
-        services.AddHostedService<DeleteEntityWorker>();
         return services;
     }
     public IServiceCollection AddWfDbContextFactory<TDbContext>(ConfigurationManager configuration, params HashSet<IInterceptor> interceptors)
@@ -112,13 +114,7 @@ public static class ServiceCollectionExtensions
         return services.AddDbContextFactory<ApplicationDbContext, TDbContext>(options =>
         {
             options.UseNpgsql(
-                connectionString, 
-                npgsqlOptions =>
-                    npgsqlOptions.EnableRetryOnFailure(
-                        maxRetryCount: 5,
-                        maxRetryDelay: TimeSpan.FromSeconds(30),
-                        errorCodesToAdd: null
-                    ));
+                connectionString);
             options.AddInterceptors([new AuditableEntityInterceptor(), new SoftDeletableEntityInterceptor(), ..interceptors]);
         });
     }
@@ -138,10 +134,6 @@ public static class ServiceCollectionExtensions
             return new UserTimeZoneProvider();
         }
     });
-
-    public IServiceCollection AddDeleteEntityTask<TEntityTask>()
-    where TEntityTask : class, IDeleteEntityTask =>
-        services.AddSingleton<IDeleteEntityTask, TEntityTask>();
 
     public IServiceCollection AddWfRateLimiting() => services.AddRateLimiter(options =>
             {
@@ -229,6 +221,34 @@ public static class ServiceCollectionExtensions
                     options.KeepAliveInterval = TimeSpan.FromSeconds(15);
                 });
         }
+
+        public IServiceCollection AddWfTickerQ<TDbContext>(string applicationName, ConfigurationManager config, params List<CronJobRequest> cronJobs)
+        where TDbContext : DbContext =>
+            services.AddTickerQ(cronOpt =>
+            {
+                cronOpt.UseLicense(config.GetSection("TickerQ:LicensePath").Value!);
+                cronOpt.UseApplicationNamespace(applicationName);
+                cronOpt.SeedCronTickers(crons => 
+                {
+                    foreach (var job in cronJobs)
+                        crons.Add(job.JobFunction, job.CronExpression);
+                });
+                cronOpt.AddOperationalStore(efOpt =>
+                {
+                    efOpt.UseApplicationDbContext<TDbContext>(ConfigurationType.UseModelCustomizer);
+                });
+
+                cronOpt.AddDashboard(dashboard =>
+                {
+                    dashboard.SetTitle("Job Monitor");
+                    dashboard.SetBasePath("/tickerq");
+                    dashboard.WithCustomAuth(async context =>
+                    {
+                        var hasPermission = context.RequestServices.GetRequiredService<HasPermissionHandler>();
+                        return await hasPermission.HandleAsync(new HasPermissionQuery(CorePermissions.CanCheckBackgroundJobDashboard));
+                    });
+                });
+            });
     }
 
     extension(ConfigureHostBuilder host)
@@ -237,7 +257,7 @@ public static class ServiceCollectionExtensions
             host.UseSerilog((_, _, configuration) => configuration
                 .MinimumLevel.Information()
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-                .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Information)
+                .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Warning)
                 .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
                 .MinimumLevel.Override("System", LogEventLevel.Warning)
                 .MinimumLevel.Override("Microsoft.AspNetCore.Components.RenderTree.Renderer", LogEventLevel.Error)
