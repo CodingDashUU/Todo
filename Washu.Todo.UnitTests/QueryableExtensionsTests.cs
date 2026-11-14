@@ -3,6 +3,7 @@ using Washu.Todo.Tasks;
 using Washu.Todo.Extensions;
 namespace Washu.Todo.UnitTests;
 
+using Components;
 using FluentAssertions;
 
 public class QueryableExtensionsTests
@@ -76,7 +77,7 @@ public class QueryableExtensionsTests
         var callbackInvoked = false;
         var filteredCount = 0;
 
-        var resultQuery = await query.ApplyDataGridFiltersAsync(args, filtered =>
+        var resultQuery = await query.ApplyDataGridFiltersAsync(LoadDataConfig.FromRadzenArgs(args), filtered =>
         {
             callbackInvoked = true;
             filteredCount = filtered.Count();
@@ -110,7 +111,7 @@ public class QueryableExtensionsTests
 
         var callbackCount = 0;
 
-        var resultQuery = await query.ApplyDataGridDropDownFiltersAsync(args, filtered =>
+        var resultQuery = await query.ApplyDataGridDropDownFiltersAsync(LoadDataConfig.FromRadzenArgs(args), filtered =>
         {
             callbackCount = filtered.Count();
             return ValueTask.CompletedTask;

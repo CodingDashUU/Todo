@@ -1,4 +1,3 @@
-@using Microsoft.EntityFrameworkCore
 @using Humanizer
 @using Washu.Framework.Extensions
 @using Washu.Framework.Identity.Users
@@ -11,11 +10,10 @@
 @using Washu.Todo.Extensions
 @using Washu.Todo.Lists
 @using Washu.Todo.Lists.Features
-@using Washu.Todo.Persistence
 @using Washu.Todo.Tasks
 @using Washu.Todo.Tasks.Features
 @inject UserTimeZoneProvider TimeZoneProvider
-@inject IDbContextFactory<TodoDbContext> DbContextFactory
+@inject GetTasksHandler GetTasksHandler
 @inject GetUserService GetUserService
 @inject CreateListHandler CreateListHandler
 @inject CreateTaskHandler CreateTaskHandler
@@ -24,6 +22,7 @@
 @inject UpdateListHandler UpdateListHandler
 @inject DeleteTaskHandler DeleteTaskHandler
 @inject DeleteListHandler DeleteListHandler
+@inject GetListsHandler GetListHandler
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 <RadzenDataGrid @ref="_grid" 
@@ -43,7 +42,7 @@
                 IsLoading="@_isLoading"  
                 Data="@_tasks" 
                 Count="@_count"
-                LoadData="@LoadData" 
+                LoadData="@LoadTasksAsync" 
                 Filter="FilterHelpers.OnFilter" 
                 FilterCleared="FilterHelpers.OnFilterCleared"
                 ColumnWidth="300px"
@@ -369,21 +368,9 @@
         try
         {
             _isListsDataLoading = true;
-            await InvokeAsync(StateHasChanged);
-            
-            await using var context = await DbContextFactory.CreateDbContextAsync();
-            var query = await context.TodoLists
-                .AsNoTracking()
-                .ForUser(_userId)
-                .OrderByDescending(e => e.LastModifiedDate.HasValue)
-                .ThenByDescending(e => e.LastModifiedDate)
-                .ThenByDescending(e => e.CreationDate)
-                .AsQueryable()
-                .ApplyDataGridDropDownFiltersAsync(args, async queryable =>
-                {
-                    _listsCount = await queryable.CountAsync();
-                });
-            _lists = _listsCount == 0 ? [] : await query.ToListAsync();
+            var response = await GetListHandler.HandleAsync(new GetListsQuery(_userId, LoadDataConfig.FromRadzenArgs(args)));
+            _lists = response.Lists;
+            _listsCount = response.Count;
         }
         catch (Exception)
         {
@@ -397,7 +384,7 @@
         }
     }
 
-    async Task LoadData(LoadDataArgs args)
+    async Task LoadTasksAsync(LoadDataArgs args)
     {
         try
         {
@@ -419,19 +406,10 @@
                 return;
             }
 
-            await using var context = await DbContextFactory.CreateDbContextAsync();
-            var query = await context.Tasks
-                .AsNoTracking()
-                .ForTodoList(_selectedList.Id)
-                .OrderByDescending(e => e.DateCreated)
-                .AsQueryable()
-                .ApplyDataGridFiltersAsync(args, async queryable =>
-                {
-                    _count = await queryable.CountAsync();
-                    _completedTasks = _count > 0 ? await queryable.CountAsync(t => t.IsCompleted) : 0;
-                });
-            
-            _tasks = _count == 0 ? [] : await query.ToListAsync();
+            var response = await GetTasksHandler.HandleAsync(new GetTasksQuery(_selectedList.Id, LoadDataConfig.FromRadzenArgs(args)));
+            _tasks = response.Tasks;
+            _count = response.Count;
+            _completedTasks = response.CompletedTasks;
 
             if (_tasks.IsNotEmpty && _selectedTasks.IsEmpty)
             {

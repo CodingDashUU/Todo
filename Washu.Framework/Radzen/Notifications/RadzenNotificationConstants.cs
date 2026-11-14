@@ -1,4 +1,4 @@
-namespace Washu.Framework.Radzen;
+namespace Washu.Framework.Radzen.Notifications;
 
 public static class RadzenNotificationConstants
 {

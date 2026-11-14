@@ -17,6 +17,8 @@ public static class ConfigurationExtensions
             services.AddSingleton<DeleteTaskHandler>();
             services.AddSingleton<DeleteListHandler>();
             services.AddSingleton<UpdateListHandler>();
+            services.AddSingleton<GetListsHandler>();
+            services.AddSingleton<GetTasksHandler>();
             return services;
         }
     }

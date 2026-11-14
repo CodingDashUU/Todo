@@ -1,0 +1,37 @@
+namespace Washu.Todo.Tasks.Features;
+
+using Components;
+using Extensions;
+using Lists.Features;
+using Microsoft.EntityFrameworkCore;
+using Persistence;
+
+public sealed record GetTasksQuery(Guid SelectedListId, LoadDataConfig Config);
+public sealed class GetTasksHandler(IDbContextFactory<TodoDbContext> factory)
+{
+    public async Task<GetTasksResponse> HandleAsync(GetTasksQuery query, CancellationToken ctx = new())
+    {
+        var response = new GetTasksResponse();
+        await using var context = await factory.CreateDbContextAsync(ctx);
+        var dbQuery = await context.Tasks
+            .AsNoTracking()
+            .ForTodoList(query.SelectedListId)
+            .OrderByDescending(e => e.DateCreated)
+            .AsQueryable()
+            .ApplyDataGridFiltersAsync(query.Config, async queryable =>
+            {
+                response.Count = await queryable.CountAsync(ctx);
+                response.CompletedTasks = response.Count > 0 ? await queryable.CountAsync(t => t.IsCompleted, ctx) : 0;
+            });
+            
+        response.Tasks = response.Count == 0 ? [] : await dbQuery.ToListAsync(ctx);
+        return response;
+    }
+}
+
+public sealed class GetTasksResponse
+{
+    public int Count { get; set; }
+    public int CompletedTasks { get; set; }
+    public List<TaskEntry> Tasks { get; set; } = [];
+}

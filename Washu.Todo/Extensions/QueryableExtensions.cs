@@ -6,6 +6,8 @@ using Washu.Todo.Tasks;
 
 namespace Washu.Todo.Extensions;
 
+using Components;
+
 public static class QueryableExtensions
 {
     extension(IQueryable<TodoList> query)
@@ -21,13 +23,13 @@ public static class QueryableExtensions
     extension<T>(IQueryable<T> query)
     where T : class
     {
-        public async Task<IQueryable<T>> ApplyDataGridFiltersAsync(LoadDataArgs args, Func<IQueryable<T>, ValueTask> onFilteredAndSorted)
+        public async Task<IQueryable<T>> ApplyDataGridFiltersAsync(LoadDataConfig config, Func<IQueryable<T>, ValueTask> onFilteredAndSorted)
         {
-            if (!string.IsNullOrEmpty(args.Filter)) query = query.Where(args.Filter);
-            if (!string.IsNullOrEmpty(args.OrderBy)) query = query.OrderBy(args.OrderBy);
+            if (!string.IsNullOrEmpty(config.Filter)) query = query.Where(config.Filter);
+            if (!string.IsNullOrEmpty(config.OrderBy)) query = query.OrderBy(config.OrderBy);
             await onFilteredAndSorted(query);
-            if (args.Skip is not null) query = query.Skip(args.Skip.Value);
-            if (args.Top is not null) query = query.Take(args.Top.Value);
+            if (config.Skip is not null) query = query.Skip(config.Skip.Value);
+            if (config.Top is not null) query = query.Take(config.Top.Value);
             return query;
         }
     }
@@ -35,13 +37,13 @@ public static class QueryableExtensions
     extension<T>(IQueryable<T> query) 
         where T : class, INamedEntity
     {
-        public async Task<IQueryable<T>> ApplyDataGridDropDownFiltersAsync(LoadDataArgs args, Func<IQueryable<T>, ValueTask> onFilteredAndSorted)
+        public async Task<IQueryable<T>> ApplyDataGridDropDownFiltersAsync(LoadDataConfig config, Func<IQueryable<T>, ValueTask> onFilteredAndSorted)
         {
-            if (!string.IsNullOrEmpty(args.Filter)) query = query.Where(t => t.Name.ToLower().Contains(args.Filter.ToLower()));
-            if (!string.IsNullOrEmpty(args.OrderBy)) query = query.OrderBy(args.OrderBy);
+            if (!string.IsNullOrEmpty(config.Filter)) query = query.Where(t => t.Name.ToLower().Contains(config.Filter.ToLower()));
+            if (!string.IsNullOrEmpty(config.OrderBy)) query = query.OrderBy(config.OrderBy);
             await onFilteredAndSorted(query);
-            if (args.Skip is not null) query = query.Skip(args.Skip.Value);
-            if (args.Top is not null) query = query.Take(args.Top.Value);
+            if (config.Skip is not null) query = query.Skip(config.Skip.Value);
+            if (config.Top is not null) query = query.Take(config.Top.Value);
             return query;
         }
     }
