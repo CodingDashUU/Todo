@@ -24,7 +24,7 @@ public class TodoDbContext(DbContextOptions<TodoDbContext> options) : Applicatio
             entity.ToTable(table =>
             {
                 table.HasMaxLengthCheckConstraint(p => p.Name, 64);
-                table.HasAllowedCharactersCheckConstraint(p => p.Name, ListName.AllowedCharacters);
+                table.HasAllowedCharactersCheckConstraint(p => p.Name, ListName.AllowedCharacters + "~");
                 table.HasDateLessThanOrEqualToNullableDateCheckConstraint(p => p.CreationDate, p => p.LastModifiedDate);
             });
             entity.Property(t => t.RowVersion).IsRowVersion();
@@ -33,7 +33,7 @@ public class TodoDbContext(DbContextOptions<TodoDbContext> options) : Applicatio
                 .WithOne()
                 .HasForeignKey(x => x.TodoListId)
                 .OnDelete(DeleteBehavior.Cascade);
-            entity.HasUniqueIndex(t => new { t.UserId, t.Name }).HasSoftDeleteFilter();
+            entity.HasUniqueIndex(t => new { t.UserId, t.Name });
         });
         builder.Entity<TaskEntry>(entity =>
         {

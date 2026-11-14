@@ -9,13 +9,20 @@ public sealed class ApplicationUser(string userName, string email, string google
     public Guid Id { get; private init; } = Guid.CreateVersion7();
 
     public string Username { get; set; } = userName;
-    public string Email { get; private init; } = email;
+    public string Email { get; private set; } = email;
     public Guid SecurityStamp { get; private init; } = Guid.CreateVersion7();
-    public string GoogleSubject { get; private init; } = googleSubject;
+    public string GoogleSubject { get; private set; } = googleSubject;
     public uint RowVersion { get; private init; }
     public DateTimeOffset CreationDate { get; private init; }
     public DateTimeOffset? LastModifiedDate { get; private init; }
     public DateTimeOffset? LastSignedInDate { get; private init; }
     public DateTimeOffset? LastSignedOutDate { get; private init; }
-    public bool IsDeleted { get; private init; }
+    public bool IsDeleted { get; private set; }
+    
+    public void SoftDelete()
+    {
+        Username = $"deleted~{Username}~{Random.Shared.Next(1000, 10000)}";
+        Email = $"deleted~{Email}~{Random.Shared.Next(1000, 10000)}";
+        GoogleSubject = $"deleted~{GoogleSubject}~{Random.Shared.Next(1000, 10000)}";
+    }
 }

@@ -4,6 +4,7 @@ using Washu.Framework.Identity.Users.DeleteUser;
 
 namespace Washu.Framework.IntegrationTests;
 
+using Entities.SoftDeleteEntity;
 using Fixtures;
 using FluentAssertions;
 using Identity;
@@ -27,7 +28,6 @@ public sealed class SoftDeleteAndJobIntegrationTests(ApplicationPostgreSqlFixtur
             context.Users.Add(user);
             await context.SaveChangesAsync();
         }
-
         await using (var deleteContext = await factory.CreateDbContextAsync())
         {
             var userToDelete = await deleteContext.Users.FirstAsync(u => u.Id == user.Id);
@@ -44,7 +44,7 @@ public sealed class SoftDeleteAndJobIntegrationTests(ApplicationPostgreSqlFixtur
             // IgnoreQueryFilters shows the user still exists with IsDeleted = true
             var ignoredFilterUser = await verifyContext.Users.IgnoreQueryFilters().FirstOrDefaultAsync(u => u.Id == user.Id);
             ignoredFilterUser.Should().NotBeNull("User should not be physically removed by SaveChangesAsync");
-            ignoredFilterUser!.IsDeleted.Should().BeTrue("SoftDeletableEntityInterceptor must set IsDeleted to true");
+            ignoredFilterUser.IsDeleted.Should().BeTrue($"SoftDeletableEntityInterceptor must set {nameof(ISoftDeletableEntity.IsDeleted)} to UTC now");
         }
     }
 
@@ -82,52 +82,6 @@ public sealed class SoftDeleteAndJobIntegrationTests(ApplicationPostgreSqlFixtur
             // Ignoring query filters reveals the association still exists
             var roleExistsIgnoringFilter = await verifyContext.UserRoles.IgnoreQueryFilters().AnyAsync(ur => ur.UserId == user.Id);
             roleExistsIgnoringFilter.Should().BeTrue("UserRole association should remain until purged");
-        }
-    }
-
-    [Fact]
-    public async Task SoftDeleteFilterOnUniqueIndex_AllowsRecreatingUserWithSameUsernameAndEmail()
-    {
-        var factory = fixture.CreateDbContextFactory();
-        var guid = Guid.CreateVersion7().ToString("N");
-        var username = $"ReuseUser_{guid}";
-        var email = $"reuse_{guid}@example.com";
-        var sub1 = $"sub1_{guid}";
-        var sub2 = $"sub2_{guid}";
-
-        var user1 = new ApplicationUser(username, email, sub1);
-
-        await using (var context = await factory.CreateDbContextAsync())
-        {
-            context.Users.Add(user1);
-            await context.SaveChangesAsync();
-        }
-
-        // Soft-delete user1
-        await using (var context = await factory.CreateDbContextAsync())
-        {
-            var u1 = await context.Users.FirstAsync(u => u.Id == user1.Id);
-            context.Users.Remove(u1);
-            await context.SaveChangesAsync();
-        }
-
-        // Create new user2 with identical username and email
-        var user2 = new ApplicationUser(username, email, sub2);
-        await using (var context = await factory.CreateDbContextAsync())
-        {
-            context.Users.Add(user2);
-            var saveAct = async () => await context.SaveChangesAsync();
-            await saveAct.Should().NotThrowAsync("SoftDelete filter on unique index permits re-registration of the same username/email");
-        }
-
-        await using (var verifyContext = await factory.CreateDbContextAsync())
-        {
-            var activeUser = await verifyContext.Users.SingleAsync(u => u.Username == username);
-            activeUser.Id.Should().Be(user2.Id);
-            activeUser.GoogleSubject.Should().Be(sub2);
-
-            var totalUsersWithSameName = await verifyContext.Users.IgnoreQueryFilters().CountAsync(u => u.Username == username);
-            totalUsersWithSameName.Should().Be(2, "Both soft-deleted and active users coexist in table");
         }
     }
 

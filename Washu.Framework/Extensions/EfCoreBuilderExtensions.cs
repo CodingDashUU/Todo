@@ -14,11 +14,6 @@ public static class EfCoreBuilderExtensions
     {
         public IndexBuilder<TEntity> HasUniqueIndex(Expression<Func<TEntity, object?>> indexExpression) => entity.HasIndex(indexExpression).IsUnique();
     }
-
-    extension<TEntity>(IndexBuilder<TEntity> index) where TEntity : ISoftDeletableEntity
-    {
-        public void HasSoftDeleteFilter() => index.HasFilter($"\"{nameof(ISoftDeletableEntity.IsDeleted)}\" = false");
-    }
     extension<TEntity>(EntityTypeBuilder<TEntity> entity) where TEntity : class, ISoftDeletableEntity
     {
         public void HasSoftDeleteQueryFilter() => entity.HasQueryFilter(e => !e.IsDeleted);

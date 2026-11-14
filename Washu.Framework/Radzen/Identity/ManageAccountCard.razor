@@ -1,3 +1,4 @@
+@using System.Globalization
 @using Humanizer
 @using Washu.Framework.Extensions
 @using Washu.Framework.Identity.Login
@@ -86,7 +87,7 @@
                             Account Created
                         </RadzenText>
                         <RadzenText TextStyle="TextStyle.Body2" class="rz-mb-0 rz-font-weight-bold">
-                            @CreationDate.ToString("F")
+                            @CreationDate.ToString("F", CultureInfo.InvariantCulture)
                         </RadzenText>
                         <RadzenText TextStyle="TextStyle.Caption" class="rz-color-secondary rz-mb-0">
                             @CreationDate.Humanize()
@@ -103,7 +104,7 @@
                         @if (LastModifiedDate.HasValue)
                         {
                             <RadzenText TextStyle="TextStyle.Body2" class="rz-mb-0 rz-font-weight-bold">
-                                @LastModifiedDate.Value.ToString("F")
+                                @LastModifiedDate.Value.ToString("F", CultureInfo.InvariantCulture)
                             </RadzenText>
                             <RadzenText TextStyle="TextStyle.Caption" class="rz-color-secondary rz-mb-0">
                                 @LastModifiedDate.Value.Humanize()
@@ -127,7 +128,7 @@
                         @if (LastSignedInDate.HasValue)
                         {
                             <RadzenText TextStyle="TextStyle.Body2" class="rz-mb-0 rz-font-weight-bold">
-                                @LastSignedInDate.Value.ToString("F")
+                                @LastSignedInDate.Value.ToString("F", CultureInfo.InvariantCulture)
                             </RadzenText>
                             <RadzenText TextStyle="TextStyle.Caption" class="rz-color-secondary rz-mb-0">
                                 @LastSignedInDate.Value.Humanize()
@@ -151,7 +152,7 @@
                         @if (LastSignedOutDate.HasValue)
                         {
                             <RadzenText TextStyle="TextStyle.Body2" class="rz-mb-0 rz-font-weight-bold">
-                                @LastSignedOutDate.Value.ToString("F")
+                                @LastSignedOutDate.Value.ToString("F", CultureInfo.InvariantCulture)
                             </RadzenText>
                             <RadzenText TextStyle="TextStyle.Caption" class="rz-color-secondary rz-mb-0">
                                 @LastSignedOutDate.Value.Humanize()

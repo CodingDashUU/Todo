@@ -25,4 +25,6 @@ public class TodoList(Guid userId, string listName) : IOwnedByUser, IAuditableEn
         Tasks = []
     };
     public bool IsDeleted { get; private init; }
+
+    public void SoftDelete() => Name = $"deleted~{Name}~{Random.Shared.Next(1000, 10000)}";
 }

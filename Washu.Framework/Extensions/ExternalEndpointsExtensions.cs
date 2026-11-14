@@ -80,17 +80,6 @@ public static class ExternalEndpointsExtensions
             return Results.Redirect(errorUrl);
         }
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-
-        var existingUser = await dbContext.Users
-            .AsNoTracking()
-            .SingleOrDefaultAsync(l => l.GoogleSubject == info.ProviderKey);
-
-        if (existingUser is not null)
-        {
-            await signInHandler.HandleAsync(new SignInCommand(existingUser, persistCookie, info.LoginProvider));
-            return TypedResults.Redirect(SafeReturnUrl(returnUrl));
-        }
-        
         var email = info.Principal.FindFirstValue(ClaimTypes.Email);
         if (email is null)
         {
@@ -106,7 +95,17 @@ public static class ExternalEndpointsExtensions
                 });
             return TypedResults.Redirect(url);
         }
-        if (await dbContext.Users.AnyAsync(u => u.GoogleSubject == info.ProviderKey || u.Email == email))
+        var existingUser = await dbContext.Users
+            .AsNoTracking()
+            .SingleOrDefaultAsync(l => l.GoogleSubject == info.ProviderKey);
+
+        if (existingUser is not null)
+        {
+            await signInHandler.HandleAsync(new SignInCommand(existingUser, persistCookie, info.LoginProvider));
+            return TypedResults.Redirect(SafeReturnUrl(returnUrl));
+        }
+
+        if (await dbContext.Users.AnyAsync(u => u.Email == email))
         {
             var id = store.Store(Message.Error("Registration Error", "This account or email is already registered. Please sign in."));
             var url = QueryHelpers.AddQueryString(
@@ -119,7 +118,6 @@ public static class ExternalEndpointsExtensions
                 });
             return TypedResults.Redirect(url);
         }
-
         var username = await GenerateValidUsernameAsync(dbContext, email);
         var user = new ApplicationUser(username, email, info.ProviderKey);
         await dbContext.Users.AddAsync(user);

@@ -19,9 +19,10 @@ public class SoftDeletableEntityInterceptor  : SaveChangesInterceptor
 
         var entries = context.ChangeTracker.Entries()
             .Where(e => e is { Entity: ISoftDeletableEntity, State: EntityState.Deleted });
-
         foreach (var entry in entries)
         {
+            if (entry.Entity is not ISoftDeletableEntity entity) continue;
+            entity.SoftDelete();
             entry.Property(nameof(ISoftDeletableEntity.IsDeleted)).CurrentValue = true;
             entry.State = EntityState.Unchanged;
         }

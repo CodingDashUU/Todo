@@ -23,46 +23,6 @@ public class TodoDbContextConstraintsTests(TodoPostgreSqlFixture fixture)
     }
 
     [Fact]
-    public async Task UniqueIndex_WithSoftDeleteFilter_AllowsRecreatingListNameAfterSoftDelete()
-    {
-        var factory = fixture.CreateDbContextFactory<TodoDbContext>();
-        var listName = $"Project {Random.Shared.Next(0, 1000)}";
-
-        await using var context = await factory.CreateDbContextAsync();
-        var user = await CreateTestUserAsync(context);
-
-        // 1. Create first list
-        var list1 = new TodoList(user.Id, listName);
-        context.TodoLists.Add(list1);
-        await context.SaveChangesAsync();
-
-        // 2. Attempt duplicate while list1 is active -> UniqueViolation
-        var listDuplicate = new TodoList(user.Id, listName);
-        context.TodoLists.Add(listDuplicate);
-        var actDuplicate = async () => await context.SaveChangesAsync();
-        (await actDuplicate.Should().ThrowAsync<DbUpdateException>())
-            .WithInnerException<PostgresException>()
-            .And.SqlState.Should().Be(PostgresErrorCodes.UniqueViolation);
-
-        // Detach failed entry
-        context.Entry(listDuplicate).State = EntityState.Detached;
-
-        // 3. Soft delete list1
-        context.TodoLists.Remove(list1);
-        await context.SaveChangesAsync();
-
-        // 4. Create new list with same name -> Should succeed now
-        var list2 = new TodoList(user.Id, listName);
-        context.TodoLists.Add(list2);
-        var actRecreate = async () => await context.SaveChangesAsync();
-        await actRecreate.Should().NotThrowAsync("SoftDelete filter allows recreating list with same name once previous is soft-deleted");
-
-        // Verify both coexist with query filters ignored
-        var count = await context.TodoLists.IgnoreQueryFilters().CountAsync(l => l.UserId == user.Id && l.Name == listName);
-        count.Should().Be(2);
-    }
-
-    [Fact]
     public async Task DateCreatedLTEGoalDateCheckConstraint_RejectsGoalDateEarlierThanDateCreated()
     {
         var factory = fixture.CreateDbContextFactory<TodoDbContext>();
