@@ -7,13 +7,15 @@ using Washu.Framework.Identity.Users;
 
 namespace Washu.Framework.Identity.Login;
 
-public sealed record SignInCommand(ApplicationUser User, bool IsPersistent, string? AuthenticationMethod = null);
+using Mediator;
+
+public sealed record SignInCommand(ApplicationUser User, bool IsPersistent, string? AuthenticationMethod = null) : ICommand;
 
 public sealed class SignInHandler(
     IHttpContextAccessor httpContextAccessor
-    )
+    ) : ICommandHandler<SignInCommand>
 {
-    public async Task HandleAsync(SignInCommand command)
+    public async ValueTask<Unit> Handle(SignInCommand command, CancellationToken ctx = new())
     {
         var context = httpContextAccessor.HttpContext ??
                       throw new InvalidOperationException("An active HttpContext is required");
@@ -32,5 +34,6 @@ public sealed class SignInHandler(
         
         context.User = userPrincipal;
         await context.SignOutAsync(IdentityConstants.ExternalScheme);
+        return Unit.Value;
     }
 }

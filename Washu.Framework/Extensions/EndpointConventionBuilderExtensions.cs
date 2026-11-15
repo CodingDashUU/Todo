@@ -3,6 +3,7 @@ using Washu.Framework.Identity.Permissions;
 namespace Washu.Framework.Extensions;
 
 using Identity;
+using Mediator;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,8 +14,8 @@ public static class EndpointConventionBuilderExtensions
     {
         public IEndpointConventionBuilder RequirePermission(string permission) => builder.AddEndpointFilter(async (context, next) =>
         {
-            var handler = context.HttpContext.RequestServices.GetRequiredService<HasPermissionHandler>();
-            if (!await handler.HandleAsync(new HasPermissionQuery(permission)))
+            var mediator = context.HttpContext.RequestServices.GetRequiredService<IMediator>();
+            if (!await mediator.Send(new HasPermissionQuery(permission)))
                 return TypedResults.Forbid();
             return await next(context);
         });

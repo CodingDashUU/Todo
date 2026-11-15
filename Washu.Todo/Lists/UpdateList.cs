@@ -9,18 +9,20 @@ using Washu.Todo.Persistence;
 
 namespace Washu.Todo.Lists;
 
-public sealed record UpdateListCommand(Guid ListId, uint ListRowVersion, string NewListName);
+using Mediator;
+
+public sealed record UpdateListCommand(Guid ListId, uint ListRowVersion, string NewListName) : ICommand<Message>;
 public sealed class UpdateListHandler(
     IDbContextFactory<TodoDbContext> factory,
     CurrentUser user
-    )
+    ) : ICommandHandler<UpdateListCommand, Message>
 {
-    public async Task<Message> HandleAsync(UpdateListCommand command)
+    public async ValueTask<Message> Handle(UpdateListCommand command, CancellationToken ctx = new())
     {
-        await using var dbContext = await factory.CreateDbContextAsync();
+        await using var dbContext = await factory.CreateDbContextAsync(ctx);
         var todoListQuery = dbContext.TodoLists
             .ForCurrentUser(user);
-        var list = await todoListQuery.ByTodoList(command.ListId).SingleOrDefaultAsync<TodoList>();
+        var list = await todoListQuery.ByTodoList(command.ListId).SingleOrDefaultAsync(ctx);
         if (list is null)
             return Message.Error("Update List Error", "Todo list does not exist");
         if (todoListQuery.Any(l => l.Name == command.NewListName && l.Id != command.ListId))
@@ -29,7 +31,7 @@ public sealed class UpdateListHandler(
         list.Name =  command.NewListName;
         try
         {
-            await dbContext.SaveChangesAsync();
+            await dbContext.SaveChangesAsync(ctx);
         }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException
                                            {

@@ -3,14 +3,15 @@ namespace Washu.Todo.Lists.Features;
 using Components;
 using Extensions;
 using Framework.Extensions;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
 using Persistence;
 
-public sealed record GetListsQuery(Guid UserId, LoadDataConfig Config);
-public class GetListsHandler(IDbContextFactory<TodoDbContext> factory)
+public sealed record GetListsQuery(Guid UserId, LoadDataConfig Config) : IQuery<GetListsResponse>;
+public class GetListsHandler(IDbContextFactory<TodoDbContext> factory) : IQueryHandler<GetListsQuery, GetListsResponse>
 {
-    public async Task<GetListsResponse> HandleAsync(GetListsQuery query, CancellationToken ctx = new())
+    public async ValueTask<GetListsResponse> Handle(GetListsQuery query, CancellationToken ctx = new())
     {
         var response = new GetListsResponse();
         await using var context = await factory.CreateDbContextAsync(ctx);

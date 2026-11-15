@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Components.Server;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Identity;
+using Mediator;
 
 internal sealed class AppAuthenticationStateProvider(
     ILoggerFactory loggerFactory,
@@ -25,8 +26,8 @@ internal sealed class AppAuthenticationStateProvider(
         if (principal.UserId is not {} userId) return false;
         if (principal.SecurityStamp is not { } securityStamp) return false;
         await using var scope = scopeFactory.CreateAsyncScope();
-        var userStore = scope.ServiceProvider.GetRequiredService<CachedFindUserHandler>();
-        var user = await userStore.HandleAsync(userId);
+        var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+        var user = await mediator.Send(new FindUserQuery(userId), cancellationToken);
         if (user is null) return false;
         return securityStamp == user.SecurityStamp;
     }

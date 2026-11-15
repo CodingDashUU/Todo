@@ -6,6 +6,7 @@ namespace Washu.Framework.Extensions;
 
 using Blazor;
 using Identity;
+using Mediator;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -85,9 +86,9 @@ public static class AuthenticationBuilderExtensions
                     logger.LogInformation("Updated 'LastSignInDate' for user with id {UserId}", userId);
                     logger.LogInformation("User with id {UserId} signing in", userId);
                 }
-                var userStore = context.HttpContext.RequestServices
-                    .GetRequiredService<CachedFindUserHandler>();
-                await userStore.RemoveUserAsync(userId.Value);
+                var publisher = context.HttpContext.RequestServices
+                    .GetRequiredService<IPublisher>();
+                await publisher.Publish(new UserSignedIn(userId.Value));
             };
             options.Events.OnSigningOut = async context =>
             {
@@ -106,25 +107,29 @@ public static class AuthenticationBuilderExtensions
                     .CreateDbContextAsync();
                 var rowsChanged = await dbContext.Users
                     .Where(u => u.Id == userId)
-                    .ExecuteUpdateAsync(
-                        s => 
-                            s.SetProperty(u => u.LastSignedOutDate, DateTimeOffset.UtcNow)
+                    .ExecuteUpdateAsync(s =>
+                        {
+                            s.SetProperty(u => u.LastSignedOutDate, DateTimeOffset.UtcNow);
+                            s.SetProperty(u => u.SecurityStamp, Guid.CreateVersion7());
+                        }
                             );
+                if (rowsChanged == 1 && logger.IsEnabled(LogLevel.Information))
+                    logger.LogInformation("Changed security stamp for user with id {UserId}", userId);
                 if (rowsChanged != 1)
                 {
                     await context.HttpContext.SignOutAsync(
                         IdentityConstants.ApplicationScheme);
                     logger.LogError(
-                        "Could not update 'LastSignedOutDate' for user with id {UserId}. Rows changed: {RowsChanged}",
+                        "Could not update 'LastSignedOutDate' and 'SecurityStamp' for user with id {UserId}. Rows changed: {RowsChanged}",
                         userId, rowsChanged);
                 }
 
                 else if (logger.IsEnabled(LogLevel.Information)) 
-                    logger.LogInformation("Updated 'LastSignOutDate' for user with id {UserId}", userId);
+                    logger.LogInformation("Updated 'LastSignOutDate' and 'SecurityStamp' for user with id {UserId}", userId);
 
-                var userStore = context.HttpContext.RequestServices
-                    .GetRequiredService<CachedFindUserHandler>();
-                await userStore.RemoveUserAsync(userId.Value);
+                var publisher = context.HttpContext.RequestServices
+                    .GetRequiredService<IPublisher>();
+                await publisher.Publish(new UserSignedOut(userId.Value));
             };
             options.Events.OnValidatePrincipal = async context =>
             {
@@ -137,9 +142,9 @@ public static class AuthenticationBuilderExtensions
                         IdentityConstants.ApplicationScheme);
                     return;
                 }
-                var userStore = context.HttpContext.RequestServices
-                    .GetRequiredService<CachedFindUserHandler>();
-                var user = await userStore.HandleAsync(userId.Value);
+                var mediator = context.HttpContext.RequestServices
+                    .GetRequiredService<IMediator>();
+                var user = await mediator.Send(new FindUserQuery(userId.Value));
                 if (user is null 
                     || context.Principal?.SecurityStamp is null 
                     || context.Principal?.SecurityStamp != user.SecurityStamp)
@@ -195,3 +200,6 @@ public static class AuthenticationBuilderExtensions
 }
 
 file abstract class OnSigningIn;
+
+public readonly record struct UserSignedIn(Guid UserId) : INotification;
+public readonly record struct UserSignedOut(Guid UserId) : INotification;

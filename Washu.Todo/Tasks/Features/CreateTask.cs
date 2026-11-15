@@ -9,23 +9,25 @@ using Washu.Todo.Persistence;
 
 namespace Washu.Todo.Tasks.Features;
 
-public sealed record CreateTaskCommand(Guid ListId, uint ListRowVersion, string TaskName, DateTimeOffset GoalDate);
+using Mediator;
+
+public sealed record CreateTaskCommand(Guid ListId, uint ListRowVersion, string TaskName, DateTimeOffset GoalDate) : ICommand<Message>;
 
 public sealed class CreateTaskHandler(
     IDbContextFactory<TodoDbContext> dbContextFactory,
     CurrentUser user
-    )
+    ) : ICommandHandler<CreateTaskCommand, Message>
 {
-    public async Task<Message> HandleAsync(CreateTaskCommand command)
+    public async ValueTask<Message> Handle(CreateTaskCommand command, CancellationToken ctx = new())
     {
-        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(ctx);
         var list = await dbContext.TodoLists
             .ForCurrentUser(user)
             .ByTodoList(command.ListId)
-            .SingleOrDefaultAsync();
+            .SingleOrDefaultAsync(ctx);
         if (list is null)
             return Message.Error("Task Creation Error", "List does not exist");
-        if (await dbContext.Tasks.ForTodoList(command.ListId).CountAsync<TaskEntry>() >= 1000) 
+        if (await dbContext.Tasks.ForTodoList(command.ListId).CountAsync<TaskEntry>(ctx) >= 1000) 
             return Message.Error("Task Creation Error", 
                 "A single todo list cannot exceed 1000 tasks. Please either delete any existing task or create a new todo list");
         dbContext.SetRowVersion(list, command.ListRowVersion);
@@ -33,7 +35,7 @@ public sealed class CreateTaskHandler(
         dbContext.TodoLists.Update(list);
         try
         {
-            await dbContext.SaveChangesAsync();
+            await dbContext.SaveChangesAsync(ctx);
             return Message.Success("Task Creation", "Successfully Created Task");
         }
         catch (DbUpdateConcurrencyException)

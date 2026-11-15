@@ -6,19 +6,21 @@ using Washu.Todo.Persistence;
 
 namespace Washu.Todo.Lists.Features;
 
-public sealed record CreateListCommand(string ListName);
+using Mediator;
+
+public sealed record CreateListCommand(string ListName) : ICommand<Message>;
 public sealed class CreateListHandler(
     IDbContextFactory<TodoDbContext> dbContextFactory,
     CurrentUser user
-    )
+    ) : ICommandHandler<CreateListCommand, Message>
 {
-    public async Task<Message> HandleAsync(CreateListCommand command)
+    public async ValueTask<Message> Handle(CreateListCommand command, CancellationToken ctx = new())
     {
-        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(ctx);
         dbContext.TodoLists.Add(new Features.TodoList(user.UserId!.Value, command.ListName));
         try
         {
-            await dbContext.SaveChangesAsync();
+            await dbContext.SaveChangesAsync(ctx);
             return Message.Success("List Creation Success", $"Successfully created list: {command.ListName}");
         }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException

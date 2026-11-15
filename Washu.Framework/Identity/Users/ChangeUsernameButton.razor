@@ -1,5 +1,6 @@
 @using global::Radzen
 @using global::Radzen.Blazor
+@using Mediator
 @using Washu.Framework.AspNetCore
 @using Washu.Framework.Identity.Users.DeleteUser
 @using Washu.Framework.Identity.Users.FindUser
@@ -8,10 +9,9 @@
 @using Washu.Framework.Radzen.Identity
 @using Washu.Framework.Radzen.Notifications
 @inject DialogService DialogService
-@inject CachedFindUserHandler CachedFindUserHandler
 @inject MessageStore Store
 @inject NavigationManager NavManager
-@inject ChangeUsernameHandler ChangeUsernameHandler
+@inject IMediator Mediator
 @inject NotificationService NotificationService
 <RadzenButton Icon="@MaterialIcons.Edit"
               ButtonStyle="ButtonStyle.Primary"
@@ -32,13 +32,12 @@
         };
         var data = await DialogService.OpenAsync<ChangeUsernameDialog>("Change Username", parameters);
         if (data is not ChangeUsernameCommand command) return;
-        var result = await ChangeUsernameHandler.HandleAsync(command);
+        var result = await Mediator.Send(command);
         switch (result)
         {
             case AccountNotFound:
             {
                 var id = Store.Store(Message.Error("Identity Error", AccountNotFound.Message));
-                await CachedFindUserHandler.RemoveUserAsync(User.Id);
                 NavManager.NavigateTo($"{IdentityRoutes.SignOut}?messageId={id}", forceLoad: true);
                 return;
             }
@@ -57,7 +56,6 @@
         NotificationService.Show(message);
         if (message.Type is MessageType.Success)
         {
-            await CachedFindUserHandler.RemoveUserAsync(User.Id);
             await OnRefreshUserAsync();
         }
     }

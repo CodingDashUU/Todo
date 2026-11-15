@@ -8,24 +8,26 @@ using Washu.Todo.Persistence;
 
 namespace Washu.Todo.Tasks.Features;
 
-public sealed record ToggleTaskCommand(Guid TaskId, Guid ListId, uint ListRowVersion);
+using Mediator;
+
+public sealed record ToggleTaskCommand(Guid TaskId, Guid ListId, uint ListRowVersion) : ICommand<Message>;
 
 public sealed class ToggleTaskHandler(
     IDbContextFactory<TodoDbContext> factory,
     CurrentUser user
-    )
+    ) : ICommandHandler<ToggleTaskCommand, Message>
 {
-    public async Task<Message> HandleAsync(ToggleTaskCommand command)
+    public async ValueTask<Message> Handle(ToggleTaskCommand command, CancellationToken ctx = new())
     {
-        await using var dbContext = await factory.CreateDbContextAsync();
+        await using var dbContext = await factory.CreateDbContextAsync(ctx);
         var list = await dbContext.TodoLists
             .ForCurrentUser(user)
             .ByTodoList(command.ListId)
-            .SingleOrDefaultAsync();
+            .SingleOrDefaultAsync(cancellationToken: ctx);
         var task = await dbContext.Tasks
             .ForTodoList(command.ListId)
             .ByTask(command.TaskId)
-            .SingleOrDefaultAsync<TaskEntry>();
+            .SingleOrDefaultAsync(cancellationToken: ctx);
         if (list is null)
             return Message.Error("Toggle Task Error", "Todo list does not exist");
         if (task is null) return Message.Error(title: "Toggle Task Error", details: "Task does not exist");
@@ -34,7 +36,7 @@ public sealed class ToggleTaskHandler(
         dbContext.TodoLists.Update(list);
         try
         {
-            await dbContext.SaveChangesAsync();
+            await dbContext.SaveChangesAsync(ctx);
         }
         catch (DbUpdateConcurrencyException)
         {

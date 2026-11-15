@@ -5,12 +5,15 @@ using Microsoft.AspNetCore.Identity;
 
 namespace Washu.Framework.Identity.Login;
 
-internal sealed class GetExternalLoginInfoHandler(
+using Mediator;
+
+public readonly record struct GetExternalLoginInfoQuery : IQuery<ExternalLoginInfo?>;
+public sealed class GetExternalLoginInfoHandler(
     IHttpContextAccessor httpContextAccessor,
     IAuthenticationSchemeProvider schemeProvider
-    )
+    ) : IQueryHandler<GetExternalLoginInfoQuery, ExternalLoginInfo?>
 {
-    public async Task<ExternalLoginInfo?> HandleAsync()
+    public async ValueTask<ExternalLoginInfo?> Handle(GetExternalLoginInfoQuery query, CancellationToken ctx = new())
     {
         var context = httpContextAccessor.HttpContext 
                                    ?? throw new InvalidOperationException("An active HttpContext is required.");

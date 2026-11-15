@@ -1,17 +1,15 @@
-@using System.ComponentModel
-@using System.Diagnostics
 @using global::Radzen
 @using global::Radzen.Blazor
+@using Mediator
 @using Washu.Framework.AspNetCore
 @using Washu.Framework.Identity.Users.FindUser
 @using Washu.Framework.Notifications
 @using Washu.Framework.Radzen
 @using Washu.Framework.Radzen.Identity
 @inject DialogService DialogService
-@inject CachedFindUserHandler CachedFindUserHandler
 @inject MessageStore Store
 @inject NavigationManager NavManager
-@inject DeleteUserHandler DeleteUserHandler
+@inject IMediator Mediator
 
 <RadzenCard Variant="Variant.Filled"
             class=" rz-background-color-danger-lighter rz-border-radius-2" 
@@ -48,14 +46,13 @@
         if (!confirmData) return;
         var data = await DialogService.OpenAsync<ConfirmAccountDeletionDialog>("Confirm Account Deletion", parameters);
         if (data is not DeleteUserCommand command) return;
-        var result = await DeleteUserHandler.HandleAsync(command);
+        var result = await Mediator.Send(command);
         var message = result switch
         {
             AccountNotFound => Message.Error("Identity Error", AccountNotFound.Message),
             DeleteUserSuccess => Message.Success("Identity Success", DeleteUserSuccess.Message),
             null => throw new InvalidOperationException(),
         };
-        await CachedFindUserHandler.RemoveUserAsync(User.Id);
         var id = Store.Store(message);
         NavManager.NavigateTo($"{IdentityRoutes.SignOut}?messageId={id}", forceLoad: true);
     }

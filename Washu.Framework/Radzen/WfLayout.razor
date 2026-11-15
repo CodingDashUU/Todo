@@ -1,8 +1,8 @@
+@using Mediator
 @using Washu.Framework.Extensions
-@using Washu.Framework.Identity.Users
 @using Washu.Framework.Identity.Users.FindUser
 @using Washu.Framework.Radzen.Notifications
-@inject CachedFindUserHandler CachedFindUserHandler
+@inject IMediator Mediator
 
 <QueryNotificationHandler />
 <RadzenLayout>
@@ -90,7 +90,7 @@
     {
         var state = await Context;
         if (state.User.UserId is not {} userGuid) return;
-        _email = (await CachedFindUserHandler.HandleAsync(userGuid))?.Email ?? "";
+        _email = (await Mediator.Send(new FindUserQuery(userGuid)))?.Email ?? "";
     }
     protected override void OnParametersSet()
     {

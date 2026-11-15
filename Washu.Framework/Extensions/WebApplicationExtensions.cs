@@ -15,6 +15,7 @@ using AspNetCore;
 using Blazor;
 using Identity;
 using Identity.Users.DeleteUser;
+using Mediator;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components;
@@ -25,6 +26,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Reflection;
 using TickerQ.DependencyInjection;
 
 public static class WebApplicationExtensions
@@ -34,8 +36,8 @@ public static class WebApplicationExtensions
         public async Task SeedRolesAsync(List<string> roles)
         {
             await using var serviceScope = app.Services.CreateAsyncScope();
-            var addRolesHandler = serviceScope.ServiceProvider.GetRequiredService<AddRolesHandler>();
-            await addRolesHandler.HandleAsync(new AddRolesCommand(roles));
+            var mediator = serviceScope.ServiceProvider.GetRequiredService<IMediator>();
+            await mediator.Send(new AddRolesCommand(roles));
         }
         public async Task SeedPermissionsAsync(params IEnumerable<PermissionRequest> perms)
         {
@@ -125,31 +127,12 @@ public static class WebApplicationExtensions
                     return TypedResults.Redirect(targetUrl);
                 })
                 .RequireRateLimiting(RateLimiterPolicy.StandardRateLimiter);
-            app.MapGet(IdentityRoutes.SignOutFromAllSessions, async (HttpContext context, ILogger<SignOutFromAllSessions> logger, CachedFindUserHandler cachedFindUserHandler, IDbContextFactory<ApplicationDbContext> factory,[FromQuery] string? messageId) =>
+            app.MapGet(IdentityRoutes.SignOutFromAllSessions, async (HttpContext context, ILogger<SignOutFromAllSessions> logger, IPublisher publisher, IDbContextFactory<ApplicationDbContext> factory,[FromQuery] string? messageId) =>
                 {
                     var userId = context.User.UserId;
-
-                    if (userId.HasValue)
-                    {
-                        await using var dbContext = await factory.CreateDbContextAsync();
-                        var rowsChanged = await dbContext.Users
-                            .Where(u => u.Id == userId.Value)
-                            .ExecuteUpdateAsync(s =>
-                                s.SetProperty(u => u.SecurityStamp, Guid.CreateVersion7())
-                            );
-                        if (rowsChanged == 1 && logger.IsEnabled(LogLevel.Information))
-                            logger.LogInformation("Changed security stamp for user with id {UserId}", userId);
-                        await cachedFindUserHandler.RemoveUserAsync(userId.Value);
-                    }
-                    else logger.LogWarning("There is no UserId claim for connection {ConnectionId}", context.Connection.Id);
                     await context.SignOutAsync(IdentityConstants.ApplicationScheme);
-                    if (logger.IsEnabled(LogLevel.Information))
-                    {
-                        if (userId.HasValue)
-                            logger.LogInformation("User with id {UserId} signed out from all sessions", userId);
-                        else logger.LogInformation("User with connection {ConnectionId} signed out",
-                            context.Connection.Id);   
-                    }
+                    if (userId.HasValue && logger.IsEnabled(LogLevel.Information))
+                        logger.LogInformation("User with id {UserId} signed out from all sessions", userId);
                     var targetUrl = string.IsNullOrWhiteSpace(messageId)
                         ? ApplicationRoutes.SignIn
                         : $"{ApplicationRoutes.SignIn}?messageId={messageId}";
@@ -181,13 +164,6 @@ public static class WebApplicationExtensions
                 
                 var options = new WfApplicationOptions();
                 configureOptions?.Invoke(options);
-                if (string.IsNullOrEmpty(options.ApplicationName))
-                {
-                    Log.Error(
-                        $"Property {nameof(WfApplicationOptions)}.{nameof(WfApplicationOptions.ApplicationName)} cannot be empty"
-                        );
-                    return;
-                }
                 ValidatorOptions.Global.DefaultRuleLevelCascadeMode = CascadeMode.Stop;
                 builder.Host.UseWfLogging();
                 builder.Services.AddHttpContextAccessor();
@@ -207,7 +183,6 @@ public static class WebApplicationExtensions
                     .AddWfApplicationCookie()
                     .AddWfGoogle(builder.Configuration);
                 builder.Services.AddWfTickerQ<TDbContext>(
-                    options.ApplicationName,
                     builder.Configuration,
                     [new CronJobRequest(nameof(DeleteUserJob), "0 5 * * SUN"), ..options.CronJobs]
                     );
@@ -236,7 +211,6 @@ public static class WebApplicationExtensions
 }
 public class WfApplicationOptions
 {
-    public string ApplicationName { get; set; } = string.Empty;
     public List<CronJobRequest> CronJobs { get; set; } = [];
     public Action<WebApplicationBuilder>? RegisterAdditionalServices { get; set; }
 }

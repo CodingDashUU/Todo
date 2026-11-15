@@ -5,12 +5,13 @@ using Washu.Framework.Extensions;
 
 namespace Washu.Framework.Identity.Users.FindUser;
 
+using Mediator;
 using System.Diagnostics.CodeAnalysis;
 
 [SuppressMessage("Usage", "BL0013:AuthenticationStateProvider.GetAuthenticationStateAsync used without subscribing to AuthenticationStateChanged")]
 public class GetUserService(
     AuthenticationStateProvider provider,
-    CachedFindUserHandler cachedFindUserHandler,
+    IMediator mediator,
     NavigationManager navManager
     )
 {
@@ -18,7 +19,7 @@ public class GetUserService(
     {
         var state = await provider.GetAuthenticationStateAsync();
         if (state.User is { UserId: { } userId, SecurityStamp: { } securityStamp }
-            && await cachedFindUserHandler.HandleAsync(userId) is { } user
+            && await mediator.Send(new FindUserQuery(userId)) is { } user
             && user.SecurityStamp == securityStamp) return ApplicationUserInfo.FromUser(user);
         Redirect(returnUrl);
         return new ApplicationUserInfo();

@@ -18,6 +18,7 @@ using Npgsql;
 using System.Security.Claims;
 using AspNetCore;
 using Blazor;
+using Mediator;
 using Notifications;
 
 public static class ExternalEndpointsExtensions
@@ -60,14 +61,13 @@ public static class ExternalEndpointsExtensions
     }
 
     private static async Task<IResult> ExternalCallback (
-        SignInHandler signInHandler,
-        GetExternalLoginInfoHandler getExternalLoginInfoHandler,
+        IMediator sender,
         IDbContextFactory<ApplicationDbContext> dbContextFactory,
         [FromQuery] bool persistCookie, 
         MessageStore store,
         [FromQuery] string returnUrl)
     {
-        var info = await getExternalLoginInfoHandler.HandleAsync();
+        var info = await sender.Send(new GetExternalLoginInfoQuery());
         if (info is null)
         {
             var errorUrl = QueryHelpers.AddQueryString(
@@ -101,7 +101,7 @@ public static class ExternalEndpointsExtensions
 
         if (existingUser is not null)
         {
-            await signInHandler.HandleAsync(new SignInCommand(existingUser, persistCookie, info.LoginProvider));
+            await sender.Send(new SignInCommand(existingUser, persistCookie, info.LoginProvider));
             return TypedResults.Redirect(SafeReturnUrl(returnUrl));
         }
 
@@ -165,7 +165,7 @@ public static class ExternalEndpointsExtensions
                 });
             return TypedResults.Redirect(url);
         }
-        await signInHandler.HandleAsync(new SignInCommand(user, persistCookie));
+        await sender.Send(new SignInCommand(user, persistCookie));
             
         return TypedResults.Redirect(SafeReturnUrl(returnUrl));  
     }

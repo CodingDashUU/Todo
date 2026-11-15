@@ -21,6 +21,7 @@ using AspNetCore;
 using Blazor;
 using global::Radzen;
 using Identity;
+using Mediator;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -33,6 +34,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Notifications;
+using System.Reflection;
 using System.Threading.RateLimiting;
 using TickerQ.Dashboard.DependencyInjection;
 using TickerQ.DependencyInjection;
@@ -95,14 +97,6 @@ public static class ServiceCollectionExtensions
     }
     public IServiceCollection AddWfIdentityServices()
     {
-        services.AddSingleton<AddRolesHandler>();
-        services.AddSingleton<ChangeUsernameHandler>();
-        services.AddSingleton<DeleteUserHandler>();
-        services.AddSingleton<FindUserHandler>();
-        services.AddSingleton<SignInHandler>();
-        services.AddSingleton<HasPermissionHandler>();
-        services.AddSingleton<GetExternalLoginInfoHandler>();
-        services.AddSingleton<CachedFindUserHandler>();
         services.AddScoped<GetUserService>();
         services.AddSingleton<CurrentUser>();
         return services;
@@ -222,12 +216,15 @@ public static class ServiceCollectionExtensions
                 });
         }
 
-        public IServiceCollection AddWfTickerQ<TDbContext>(string applicationName, ConfigurationManager config, params List<CronJobRequest> cronJobs)
+        public IServiceCollection AddWfTickerQ<TDbContext>(ConfigurationManager config, params List<CronJobRequest> cronJobs)
         where TDbContext : DbContext =>
             services.AddTickerQ(cronOpt =>
             {
                 cronOpt.UseLicense(config.GetSection("TickerQ:LicensePath").Value!);
-                cronOpt.UseApplicationNamespace(applicationName);
+                    cronOpt.UseApplicationNamespace(
+                        Assembly.GetEntryAssembly() is { } entryAssembly 
+                            ? entryAssembly.GetName().Name
+                            : Assembly.GetCallingAssembly().GetName().Name);
                 cronOpt.SeedCronTickers(crons => 
                 {
                     foreach (var job in cronJobs)
@@ -244,8 +241,8 @@ public static class ServiceCollectionExtensions
                     dashboard.SetBasePath("/tickerq");
                     dashboard.WithCustomAuth(async context =>
                     {
-                        var hasPermission = context.RequestServices.GetRequiredService<HasPermissionHandler>();
-                        return await hasPermission.HandleAsync(new HasPermissionQuery(CorePermissions.CanCheckBackgroundJobDashboard));
+                        var mediator = context.RequestServices.GetRequiredService<IMediator>();
+                        return await mediator.Send(new HasPermissionQuery(CorePermissions.CanCheckBackgroundJobDashboard));
                     });
                 });
             });

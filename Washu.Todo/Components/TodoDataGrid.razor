@@ -1,4 +1,5 @@
 @using Humanizer
+@using Mediator
 @using Washu.Framework.Extensions
 @using Washu.Framework.Identity.Users
 @using Washu.Framework.Identity.Users.FindUser
@@ -12,17 +13,9 @@
 @using Washu.Todo.Lists.Features
 @using Washu.Todo.Tasks
 @using Washu.Todo.Tasks.Features
+@inject IMediator Sender
 @inject UserTimeZoneProvider TimeZoneProvider
-@inject GetTasksHandler GetTasksHandler
 @inject GetUserService GetUserService
-@inject CreateListHandler CreateListHandler
-@inject CreateTaskHandler CreateTaskHandler
-@inject ToggleTaskHandler ToggleTaskHandler
-@inject UpdateTaskHandler UpdateTaskHandler
-@inject UpdateListHandler UpdateListHandler
-@inject DeleteTaskHandler DeleteTaskHandler
-@inject DeleteListHandler DeleteListHandler
-@inject GetListsHandler GetListHandler
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 <RadzenDataGrid @ref="_grid" 
@@ -217,7 +210,7 @@
     private async Task OnToggleTaskAsync(TaskEntry entry)
     {
         var command = new ToggleTaskCommand(entry.Id, _selectedList.Id, _selectedList.RowVersion);
-        var message = await ToggleTaskHandler.HandleAsync(command);
+        var message = await Sender.Send(command);
         if (message.Type is not MessageType.Success)
             NotificationService.Show(message, duration: RadzenNotificationConstants.ShortDuration);
         
@@ -254,7 +247,7 @@
         if (confirmData != true) return;
 
         var command = new DeleteTaskCommand(entry.Id, _selectedList.Id, _selectedList.RowVersion);
-        var message = await DeleteTaskHandler.HandleAsync(command);
+        var message = await Sender.Send(command);
         NotificationService.Show(message);
         
         await RefreshStateAsync(_selectedList.Id);
@@ -271,7 +264,7 @@
         var result = await DialogService.OpenAsync<TaskUpdateDialog>("Update Task", parameters);
         if (result is not UpdateTaskCommand command) return;
 
-        var message = await UpdateTaskHandler.HandleAsync(command);
+        var message = await Sender.Send(command);
         NotificationService.Show(message);
 
         await RefreshStateAsync(_selectedList.Id);
@@ -299,7 +292,7 @@
         if (!confirmData) return;
 
         var command = new DeleteListCommand(list.Id);
-        var message = await DeleteListHandler.HandleAsync(command);
+        var message = await Sender.Send(command);
         NotificationService.Show(message);
 
         await RefreshStateAsync();
@@ -310,7 +303,7 @@
         var result = await DialogService.OpenAsync<ListCreationDialog>("Create List");
         if (result is not CreateListCommand command) return;
 
-        var message = await CreateListHandler.HandleAsync(command);
+        var message = await Sender.Send(command);
         NotificationService.Show(message);
 
         await RefreshStateAsync(); 
@@ -326,7 +319,7 @@
         var result = await DialogService.OpenAsync<TaskCreationDialog>("Create Task", parameters);
         if (result is not CreateTaskCommand command) return;
 
-        var message = await CreateTaskHandler.HandleAsync(command);
+        var message = await Sender.Send(command);
         NotificationService.Show(message);
 
         await RefreshStateAsync(list.Id);
@@ -351,7 +344,7 @@
         var result = await DialogService.OpenAsync<ListUpdateDialog>("Update List", parameters);
         if (result is not UpdateListCommand command) return;
 
-        var message = await UpdateListHandler.HandleAsync(command);
+        var message = await Sender.Send(command);
         NotificationService.Show(message);
 
         await RefreshStateAsync(list.Id);
@@ -368,7 +361,7 @@
         try
         {
             _isListsDataLoading = true;
-            var response = await GetListHandler.HandleAsync(new GetListsQuery(_userId, LoadDataConfig.FromRadzenArgs(args)));
+            var response = await Sender.Send(new GetListsQuery(_userId, LoadDataConfig.FromRadzenArgs(args)));
             _lists = response.Lists;
             _listsCount = response.Count;
         }
@@ -406,7 +399,7 @@
                 return;
             }
 
-            var response = await GetTasksHandler.HandleAsync(new GetTasksQuery(_selectedList.Id, LoadDataConfig.FromRadzenArgs(args)));
+            var response = await Sender.Send(new GetTasksQuery(_selectedList.Id, LoadDataConfig.FromRadzenArgs(args)));
             _tasks = response.Tasks;
             _count = response.Count;
             _completedTasks = response.CompletedTasks;

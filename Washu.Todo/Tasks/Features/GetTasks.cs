@@ -3,13 +3,14 @@ namespace Washu.Todo.Tasks.Features;
 using Components;
 using Extensions;
 using Lists.Features;
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using Persistence;
 
-public sealed record GetTasksQuery(Guid SelectedListId, LoadDataConfig Config);
-public sealed class GetTasksHandler(IDbContextFactory<TodoDbContext> factory)
+public sealed record GetTasksQuery(Guid SelectedListId, LoadDataConfig Config) : IQuery<GetTasksResponse>;
+public sealed class GetTasksHandler(IDbContextFactory<TodoDbContext> factory) : IQueryHandler<GetTasksQuery, GetTasksResponse>
 {
-    public async Task<GetTasksResponse> HandleAsync(GetTasksQuery query, CancellationToken ctx = new())
+    public async ValueTask<GetTasksResponse> Handle(GetTasksQuery query, CancellationToken ctx = new())
     {
         var response = new GetTasksResponse();
         await using var context = await factory.CreateDbContextAsync(ctx);

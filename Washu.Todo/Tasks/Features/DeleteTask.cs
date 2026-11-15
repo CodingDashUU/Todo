@@ -8,24 +8,26 @@ using Washu.Todo.Persistence;
 
 namespace Washu.Todo.Tasks.Features;
 
-public sealed record DeleteTaskCommand(Guid TaskId, Guid ListId, uint ListRowVersion);
+using Mediator;
+
+public sealed record DeleteTaskCommand(Guid TaskId, Guid ListId, uint ListRowVersion) : ICommand<Message>;
 
 public sealed class DeleteTaskHandler(
     IDbContextFactory<TodoDbContext> factory,
     CurrentUser user
-    )
+    ) : ICommandHandler<DeleteTaskCommand, Message>
 {
-    public async Task<Message> HandleAsync(DeleteTaskCommand command)
+    public async ValueTask<Message> Handle(DeleteTaskCommand command, CancellationToken ctx = new())
     {
-        await using var dbContext = await factory.CreateDbContextAsync();
+        await using var dbContext = await factory.CreateDbContextAsync(ctx);
         var list = await dbContext.TodoLists
             .ForCurrentUser(user)
             .ByTodoList(command.ListId)
-            .SingleOrDefaultAsync();
+            .SingleOrDefaultAsync(ctx);
         var task = await dbContext.Tasks
             .ForTodoList(command.ListId)
             .ByTask(command.TaskId)
-            .SingleOrDefaultAsync<TaskEntry>();
+            .SingleOrDefaultAsync(ctx);
         if (list is null)
             return Message.Error("Toggle Task Error", "Todo list does not exist");
         if (task is null) return Message.Error(title: "Toggle Task Error", details: "Task does not exist");
