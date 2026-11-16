@@ -1,11 +1,11 @@
-using Washu.Framework.Identity.Users;
-using Washu.Todo.Lists;
-using Washu.Todo.Lists.Features;
 using Washu.Todo.Persistence;
 
 namespace Washu.Todo.IntegrationTests;
 
+using Application;
+using Domain;
 using FluentAssertions;
+using Framework.Identity.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using TickerQ.Utilities.Base;

@@ -1,11 +1,10 @@
-using Washu.Framework.Identity.Users;
-using Washu.Framework.Identity.Users.FindUser;
-
 namespace Washu.Framework.UnitTests;
 
 using System.Reflection;
 using System.Security.Claims;
 using FluentAssertions;
+using Identity.Presentation;
+using Identity.Users;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -36,8 +35,8 @@ public class AppAuthenticationStateProviderTests
         services.AddSingleton<IFusionCache>(fusionCache);
 
         // Dummy FindUserHandler (not invoked when values are primed in cache)
-        services.AddScoped<FindUserHandler>(_ => null!);
-        services.AddScoped(sp => new CachedFindUserHandler(sp.GetRequiredService<IFusionCache>(), sp.GetService<FindUserHandler>()!));
+        services.AddScoped<FindUserByIdHandler>(_ => null!);
+        services.AddScoped(sp => new CachedFindUserHandler(sp.GetRequiredService<IFusionCache>(), sp.GetService<FindUserByIdHandler>()!));
 
         var sp = services.BuildServiceProvider();
         var scopeFactory = sp.GetRequiredService<IServiceScopeFactory>();

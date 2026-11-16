@@ -1,17 +1,15 @@
-using Washu.Framework.Identity.Users;
-using Washu.Todo.Lists;
-using Washu.Todo.Lists.Features;
 using Washu.Todo.Persistence;
-using Washu.Todo.Tasks;
-using Washu.Todo.Tasks.Features;
 
 namespace Washu.Todo.IntegrationTests;
 
+using Application;
+using Domain;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Testing;
 using Framework.Notifications;
 using Framework.Identity;
+using Framework.Identity.Users;
 
 [Collection(TodoPostgreSqlTestCollection.Name)]
 public class TodoHandlersTests(TodoPostgreSqlFixture fixture)

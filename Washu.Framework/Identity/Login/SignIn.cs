@@ -1,18 +1,18 @@
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
-using Washu.Framework.Extensions;
-using Washu.Framework.Identity.Users;
-
 namespace Washu.Framework.Identity.Login;
 
 using Mediator;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
+using System.Security.Claims;
+using Users;
+using Washu.Framework.Extensions;
 
 public sealed record SignInCommand(ApplicationUser User, bool IsPersistent, string? AuthenticationMethod = null) : ICommand;
 
 public sealed class SignInHandler(
-    IHttpContextAccessor httpContextAccessor
+    IHttpContextAccessor httpContextAccessor,
+    IPublisher publisher
     ) : ICommandHandler<SignInCommand>
 {
     public async ValueTask<Unit> Handle(SignInCommand command, CancellationToken ctx = new())
@@ -31,7 +31,7 @@ public sealed class SignInHandler(
             IdentityConstants.ApplicationScheme,
             userPrincipal,
             authenticationProperties);
-        
+        await publisher.Publish(new UserSigningIn(context, command.User.Id), ctx);
         context.User = userPrincipal;
         await context.SignOutAsync(IdentityConstants.ExternalScheme);
         return Unit.Value;

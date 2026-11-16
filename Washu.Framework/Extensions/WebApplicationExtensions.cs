@@ -3,18 +3,16 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Serilog;
 using Serilog.Events;
 using Serilog.Formatting.Json;
-using Washu.Framework.Identity.Permissions;
 using Washu.Framework.Identity.Persistence;
-using Washu.Framework.Identity.Roles;
-using Washu.Framework.Identity.Users;
-using Washu.Framework.Identity.Users.FindUser;
 
 namespace Washu.Framework.Extensions;
 
 using AspNetCore;
 using Blazor;
 using Identity;
-using Identity.Users.DeleteUser;
+using Identity.Login;
+using Identity.Roles;
+using Identity.Users;
 using Mediator;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
@@ -26,7 +24,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System.Reflection;
 using TickerQ.DependencyInjection;
 
 public static class WebApplicationExtensions
@@ -39,19 +36,11 @@ public static class WebApplicationExtensions
             var mediator = serviceScope.ServiceProvider.GetRequiredService<IMediator>();
             await mediator.Send(new AddRolesCommand(roles));
         }
-        public async Task SeedPermissionsAsync(params IEnumerable<PermissionRequest> perms)
+        public async Task SeedPermissionsAsync(params List<PermissionRequest> perms)
         {
             await using var serviceScope = app.Services.CreateAsyncScope();
-            await using var dbContext = await serviceScope.ServiceProvider
-                .GetRequiredService<IDbContextFactory<ApplicationDbContext>>()
-                .CreateDbContextAsync();
-            foreach (var req in perms)
-            {
-                if (await dbContext.RolePermissions.AnyAsync(rp => rp.Name == req.Permission)) continue;
-                var role = dbContext.Roles.First(r  => r.Name == req.Role);
-                dbContext.RolePermissions.Add(new RolePermission(req.Permission, role.Id));
-            }
-            await dbContext.SaveChangesAsync();
+            var mediator = serviceScope.ServiceProvider.GetRequiredService<IMediator>();
+            await mediator.Send(new AddPermissionsCommand(perms));
         }
         public void UseWfPipeline()
         {
@@ -108,31 +97,18 @@ public static class WebApplicationExtensions
             }).RequirePermission(CorePermissions.CanCheckSystemHealth);
         internal void MapSignOutEndpoints()
         {
-            app.MapGet(IdentityRoutes.SignOut, async (HttpContext context, ILogger<SignOut> logger, [FromQuery] string? messageId) =>
+            app.MapGet(IdentityRoutes.SignOut, async (HttpContext context, IMediator mediator, [FromQuery] string? messageId) =>
                 {
-                    var userId = context.User.UserId;
-                    if (!userId.HasValue)
-                        logger.LogWarning("There is no UserId claim for connection {ConnectionId}", context.Connection.Id);
-                    await context.SignOutAsync(IdentityConstants.ApplicationScheme);
-                    if (logger.IsEnabled(LogLevel.Information))
-                    {
-                        if (userId.HasValue)
-                            logger.LogInformation("User with id {UserId} signed out", userId);
-                        else logger.LogInformation("User with connection {ConnectionId} signed out",
-                            context.Connection.Id);   
-                    }
-                    var targetUrl = string.IsNullOrWhiteSpace(messageId)
+                    await mediator.Send(new SignOutCommand(context));
+                    var redirectUrl = string.IsNullOrWhiteSpace(messageId)
                         ? ApplicationRoutes.SignIn
                         : $"{ApplicationRoutes.SignIn}?messageId={messageId}";
-                    return TypedResults.Redirect(targetUrl);
+                    return TypedResults.Redirect(redirectUrl);
                 })
                 .RequireRateLimiting(RateLimiterPolicy.StandardRateLimiter);
-            app.MapGet(IdentityRoutes.SignOutFromAllSessions, async (HttpContext context, ILogger<SignOutFromAllSessions> logger, IPublisher publisher, IDbContextFactory<ApplicationDbContext> factory,[FromQuery] string? messageId) =>
+            app.MapGet(IdentityRoutes.SignOutFromAllSessions, async (HttpContext context,  IMediator mediator,[FromQuery] string? messageId) =>
                 {
-                    var userId = context.User.UserId;
-                    await context.SignOutAsync(IdentityConstants.ApplicationScheme);
-                    if (userId.HasValue && logger.IsEnabled(LogLevel.Information))
-                        logger.LogInformation("User with id {UserId} signed out from all sessions", userId);
+                    await mediator.Send(new SignOutFromAllSessionsCommand(context));
                     var targetUrl = string.IsNullOrWhiteSpace(messageId)
                         ? ApplicationRoutes.SignIn
                         : $"{ApplicationRoutes.SignIn}?messageId={messageId}";
@@ -214,5 +190,3 @@ public class WfApplicationOptions
     public List<CronJobRequest> CronJobs { get; set; } = [];
     public Action<WebApplicationBuilder>? RegisterAdditionalServices { get; set; }
 }
-file abstract class SignOut;
-file abstract class SignOutFromAllSessions;

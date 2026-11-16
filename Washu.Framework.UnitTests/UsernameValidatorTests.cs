@@ -1,8 +1,7 @@
-using Washu.Framework.Identity.Users;
-
 namespace Washu.Framework.UnitTests;
 
 using FluentAssertions;
+using Identity.Users;
 using Washu.Framework.Identity;
 
 public class UsernameValidatorTests

@@ -1,8 +1,4 @@
-using Washu.Framework.Identity.Permissions;
 using Washu.Framework.Identity.Persistence;
-using Washu.Framework.Identity.Roles;
-using Washu.Framework.Identity.Users;
-using Washu.Framework.Identity.Users.FindUser;
 
 namespace Washu.Framework.IntegrationTests;
 
@@ -15,6 +11,9 @@ using Extensions;
 using Fixtures;
 using FluentAssertions;
 using Identity;
+using Identity.Presentation;
+using Identity.Roles;
+using Identity.Users;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;

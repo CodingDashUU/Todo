@@ -1,8 +1,7 @@
-using Washu.Framework.Identity.Permissions;
-
 namespace Washu.Framework.Extensions;
 
 using Identity;
+using Identity.Roles;
 using Mediator;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;

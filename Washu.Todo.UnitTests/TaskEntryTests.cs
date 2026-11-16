@@ -1,7 +1,6 @@
-using Washu.Todo.Tasks;
-
 namespace Washu.Todo.UnitTests;
 
+using Domain;
 using FluentAssertions;
 
 public class TaskEntryTests

@@ -1,5 +1,3 @@
-using Washu.Framework.Identity.Permissions;
-
 namespace Washu.Framework.Identity.Roles;
 
 public sealed class ApplicationRole(string name)

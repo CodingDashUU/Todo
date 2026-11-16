@@ -1,13 +1,10 @@
-using Washu.Framework.Identity.Roles;
-using Washu.Framework.Identity.Users;
-using Washu.Framework.Identity.Users.DeleteUser;
-using Washu.Framework.Identity.Users.FindUser;
-
 namespace Washu.Framework.IntegrationTests;
 
 using Fixtures;
 using FluentAssertions;
 using Identity;
+using Identity.Roles;
+using Identity.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Notifications;
@@ -43,7 +40,7 @@ public sealed class IdentityHandlersTests(ApplicationPostgreSqlFixture fixture)
     public async Task FindUserHandler_ShouldReturnUserWhenExists()
     {
         var factory = fixture.CreateDbContextFactory();
-        var handler = new FindUserHandler(factory);
+        var handler = new FindUserByIdHandler(factory);
 
         var username = $"FindUser_{Guid.NewGuid():N}";
         var user = new ApplicationUser(username, $"{username}@example.com", $"sub-{Guid.NewGuid():N}");
@@ -54,12 +51,12 @@ public sealed class IdentityHandlersTests(ApplicationPostgreSqlFixture fixture)
             await context.SaveChangesAsync();
         }
 
-        var foundUser = await handler.HandleAsync(new FindUserQuery(user.Id));
+        var foundUser = await handler.HandleAsync(new FindUserByIdQuery(user.Id));
         foundUser.Should().NotBeNull($"The user, {foundUser.Username} should be in the database at this point");
         foundUser.Id.Should().Be(user.Id, "The Id of the user received should be the same as the user in the database");
         foundUser.Username.Should().Be(username);
 
-        var nonExistent = await handler.HandleAsync(new FindUserQuery(Guid.NewGuid()));
+        var nonExistent = await handler.HandleAsync(new FindUserByIdQuery(Guid.NewGuid()));
         nonExistent.Should().BeNull();
     }
 

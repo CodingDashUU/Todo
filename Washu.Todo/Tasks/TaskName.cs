@@ -1,7 +1,8 @@
+namespace Washu.Todo.Domain;
+
 using FluentValidation;
 using Washu.Framework.Constants;
 
-namespace Washu.Todo.Tasks;
 public static class TaskName
 {
     public const byte MinimumLength = 3;

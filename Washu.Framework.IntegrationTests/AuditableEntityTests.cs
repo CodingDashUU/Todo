@@ -1,12 +1,11 @@
-using Washu.Framework.Entities.AuditEntity;
-using Washu.Framework.Identity.Users;
-
 namespace Washu.Framework.IntegrationTests;
 
+using Entities;
 using Extensions;
 using Fixtures;
 using FluentAssertions;
 using Identity;
+using Identity.Users;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
@@ -99,7 +98,7 @@ public class AuditableEntityTests(ApplicationPostgreSqlFixture fixture)
         context.Users.Add(user);
         await context.SaveChangesAsync();
 
-        context.SetRowVersion(user, 999u);
+        context.UpdateEntity(user, 999u);
         var entryOriginal = context.Entry(user).Property(nameof(IAuditableEntity.RowVersion)).OriginalValue;
         entryOriginal.Should().Be(999u);
     }

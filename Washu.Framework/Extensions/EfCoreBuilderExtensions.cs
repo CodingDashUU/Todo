@@ -1,9 +1,8 @@
-using Washu.Framework.Entities.SoftDeleteEntity;
-using Washu.Framework.Identity.Users;
-
 namespace Washu.Framework.Extensions;
 
+using Entities;
 using Identity;
+using Identity.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using System.Linq.Expressions;

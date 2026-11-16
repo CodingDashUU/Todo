@@ -1,6 +1,6 @@
-using FluentValidation;
+namespace Washu.Todo.Domain;
 
-namespace Washu.Todo.Tasks;
+using FluentValidation;
 
 public class GoalDateValidator : AbstractValidator<DateTimeOffset>
 {

@@ -1,11 +1,10 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Washu.Framework.Extensions;
-using Washu.Framework.Identity.Persistence;
-
 namespace Washu.Framework.Identity.Roles;
 
 using Mediator;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Persistence;
+using Washu.Framework.Extensions;
 
 public sealed record AddRolesCommand(List<string> RoleNames) : ICommand;
 

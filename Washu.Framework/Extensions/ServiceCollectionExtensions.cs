@@ -4,16 +4,8 @@ using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Events;
 using Serilog.Formatting.Json;
-using Washu.Framework.Entities.AuditEntity;
-using Washu.Framework.Entities.SoftDeleteEntity;
 using Washu.Framework.Extensions;
-using Washu.Framework.Identity.Login;
-using Washu.Framework.Identity.Permissions;
 using Washu.Framework.Identity.Persistence;
-using Washu.Framework.Identity.Roles;
-using Washu.Framework.Identity.Users;
-using Washu.Framework.Identity.Users.DeleteUser;
-using Washu.Framework.Identity.Users.FindUser;
 
 namespace Washu.Framework.Extensions;
 
@@ -21,6 +13,9 @@ using AspNetCore;
 using Blazor;
 using global::Radzen;
 using Identity;
+using Identity.Presentation;
+using Identity.Roles;
+using Identity.Users;
 using Mediator;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Builder;
@@ -98,7 +93,6 @@ public static class ServiceCollectionExtensions
     public IServiceCollection AddWfIdentityServices()
     {
         services.AddScoped<GetUserService>();
-        services.AddSingleton<CurrentUser>();
         return services;
     }
     public IServiceCollection AddWfDbContextFactory<TDbContext>(ConfigurationManager configuration, params HashSet<IInterceptor> interceptors)
@@ -109,7 +103,7 @@ public static class ServiceCollectionExtensions
         {
             options.UseNpgsql(
                 connectionString);
-            options.AddInterceptors([new AuditableEntityInterceptor(), new SoftDeletableEntityInterceptor(), ..interceptors]);
+            options.AddInterceptors([..interceptors]);
         });
     }
     public IServiceCollection AddUserTimeZoneProvider() => services.AddScoped<UserTimeZoneProvider>(sp =>

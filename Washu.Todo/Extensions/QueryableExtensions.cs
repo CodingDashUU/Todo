@@ -1,12 +1,11 @@
 using System.Linq.Dynamic.Core;
 using Radzen;
-using Washu.Framework.Entities.NamedEntity;
-using Washu.Todo.Lists.Features;
-using Washu.Todo.Tasks;
 
 namespace Washu.Todo.Extensions;
 
 using Components;
+using Domain;
+using Framework.Entities;
 
 public static class QueryableExtensions
 {

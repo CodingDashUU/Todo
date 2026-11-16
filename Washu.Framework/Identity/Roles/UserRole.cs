@@ -1,6 +1,6 @@
-using Washu.Framework.Identity.Users;
-
 namespace Washu.Framework.Identity.Roles;
+
+using Users;
 
 public sealed class UserRole : IOwnedByUser
 {

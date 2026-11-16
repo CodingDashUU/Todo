@@ -1,13 +1,13 @@
 using Washu.Framework.Identity.Persistence;
-using Washu.Framework.Identity.Users;
-using Washu.Framework.Identity.Users.FindUser;
 
 namespace Washu.Framework.Extensions;
 
 using Blazor;
 using Identity;
+using Identity.Login;
 using Mediator;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -49,115 +49,9 @@ public static class AuthenticationBuilderExtensions
             options.LoginPath = ApplicationRoutes.SignIn;
             options.AccessDeniedPath = ApplicationRoutes.AccessDenied;
             options.Cookie.Name = ".Washu.Application";
-            options.Events.OnSigningIn = async context =>
-            {
-                var logger = context.HttpContext.RequestServices
-                    .GetRequiredService<ILogger<OnSigningIn>>();
-                var userId = context.Principal?.UserId;
-                if (!userId.HasValue)
-                {
-                    await context.HttpContext.SignOutAsync(
-                        IdentityConstants.ApplicationScheme);
-                    logger.LogError(
-                        "No userId found in ClaimsPrincipal for connection {Id}",
-                        context.HttpContext.Connection.Id);
-                    return;
-                }
-                await using var dbContext = await context.HttpContext.RequestServices
-                    .GetRequiredService<IDbContextFactory<ApplicationDbContext>>()
-                    .CreateDbContextAsync();
-                var rowsChanged = await dbContext.Users
-                    .Where(u => u.Id == userId)
-                    .ExecuteUpdateAsync(
-                        s => 
-                            s.SetProperty(u => u.LastSignedInDate, DateTimeOffset.UtcNow)
-                            );
-                if (rowsChanged != 1)
-                {
-                    await context.HttpContext.SignOutAsync(
-                        IdentityConstants.ApplicationScheme);
-                    logger.LogError(
-                        "Could not update 'LastSignedInDate' for user with id {UserId}. Rows changed: {RowsChanged}",
-                        userId, rowsChanged);
-                }
-
-                else if (logger.IsEnabled(LogLevel.Information))
-                {
-                    logger.LogInformation("Updated 'LastSignInDate' for user with id {UserId}", userId);
-                    logger.LogInformation("User with id {UserId} signing in", userId);
-                }
-                var publisher = context.HttpContext.RequestServices
-                    .GetRequiredService<IPublisher>();
-                await publisher.Publish(new UserSignedIn(userId.Value));
-            };
-            options.Events.OnSigningOut = async context =>
-            {
-                var logger = context.HttpContext.RequestServices
-                    .GetRequiredService<ILogger<OnSigningIn>>();
-                var userId = context.HttpContext.User.UserId;
-                if (!userId.HasValue)
-                {
-                    logger.LogError(
-                        "No userId found in ClaimsPrincipal for connection {Id}",
-                        context.HttpContext.Connection.Id);
-                    return;
-                }
-                await using var dbContext = await context.HttpContext.RequestServices
-                    .GetRequiredService<IDbContextFactory<ApplicationDbContext>>()
-                    .CreateDbContextAsync();
-                var rowsChanged = await dbContext.Users
-                    .Where(u => u.Id == userId)
-                    .ExecuteUpdateAsync(s =>
-                        {
-                            s.SetProperty(u => u.LastSignedOutDate, DateTimeOffset.UtcNow);
-                            s.SetProperty(u => u.SecurityStamp, Guid.CreateVersion7());
-                        }
-                            );
-                if (rowsChanged == 1 && logger.IsEnabled(LogLevel.Information))
-                    logger.LogInformation("Changed security stamp for user with id {UserId}", userId);
-                if (rowsChanged != 1)
-                {
-                    await context.HttpContext.SignOutAsync(
-                        IdentityConstants.ApplicationScheme);
-                    logger.LogError(
-                        "Could not update 'LastSignedOutDate' and 'SecurityStamp' for user with id {UserId}. Rows changed: {RowsChanged}",
-                        userId, rowsChanged);
-                }
-
-                else if (logger.IsEnabled(LogLevel.Information)) 
-                    logger.LogInformation("Updated 'LastSignOutDate' and 'SecurityStamp' for user with id {UserId}", userId);
-
-                var publisher = context.HttpContext.RequestServices
-                    .GetRequiredService<IPublisher>();
-                await publisher.Publish(new UserSignedOut(userId.Value));
-            };
-            options.Events.OnValidatePrincipal = async context =>
-            {
-                var userId = context.Principal?.UserId;
-
-                if (!userId.HasValue)
-                {
-                    context.RejectPrincipal();
-                    await context.HttpContext.SignOutAsync(
-                        IdentityConstants.ApplicationScheme);
-                    return;
-                }
-                var mediator = context.HttpContext.RequestServices
-                    .GetRequiredService<IMediator>();
-                var user = await mediator.Send(new FindUserQuery(userId.Value));
-                if (user is null 
-                    || context.Principal?.SecurityStamp is null 
-                    || context.Principal?.SecurityStamp != user.SecurityStamp)
-                {
-                 context.RejectPrincipal();
-                    await context.HttpContext.SignOutAsync(
-                        IdentityConstants.ApplicationScheme);
-                }
-            };
             options.Events.OnRedirectToAccessDenied = context =>
             {
-                context.RedirectUri = options.AccessDeniedPath; // no returnUrl query
-
+                context.RedirectUri = options.AccessDeniedPath;
                 context.Response.Redirect(context.RedirectUri);
                 return Task.CompletedTask;
             };
@@ -173,7 +67,6 @@ public static class AuthenticationBuilderExtensions
                         : ApplicationRoutes.Home;
                     context.RedirectUri = $"{options.LoginPath}?ReturnUrl={safeReturnUrl}";
                 }
-
                 context.Response.Redirect(context.RedirectUri);
                 return Task.CompletedTask;
             };
@@ -196,10 +89,5 @@ public static class AuthenticationBuilderExtensions
                 return Task.CompletedTask;
             };
         });
-    } 
+    }
 }
-
-file abstract class OnSigningIn;
-
-public readonly record struct UserSignedIn(Guid UserId) : INotification;
-public readonly record struct UserSignedOut(Guid UserId) : INotification;

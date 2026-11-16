@@ -1,11 +1,9 @@
-using Washu.Framework.Identity.Users;
-using Washu.Framework.Identity.Users.FindUser;
-
 namespace Washu.Framework.IntegrationTests;
 
 using Fixtures;
 using FluentAssertions;
 using Identity;
+using Identity.Users;
 using ZiggyCreatures.Caching.Fusion;
 
 [Collection(PostgreSqlTestCollection.Name)]
@@ -18,7 +16,7 @@ public class CachedFindUserHandlerTests(ApplicationPostgreSqlFixture fixture)
         await using var dbContext = await factory.CreateDbContextAsync();
         using var cache = new FusionCache(new FusionCacheOptions());
     
-        var handler = new FindUserHandler(factory);
+        var handler = new FindUserByIdHandler(factory);
         var userStore = new CachedFindUserHandler(cache, handler);
 
         var existingUser = new ApplicationUser($"User_{Guid.CreateVersion7():N}", $"{Guid.CreateVersion7():N}@example.com", $"sub_{Guid.CreateVersion7():N}");
@@ -50,7 +48,7 @@ public class CachedFindUserHandlerTests(ApplicationPostgreSqlFixture fixture)
         await using var dbContext = await factory.CreateDbContextAsync();
         using var cache = new FusionCache(new FusionCacheOptions());
 
-        var handler = new FindUserHandler(factory);
+        var handler = new FindUserByIdHandler(factory);
         var userStore = new CachedFindUserHandler(cache, handler);
 
         var existingUser = new ApplicationUser($"User_{Guid.CreateVersion7():N}", $"{Guid.CreateVersion7():N}@example.com", $"sub_{Guid.CreateVersion7():N}");
@@ -78,7 +76,7 @@ public class CachedFindUserHandlerTests(ApplicationPostgreSqlFixture fixture)
     {
         using var cache = new FusionCache(new FusionCacheOptions());
         var factory = fixture.CreateDbContextFactory();
-        var handler = new FindUserHandler(factory);
+        var handler = new FindUserByIdHandler(factory);
         var userStore = new CachedFindUserHandler(cache, handler);
 
         var nonExistentId = Guid.NewGuid();

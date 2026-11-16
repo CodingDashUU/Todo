@@ -1,10 +1,9 @@
-using Washu.Framework.Identity.Users;
-using Washu.Framework.Identity.Users.FindUser;
-
 namespace Washu.Framework.UnitTests;
 
 using System.Security.Claims;
 using FluentAssertions;
+using Identity.Presentation;
+using Identity.Users;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;

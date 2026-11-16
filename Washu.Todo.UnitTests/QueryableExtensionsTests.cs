@@ -1,9 +1,8 @@
-using Washu.Todo.Lists.Features;
-using Washu.Todo.Tasks;
 using Washu.Todo.Extensions;
 namespace Washu.Todo.UnitTests;
 
 using Components;
+using Domain;
 using FluentAssertions;
 
 public class QueryableExtensionsTests

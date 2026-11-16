@@ -1,8 +1,4 @@
-using Washu.Framework.Entities.AuditEntity;
-using Washu.Framework.Identity.Login;
 using Washu.Framework.Identity.Persistence;
-using Washu.Framework.Identity.Users;
-using Washu.Framework.Identity.Users.FindUser;
 
 namespace Washu.Framework.IntegrationTests;
 
@@ -10,6 +6,8 @@ using Extensions;
 using Fixtures;
 using FluentAssertions;
 using Identity;
+using Identity.Login;
+using Identity.Users;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -32,7 +30,7 @@ public class SignInHandlerTests(ApplicationPostgreSqlFixture fixture)
         services.AddHttpContextAccessor();
         services.AddScoped<SignInHandler>();
         services.AddSingleton<CachedFindUserHandler>();
-        services.AddSingleton<FindUserHandler>();
+        services.AddSingleton<FindUserByIdHandler>();
         services.AddFusionCaching();
         services.AddDbContextFactory<ApplicationDbContext>(options =>
             options.UseNpgsql(fixture.ConnectionString).AddInterceptors(new AuditableEntityInterceptor()));

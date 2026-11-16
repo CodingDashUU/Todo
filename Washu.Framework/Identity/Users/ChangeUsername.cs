@@ -1,14 +1,11 @@
+namespace Washu.Framework.Identity.Users;
+
+using Mediator;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Npgsql;
+using Persistence;
 using Washu.Framework.Extensions;
-using Washu.Framework.Identity.Persistence;
-
-namespace Washu.Framework.Identity.Users;
-
-using DeleteUser;
-using Mediator;
-using System.Windows.Input;
 
 public sealed record ChangeUsernameCommand(Guid UserId, uint UserRowVersion, string NewName) : ICommand<ChangeUsernameResult>;
 
@@ -27,7 +24,7 @@ public sealed class ChangeUsernameHandler(
             await publisher.Publish(new UserUpdated(command.UserId), ct);
             return new AccountNotFound();
         }
-        dbContext.SetRowVersion(user, command.UserRowVersion);
+        dbContext.UpdateEntity(user, command.UserRowVersion);
         user.Username = command.NewName;
         
         try
@@ -37,7 +34,6 @@ public sealed class ChangeUsernameHandler(
         catch (DbUpdateConcurrencyException ex)
         {
             logger.LogError(ex, "User with id {UserId} has already been modified by another session", command.UserId);
-            await publisher.Publish(new UserUpdated(command.UserId), ct);
             return new UserAlreadyModified();
         }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException{ SqlState: PostgresErrorCodes.UniqueViolation })

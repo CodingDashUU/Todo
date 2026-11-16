@@ -1,0 +1,29 @@
+﻿namespace Washu.Framework.SharedComponents;
+
+public static class MaterialIcons
+{
+    public const string Task = "task";
+    public const string Home = "home";
+    public const string CheckCircle = "check_circle";
+    public const string Cancel = "cancel";
+    public const string AccountCircle = "account_circle";
+    public const string ArrowBack = "arrow_back";
+    public const string Logout = "logout";
+    public const string Delete = "delete";
+    public const string Update = "update";
+    public const string ErrorOutline = "error_outline";
+    public const string Email = "mail";
+    public const string SearchOff = "search_off";
+    public const string Target = "target";
+    public const string Grid = "grid_on";
+    public const string Description = "description";
+    public const string FileExport = "file_export";
+    public const string LightMode = "light_mode";
+    public const string DarkMode = "dark_mode";
+    public const string DeadSadFace = "sentiment_very_dissatisfied";
+    public const string Refresh = "refresh";
+    public const string Edit = "edit";
+    public const string PersonOff = "person_off";
+    public const string Add = "add";
+    public const string QuestionBox = "indeterminate_question_box";
+}

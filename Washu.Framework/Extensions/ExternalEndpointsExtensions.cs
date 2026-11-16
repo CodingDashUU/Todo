@@ -1,7 +1,4 @@
-using Washu.Framework.Identity.Login;
 using Washu.Framework.Identity.Persistence;
-using Washu.Framework.Identity.Roles;
-using Washu.Framework.Identity.Users;
 
 namespace Washu.Framework.Extensions;
 
@@ -18,7 +15,10 @@ using Npgsql;
 using System.Security.Claims;
 using AspNetCore;
 using Blazor;
+using Identity.Login;
+using Identity.Users;
 using Mediator;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Notifications;
 
 public static class ExternalEndpointsExtensions
@@ -34,40 +34,29 @@ public static class ExternalEndpointsExtensions
         }
     }
     private static async Task<IResult> ChallengeExternal(
-        HttpContext context, 
-        IDbContextFactory<ApplicationDbContext> factory,
+        IMediator mediator, 
         [FromQuery] bool persistCookie, 
         [FromQuery] string returnUrl = "/")
     {
-        await using var dbContext = await factory.CreateDbContextAsync();
-        if (context.User is { Identity.IsAuthenticated: true, UserId: {} userGuid}
-            && await dbContext.Users.AnyAsync(u => u.Id == userGuid))
-            return TypedResults.Redirect(SafeReturnUrl(returnUrl));
-        var callbackUrl = QueryHelpers.AddQueryString(
-            IdentityRoutes.GoogleExternalCallback,
-            new Dictionary<string, string?>
-            {
-                ["PersistCookie"] = persistCookie.ToString(),
-                ["ReturnUrl"] = returnUrl
-            });
-        var properties = new AuthenticationProperties { RedirectUri = callbackUrl, Items =
+        var result = await mediator.Send(new ChallengeExternalCommand(returnUrl, persistCookie));
+        return result switch
         {
-            ["LoginProvider"] = GoogleDefaults.AuthenticationScheme
-        } };
-
-        return TypedResults.Challenge(
-            properties,
-            [GoogleDefaults.AuthenticationScheme]);
+            AlreadySignedIn(var safeReturnUrl) => TypedResults.Redirect(QueryHelpers.SafeReturnUrl(safeReturnUrl)),
+            ShouldChallenge(var authenticationProperties) => TypedResults.Challenge(
+                authenticationProperties,
+                [GoogleDefaults.AuthenticationScheme]),
+            null => throw new InvalidOperationException($"{nameof(ChallengeExternalResult)} should not be null")
+        };
     }
 
     private static async Task<IResult> ExternalCallback (
-        IMediator sender,
+        IMediator mediator,
         IDbContextFactory<ApplicationDbContext> dbContextFactory,
         [FromQuery] bool persistCookie, 
         MessageStore store,
         [FromQuery] string returnUrl)
     {
-        var info = await sender.Send(new GetExternalLoginInfoQuery());
+        var info = await mediator.Send(new GetExternalLoginInfoQuery());
         if (info is null)
         {
             var errorUrl = QueryHelpers.AddQueryString(
@@ -81,134 +70,37 @@ public static class ExternalEndpointsExtensions
         }
         await using var dbContext = await dbContextFactory.CreateDbContextAsync();
         var email = info.Principal.FindFirstValue(ClaimTypes.Email);
-        if (email is null)
-        {
-            var id = store.Store(
-                Message.Error("Registration Error", "Email was not provided or not found"));
-            var url = QueryHelpers.AddQueryString(
-                ApplicationRoutes.SignIn,
-                new Dictionary<string, string?>
-                {
-                    ["MessageId"] = id,
-                    ["PersistCookie"] = persistCookie.ToString(),
-                    ["ReturnUrl"] = returnUrl
-                });
-            return TypedResults.Redirect(url);
-        }
-        var existingUser = await dbContext.Users
-            .AsNoTracking()
-            .SingleOrDefaultAsync(l => l.GoogleSubject == info.ProviderKey);
-
+        if (email is null) return RedirectError(Message.Error("Registration Error", "Email was not provided or not found"));
+        var existingUser = await mediator.Send(new FindUserByProviderKeyQuery(info.ProviderKey));
         if (existingUser is not null)
         {
-            await sender.Send(new SignInCommand(existingUser, persistCookie, info.LoginProvider));
-            return TypedResults.Redirect(SafeReturnUrl(returnUrl));
+            await mediator.Send(new SignInCommand(existingUser, persistCookie, info.LoginProvider));
+            return TypedResults.Redirect(QueryHelpers.SafeReturnUrl(returnUrl));
+        }
+        var result = await mediator.Send(new CreateUserCommand(email, info.ProviderKey));
+        return result switch
+        {
+            RoleNotFound => RedirectError(Message.Error("Login Error", "There was an issue while logging you in")),
+            UserAlreadyExists => RedirectError(Message.Error("Identity Error", "That username or sign-in identity is already in use.")),
+            CreateUserSuccess(var user) => await SignInAndRedirect(user),
+            null => throw new InvalidOperationException($"{nameof(CreateUserResult)} cannot be null")
+        };
+
+        async Task<RedirectHttpResult> SignInAndRedirect(ApplicationUser user)
+        {
+            await mediator.Send(new SignInCommand(user, persistCookie));
+            return TypedResults.Redirect(QueryHelpers.SafeReturnUrl(returnUrl));  
         }
 
-        if (await dbContext.Users.AnyAsync(u => u.Email == email))
-        {
-            var id = store.Store(Message.Error("Registration Error", "This account or email is already registered. Please sign in."));
-            var url = QueryHelpers.AddQueryString(
-                ApplicationRoutes.SignIn,
-                new Dictionary<string, string?>
-                {
-                    ["MessageId"] = id,
-                    ["PersistCookie"] = persistCookie.ToString(),
-                    ["ReturnUrl"] = returnUrl
-                });
-            return TypedResults.Redirect(url);
-        }
-        var username = await GenerateValidUsernameAsync(dbContext, email);
-        var user = new ApplicationUser(username, email, info.ProviderKey);
-        await dbContext.Users.AddAsync(user);
-        var role = await dbContext.Roles
-            .AsNoTracking()
-            .FirstOrDefaultAsync(r => r.Name == InitialUserRoles.User);
-        if (role is null) 
-        {
-            var id = store.Store(Message.Error("Login Error", "There was an issue while logging you in") );
-            var url = QueryHelpers.AddQueryString(
-                ApplicationRoutes.SignIn,
-                new Dictionary<string, string?>
-                {
-                    ["PersistCookie"] = persistCookie.ToString(),
-                    ["MessageId"] = id,
-                    ["ReturnUrl"] = returnUrl
-                });
-            return TypedResults.Redirect(url);
-        }
-        if (!await dbContext.UserRoles
-                .AnyAsync(ur => ur.UserId == user.Id && ur.RoleId == role.Id))
-        {
-            var userRole = new UserRole
+        RedirectHttpResult RedirectError(Message message) => TypedResults.Redirect(QueryHelpers.AddQueryString(
+            ApplicationRoutes.SignIn,
+            new Dictionary<string, string?>
             {
-                UserId = user.Id,
-                RoleId = role.Id
-            };
-            await dbContext.UserRoles.AddAsync(userRole);
-        }
-        try
-        {
-            await dbContext.SaveChangesAsync();
-        }
-        catch (DbUpdateException ex) when (ex.InnerException is PostgresException{ SqlState: PostgresErrorCodes.UniqueViolation })
-        {
-            var id = store.Store(Message.Error("Identity Error",
-                "That username or sign-in identity is already in use."));
-            var url = QueryHelpers.AddQueryString(
-                ApplicationRoutes.SignIn,
-                new Dictionary<string, string?>
-                {
-                    ["MessageId"] = id,
-                    ["PersistCookie"] = persistCookie.ToString(),
-                    ["ReturnUrl"] = returnUrl
-                });
-            return TypedResults.Redirect(url);
-        }
-        await sender.Send(new SignInCommand(user, persistCookie));
-            
-        return TypedResults.Redirect(SafeReturnUrl(returnUrl));  
-    }
-    
-    private static string SafeReturnUrl(string? returnUrl) =>
-        !string.IsNullOrWhiteSpace(returnUrl) &&
-        returnUrl[0] == '/' &&
-        (returnUrl.Length == 1 || (returnUrl[1] != '/' && returnUrl[1] != '\\'))
-            ? returnUrl
-            : ApplicationRoutes.Home;
-    
-    private static async Task<string> GenerateValidUsernameAsync(
-        ApplicationDbContext dbContext,
-        string email) 
-    {
-        var atIndex = email.IndexOf('@');
-        var localPart = email.AsSpan(0, atIndex < 0 ? email.Length : atIndex);
-
-        var validCount = 0;
-        foreach (var ch in localPart)
-            if (UsernameRules.ValidCharacters.Contains(ch)) validCount++;
-
-        var clean = string.Create(validCount, localPart.ToString(), static (dest, src) =>
-        {
-            var i = 0;
-            foreach (var ch in src)
-                if (UsernameRules.ValidCharacters.Contains(ch))
-                    dest[i++] = ch;
-        });
-        clean = clean.TrimStart('_', '-');
-        
-        if (string.IsNullOrEmpty(clean) || !char.IsAsciiLetter(clean[0])) clean = $"u_{clean}".TrimEnd('_', '-');
-        
-        if (clean.Length < UsernameRules.MinUsernameLength)
-            clean = $"{clean}_{Random.Shared.Next(100, 999)}";
-        
-        const int maxBaseLength = UsernameRules.MaxUsernameLength - 5;
-        if (clean.Length > maxBaseLength) clean = clean[..maxBaseLength];
-
-        var candidate = clean;
-        while (await dbContext.Users.AnyAsync(u => u.Username == candidate)) candidate = $"{clean}_{Random.Shared.Next(100, 9999)}";
-
-        return candidate;
+                ["PersistCookie"] = persistCookie.ToString(),
+                ["MessageId"] =
+                    store.Store(message),
+                ["ReturnUrl"] = returnUrl
+            }));
     }
     
 }

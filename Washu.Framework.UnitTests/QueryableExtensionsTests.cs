@@ -1,8 +1,7 @@
-using Washu.Framework.Identity.Users;
-
 namespace Washu.Framework.UnitTests;
 
 using FluentAssertions;
+using Identity.Users;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using Washu.Framework.Extensions;

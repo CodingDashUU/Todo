@@ -1,7 +1,6 @@
-using Washu.Framework.Identity.Users;
-
 namespace Washu.Framework.Extensions;
 
+using Identity.Users;
 using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
 

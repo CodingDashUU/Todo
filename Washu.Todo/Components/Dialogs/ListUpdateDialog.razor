@@ -1,6 +1,8 @@
 @using FluentValidation
-@using Washu.Todo.Lists
-@using TodoList = Washu.Todo.Lists.Features.TodoList
+@using Washu.Framework.SharedComponents
+@using Washu.Todo.Application
+@using Washu.Todo.Domain
+@using TodoList = Washu.Todo.Domain.TodoList
 @inject DialogService DialogService
 <ApplicationForm
     Model="_model"

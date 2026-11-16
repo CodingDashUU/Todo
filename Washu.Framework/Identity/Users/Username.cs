@@ -1,7 +1,7 @@
+namespace Washu.Framework.Identity.Users;
+
 using FluentValidation;
 using Washu.Framework.Constants;
-
-namespace Washu.Framework.Identity.Users;
 
 public static class UsernameRules
 {

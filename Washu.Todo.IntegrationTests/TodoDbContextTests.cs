@@ -1,11 +1,10 @@
-using Washu.Framework.Identity.Users;
-using Washu.Todo.Lists.Features;
 using Washu.Todo.Persistence;
-using Washu.Todo.Tasks;
 
 namespace Washu.Todo.IntegrationTests;
 
+using Domain;
 using FluentAssertions;
+using Framework.Identity.Users;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 

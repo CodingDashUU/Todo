@@ -1,9 +1,8 @@
-using Washu.Framework.Identity.Users;
-
 namespace Washu.Framework.IntegrationTests;
 
 using Fixtures;
 using FluentAssertions;
+using Identity.Users;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Xunit;

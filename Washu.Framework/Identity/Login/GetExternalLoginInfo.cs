@@ -1,11 +1,10 @@
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
-
 namespace Washu.Framework.Identity.Login;
 
 using Mediator;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
+using System.Security.Claims;
 
 public readonly record struct GetExternalLoginInfoQuery : IQuery<ExternalLoginInfo?>;
 public sealed class GetExternalLoginInfoHandler(

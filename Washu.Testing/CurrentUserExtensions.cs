@@ -1,5 +1,3 @@
-using Washu.Framework.Identity.Users;
-
 namespace Washu.Testing;
 
 using Framework.Identity;

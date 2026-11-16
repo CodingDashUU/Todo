@@ -27,4 +27,9 @@
         <InternalsVisibleTo Include="Washu.Framework.UnitTests" />
         <InternalsVisibleTo Include="Washu.Framework.IntegrationTests" />
     </ItemGroup>
+    <ItemGroup>
+      <Folder Include="Identity\Application\" />
+      <Folder Include="Identity\Constants\" />
+      <Folder Include="Identity\Domain\" />
+    </ItemGroup>
 </Project>

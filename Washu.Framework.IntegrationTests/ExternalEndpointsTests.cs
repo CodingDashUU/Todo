@@ -1,8 +1,4 @@
-using Washu.Framework.Identity.Login;
 using Washu.Framework.Identity.Persistence;
-using Washu.Framework.Identity.Roles;
-using Washu.Framework.Identity.Users;
-using Washu.Framework.Identity.Users.FindUser;
 
 namespace Washu.Framework.IntegrationTests;
 
@@ -27,6 +23,9 @@ using System.Security.Claims;
 using System.Threading.RateLimiting;
 using Xunit;
 using Extensions;
+using Identity.Login;
+using Identity.Roles;
+using Identity.Users;
 using Microsoft.Extensions.Primitives;
 using ZiggyCreatures.Caching.Fusion;
 
@@ -56,7 +55,7 @@ public sealed class ExternalEndpointsTests(ApplicationPostgreSqlFixture fixture)
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddScoped<SignInHandler>();
         builder.Services.AddScoped<GetExternalLoginInfoHandler>();
-        builder.Services.AddScoped<FindUserHandler>();
+        builder.Services.AddScoped<FindUserByIdHandler>();
 
         builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
             options.UseNpgsql(fixture.ConnectionString));
