@@ -13,7 +13,7 @@ using Extensions;
 using Fixtures;
 using FluentAssertions;
 using Identity;
-using Identity.Login;
+using Identity.Authentication;
 using Identity.Presentation;
 using Identity.Roles;
 using Identity.Users;

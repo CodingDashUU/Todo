@@ -92,6 +92,7 @@ public static class ServiceCollectionExtensions
     }
     public IServiceCollection AddWfIdentityServices()
     {
+        services.AddScoped<CurrentUser>();
         services.AddScoped<GetUserService>();
         return services;
     }
@@ -259,22 +260,24 @@ public static class ServiceCollectionExtensions
                 .Enrich.WithProcessName()
                 .Enrich.WithProcessId()
                 .Enrich.WithEnvironmentName()
-        
                 .WriteTo.Console(outputTemplate: 
                     "[{Timestamp:HH:mm:ss} {Level:u3}] [{SourceContext}] {Message:lj}{NewLine}{Exception}")
-        
                 .WriteTo.File(
                     path: "logs/app-log-.txt",
                     rollingInterval: RollingInterval.Day,
                     restrictedToMinimumLevel: LogEventLevel.Information,
                     retainedFileCountLimit: 30)
-        
                 .WriteTo.File(
                     new JsonFormatter(renderMessage: true), 
                     path: "logs/app-json-log-.json",
                     rollingInterval: RollingInterval.Day,
                     restrictedToMinimumLevel: LogEventLevel.Information,
                     retainedFileCountLimit: 30)
+                .Destructure.ByTransforming<ChangeUsernameCommand>(cmd => new
+                {
+                    cmd.UserId,
+                    cmd.UserRowVersion
+                })
             );
     }
     

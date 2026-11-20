@@ -10,6 +10,7 @@
     <NoWarn>$(NoWarn);BL0005</NoWarn>
   </PropertyGroup>
   <ItemGroup>
+    <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.2.0" />
     <PackageVersion Include="Humanizer" Version="3.0.10" />
     <PackageVersion Include="Mediator.Abstractions" Version="3.0.2" />
     <PackageVersion Include="Mediator.SourceGenerator" Version="3.0.2" />

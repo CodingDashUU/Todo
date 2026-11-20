@@ -20,8 +20,8 @@ internal sealed class AppAuthenticationStateProvider(
         AuthenticationState authenticationState, CancellationToken cancellationToken)
     {
         var principal = authenticationState.User;
-        if (principal.UserId is not {} userId) return false;
-        if (principal.SecurityStamp is not { } securityStamp) return false;
+        if (principal.UserId is not {} userId 
+            || principal.SecurityStamp is not { } securityStamp) return false;
         await using var scope = scopeFactory.CreateAsyncScope();
         var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
         var user = await mediator.Send(new FindUserByIdQuery(userId), cancellationToken);

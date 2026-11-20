@@ -1,12 +1,13 @@
 @using FluentValidation
+@using Mediator
 @using Radzen
 @using Radzen.Blazor
-@using Washu.Framework.Identity.Users
 @using Washu.Framework.SharedComponents
 @inject DialogService DialogService
+@inject IMediator Mediator
 <ApplicationForm
+    @ref="_form"
     Model="_model"
-    Validator="Validator"
     HandleValidSubmit="CloseDialog"
     SubmitButtonConfig="DeleteAccountButtonConfig"
 >
@@ -21,11 +22,10 @@
 </ApplicationForm>
 
 @code {
+    private ApplicationForm<Model> _form = null!;
     private readonly Model _model = new();
-    ConfirmAccountDeletionValidator Validator => new(Email);
     [Parameter, EditorRequired] public Guid UserId { get; set; }
-    [Parameter, EditorRequired] public string Email { get; set; }
-
+    [Parameter, EditorRequired] public uint UserRowVersion { get; set; }
     public SubmitButtonConfig DeleteAccountButtonConfig { get; set; } = new()
     {
         ButtonText = "Delete Account!",
@@ -33,24 +33,20 @@
         ButtonIcon = MaterialIcons.Delete
     };
 
-    private void CloseDialog()
+    private async Task CloseDialog()
     {
-        var command = new DeleteUserCommand(UserId);
-        DialogService.Close(command);
+        var command = new DeleteUserCommand(UserId, UserRowVersion, _model.Email);
+        var result = await Mediator.Send(command);
+        if (result is Error { Type: ValidationError vErr })
+        {
+            _form.SetErrorMessages(vErr.Errors);
+            await InvokeAsync(StateHasChanged);
+        }
+        else DialogService.Close(result);
     }
     private class Model
     {
         public string Email { get; set; } = "";
     }
-
-    private class ConfirmAccountDeletionValidator : AbstractValidator<Model>
-    {
-        public ConfirmAccountDeletionValidator(string email)
-        {
-            RuleFor(x => x.Email)
-                .NotEmpty().WithMessage("Email is required")
-                .EmailAddress().WithMessage("Invalid email")
-                .Must(x => x.Equals(email, StringComparison.InvariantCultureIgnoreCase)).WithMessage("Incorrect email");
-        }
-    }
+    
 }

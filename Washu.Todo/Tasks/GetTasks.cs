@@ -1,11 +1,10 @@
-namespace Washu.Todo.Application;
+namespace Washu.Todo.Tasks;
 
-using Components;
-using Domain;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
+using Persistence;
+using Washu.Todo.Components;
 using Washu.Todo.Extensions;
-using Washu.Todo.Persistence;
 
 public sealed record GetTasksQuery(Guid SelectedListId, LoadDataConfig Config) : IQuery<GetTasksResponse>;
 public sealed class GetTasksHandler(IDbContextFactory<TodoDbContext> factory) : IQueryHandler<GetTasksQuery, GetTasksResponse>

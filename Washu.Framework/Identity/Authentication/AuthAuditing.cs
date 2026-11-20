@@ -1,6 +1,5 @@
-namespace Washu.Framework.Identity.Login;
+namespace Washu.Framework.Identity.Authentication;
 
-using Extensions;
 using Mediator;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
@@ -8,18 +7,18 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Persistence;
-using System.Security.Claims;
-using Users;
+using Washu.Framework.Extensions;
+using Washu.Framework.Identity.Persistence;
+using Washu.Framework.Identity.Users;
 
-public sealed record UserSigningIn(HttpContext HttpContext, Guid UserId) : INotification;
-public sealed record UserSigningOut(HttpContext HttpContext, bool ChangeStamp) : INotification;
+public sealed record UserSigningInNotification(HttpContext HttpContext, Guid UserId) : INotification;
+public sealed record UserSigningOutNotification(HttpContext HttpContext, bool ChangeStamp) : INotification;
 public class AuthAuditingHandler(
     IDbContextFactory<ApplicationDbContext> dbContextFactory,
     ILogger<AuthAuditingHandler> logger
-    ) : INotificationHandler<UserSigningIn>, INotificationHandler<UserSigningOut>
+    ) : INotificationHandler<UserSigningInNotification>, INotificationHandler<UserSigningOutNotification>
 {
-    public async ValueTask Handle(UserSigningIn notification, CancellationToken cancellationToken)
+    public async ValueTask Handle(UserSigningInNotification notification, CancellationToken cancellationToken)
     {
         var userId = notification.UserId;
         var context = notification.HttpContext;
@@ -45,16 +44,16 @@ public class AuthAuditingHandler(
 
         var publisher = context.RequestServices
             .GetRequiredService<IPublisher>();
-        await publisher.Publish(new UserSignedIn(userId), cancellationToken);
+        await publisher.Publish(new UserSignedInNotification(userId), cancellationToken);
     }
 
-    public async ValueTask Handle(UserSigningOut notification, CancellationToken cancellationToken)
+    public async ValueTask Handle(UserSigningOutNotification notification, CancellationToken cancellationToken)
     {
         var context = notification.HttpContext;
         var userId = context.User.UserId;
         if (!userId.HasValue)
         {
-            logger.LogError(
+            logger.LogWarning(
                 "No userId found in ClaimsPrincipal for connection {Id}",
                 context.Connection.Id);
             return;
@@ -82,6 +81,6 @@ public class AuthAuditingHandler(
 
         var publisher = context.RequestServices
             .GetRequiredService<IPublisher>();
-        await publisher.Publish(new UserSignedOut(userId.Value), cancellationToken);
+        await publisher.Publish(new UserSignedOutNotification(userId.Value), cancellationToken);
     }
 }

@@ -1,16 +1,17 @@
 ﻿@using FluentValidation
 @using Washu.Framework.Extensions
-@using Washu.Framework.Identity
 @using Washu.Framework.Identity.Users
 @using Washu.Framework.SharedComponents
-@using Washu.Todo.Application
-@using Washu.Todo.Domain
-@inject DialogService DialogService
+@using Washu.Todo.Tasks
+@using Washu.Todo.TodoList
 @inject UserTimeZoneProvider TimeZoneProvider
+
+@inherits FormDialog<TaskCreationDialog.Model>
+
 <ApplicationForm
+    @ref="Form"
     Model="_model"
-    Validator="_validator"
-    HandleValidSubmit="CloseDialog"
+    HandleValidSubmit="_ => CloseDialog(new CreateTaskCommand(List, _model.TaskName, _model.GoalDate))"
     >
     <RadzenFormField Text="Task Name">
         <RadzenTextBox @bind-Value="_model.TaskName"/>
@@ -27,31 +28,14 @@
 
 @code {
     private readonly Model _model = new();
-    private readonly Validator _validator = new();
-    [Parameter, EditorRequired] public Guid ListId { get; set; }
-    [Parameter, EditorRequired] public uint ListVersionId { get; set; }
+    [Parameter, EditorRequired] public TodoList List { get; set; }
     protected override void OnInitialized()
     {
         _model.GoalDate = DateTimeOffset.UtcNow.AddHours(1).ToTimeZone(TimeZoneProvider.TimeZoneInfo).WithoutSeconds;
     }
-    private void CloseDialog()
-    {
-        var command = new CreateTaskCommand(ListId, ListVersionId, _model.TaskName, _model.GoalDate);
-        DialogService.Close(command);
-    }
-    private class Model
+    public class Model
     {
         public string TaskName { get; set; } = string.Empty;
         public DateTimeOffset GoalDate { get; set; }
-    }
-    private class Validator : AbstractValidator<Model>
-    {
-        public Validator()
-        {
-            RuleFor(x => x.TaskName)
-                .SetValidator(new TaskNameValidator());
-            RuleFor(x => x.GoalDate)
-                .SetValidator(new GoalDateValidator());
-        }
     }
 }

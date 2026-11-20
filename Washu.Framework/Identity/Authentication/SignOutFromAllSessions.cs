@@ -1,11 +1,11 @@
-namespace Washu.Framework.Identity.Login;
+namespace Washu.Framework.Identity.Authentication;
 
-using Extensions;
 using Mediator;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
+using Washu.Framework.Extensions;
 
 public sealed record SignOutFromAllSessionsCommand(HttpContext HttpContext) : ICommand;
 public sealed class SignOutFromAllSessionsHandler(
@@ -18,7 +18,7 @@ public sealed class SignOutFromAllSessionsHandler(
         var context = command.HttpContext;
         var userId = context.User.UserId;
         await context.SignOutAsync(IdentityConstants.ApplicationScheme);
-        await publisher.Publish(new UserSigningOut(context,  true), cancellationToken);
+        await publisher.Publish(new UserSigningOutNotification(context,  true), cancellationToken);
         if (userId.HasValue && logger.IsEnabled(LogLevel.Information))
             logger.LogInformation("User with id {UserId} signed out from all sessions", userId);
         return Unit.Value;

@@ -1,9 +1,9 @@
-namespace Washu.Todo.Application;
+namespace Washu.Todo.TodoList;
 
 using Microsoft.EntityFrameworkCore;
+using Persistence;
 using TickerQ.Utilities.Base;
 using TickerQ.Utilities.Interfaces;
-using Washu.Todo.Persistence;
 
 public class DeleteTodoListJob(
     IDbContextFactory<TodoDbContext> dbFactory,

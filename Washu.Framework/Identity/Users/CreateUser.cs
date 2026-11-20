@@ -11,14 +11,14 @@ using Npgsql;
 using Persistence;
 using Roles;
 
-public sealed record CreateUserCommand(string Email, string GoogleSubject) : ICommand<CreateUserResult>;
+public sealed record CreateUserCommand(string Email, string GoogleSubject) : ICommand<Result<ApplicationUser>>;
 public sealed class CreateUserHandler(
     IDbContextFactory<ApplicationDbContext> factory,
     ILogger<CreateUserHandler> logger,
     IMediator mediator
-    ) : ICommandHandler<CreateUserCommand, CreateUserResult>
+    ) : ICommandHandler<CreateUserCommand, Result<ApplicationUser>>
 {
-    public async ValueTask<CreateUserResult> Handle(CreateUserCommand command, CancellationToken cancellationToken)
+    public async ValueTask<Result<ApplicationUser>> Handle(CreateUserCommand command, CancellationToken cancellationToken)
     {
         await using var dbContext = await factory.CreateDbContextAsync(cancellationToken); 
         var username = await mediator.Send(
@@ -32,7 +32,7 @@ public sealed class CreateUserHandler(
         if (role is null) 
         {
             logger.LogError("Role {Role} could not be found", InitialUserRoles.User);
-            return new RoleNotFound();
+            return GenericErrors.ServerError;
         }
         
         if (!await dbContext.UserRoles
@@ -45,21 +45,7 @@ public sealed class CreateUserHandler(
             };
             await dbContext.UserRoles.AddAsync(userRole, cancellationToken);
         }
-        try
-        {
-            await dbContext.SaveChangesAsync(cancellationToken);
-        }
-        catch (DbUpdateException ex) when (ex.InnerException is PostgresException{ SqlState: PostgresErrorCodes.UniqueViolation })
-        {
-            return new UserAlreadyExists();
-        }
-
-        return new CreateUserSuccess(user);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return user;
     }
 }
-
-public readonly record struct RoleNotFound;
-public readonly record struct UserAlreadyExists;
-
-public sealed record CreateUserSuccess(ApplicationUser User);
-public readonly union CreateUserResult(RoleNotFound, UserAlreadyExists, CreateUserSuccess);

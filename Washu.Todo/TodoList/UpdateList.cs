@@ -1,49 +1,52 @@
-namespace Washu.Todo.Application;
+namespace Washu.Todo.TodoList;
 
-using Framework.Identity.Users;
+using FluentValidation;
+using Framework;
+using Framework.Identity;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using Persistence;
 using Washu.Framework.Extensions;
-using Washu.Framework.Identity.Presentation;
+using Washu.Framework.Identity.Users;
 using Washu.Framework.Notifications;
 using Washu.Todo.Extensions;
-using Washu.Todo.Persistence;
 
-public sealed record UpdateListCommand(Guid ListId, uint ListRowVersion, string NewListName) : ICommand<Message>;
+[UniqueViolationMessage("Todo list with the given name already exists")]
+public sealed record UpdateListCommand(TodoList OldList, string NewListName) : ICommand<Result>;
 public sealed class UpdateListHandler(
     IDbContextFactory<TodoDbContext> factory,
-    GetUserService getUserService
-    ) : ICommandHandler<UpdateListCommand, Message>
+    CurrentUser user
+    ) : ICommandHandler<UpdateListCommand, Result>
 {
-    public async ValueTask<Message> Handle(UpdateListCommand command, CancellationToken ctx = new())
+    public async ValueTask<Result> Handle(UpdateListCommand command, CancellationToken ctx = new())
     {
+        if (await user.GetUserIdAsync() is not { } userId) return UserErrors.UserIdNotFound;
         await using var dbContext = await factory.CreateDbContextAsync(ctx);
         var todoListQuery = dbContext.TodoLists
-            .ForUser(await getUserService.GetUserIdAsync());
-        var list = await todoListQuery.ByTodoList(command.ListId).SingleOrDefaultAsync(ctx);
+            .ForUser(userId);
+        var list = await todoListQuery.ByTodoList(command.OldList.Id, ctx);
         if (list is null)
-            return Message.Error("Update List Error", "Todo list does not exist");
-        if (todoListQuery.Any(l => l.Name == command.NewListName && l.Id != command.ListId))
-            return Message.Error("Update List Error", "A todo list with the given name already exists");
-        dbContext.UpdateEntity(list, command.ListRowVersion);
+            return TodoErrors.ListNotFound;
+        if (todoListQuery.Any(l => l.Name == command.NewListName && l.Id != command.OldList.Id))
+            return TodoErrors.ListAlreadyExists;
+        dbContext.UpdateEntity(list, command.OldList.RowVersion);
         list.Name =  command.NewListName;
-        try
-        {
-            await dbContext.SaveChangesAsync(ctx);
-        }
-        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
-                                           {
-                                               SqlState: PostgresErrorCodes.UniqueViolation
-                                           })
-        {
-            return Message.Error("Update List Error", "Todo List with the given name already exists");
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            return Message.Error("Update List Error", "Your todo list was already modified, please try again");
-        }
+        await dbContext.SaveChangesAsync(ctx);
 
-        return Message.Success(title: "Update List", details: "Successfully updated list");
+        return Result.Unit;
     }
+}
+
+public class UpdateListValidator : AbstractValidator<UpdateListCommand>
+{
+    public UpdateListValidator()
+    {
+        RuleFor(m => m.NewListName)
+            .SetValidator(new ListNameValidator());
+        RuleFor(m => m)
+            .Must(m => IsDifferent(m.OldList.Name, m.NewListName)).WithMessage("New name must be different from the old name");
+    }
+        
+    private static bool IsDifferent(string oldName, string newName) => oldName != newName;
 }

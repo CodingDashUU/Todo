@@ -1,12 +1,12 @@
-namespace Washu.Framework.Identity.Login;
+namespace Washu.Framework.Identity.Authentication;
 
 using Mediator;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
-using Users;
 using Washu.Framework.Extensions;
+using Washu.Framework.Identity.Users;
 
 public sealed record SignInCommand(ApplicationUser User, bool IsPersistent, string? AuthenticationMethod = null) : ICommand;
 
@@ -31,7 +31,7 @@ public sealed class SignInHandler(
             IdentityConstants.ApplicationScheme,
             userPrincipal,
             authenticationProperties);
-        await publisher.Publish(new UserSigningIn(context, command.User.Id), ctx);
+        await publisher.Publish(new UserSigningInNotification(context, command.User.Id), ctx);
         context.User = userPrincipal;
         await context.SignOutAsync(IdentityConstants.ExternalScheme);
         return Unit.Value;

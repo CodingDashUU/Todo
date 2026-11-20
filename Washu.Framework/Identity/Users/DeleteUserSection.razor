@@ -1,15 +1,17 @@
+@using System.Diagnostics
 @using global::Radzen
 @using global::Radzen.Blazor
 @using Mediator
 @using Washu.Framework.AspNetCore
 @using Washu.Framework.Extensions
-@using Washu.Framework.Identity.Login
+@using Washu.Framework.Identity.Authentication
 @using Washu.Framework.Notifications
 @using Washu.Framework.SharedComponents
+@using Washu.Framework.SharedComponents.Notifications
 @inject DialogService DialogService
 @inject MessageStore Store
 @inject NavigationManager NavManager
-@inject IMediator Mediator
+@inject NotificationService NotificationService
 
 <RadzenCard Variant="Variant.Filled"
             class=" rz-background-color-danger-lighter rz-border-radius-2" 
@@ -31,29 +33,35 @@
 </RadzenCard>
 
 @code {
-    [Parameter, EditorRequired] public ApplicationUserInfo User { get; set; } 
-    
-    public async Task DeleteAccountAsync()
+    [Parameter, EditorRequired] public ApplicationUserInfo User { get; set; }
+    [Parameter, EditorRequired] public Func<Task> OnRefreshUserAsync { get; set; }
+
+    private async Task DeleteAccountAsync()
     {
         var parameters = new Dictionary<string, object?>(2)
         {
-            [nameof(ConfirmAccountDeletionDialog.Email)] = User.Email,
-            [nameof(ConfirmAccountDeletionDialog.UserId)] = User.Id
+            [nameof(ConfirmAccountDeletionDialog.UserId)] = User.Id,
+            [nameof(ConfirmAccountDeletionDialog.UserRowVersion)] = User.RowVersion
         };
         var confirmData = await DialogService.ConfirmDelete(
             "Confirm Account Deletion",
             "Are you sure you want to delete your account? You cannot undo this action!");
         if (!confirmData) return;
         var data = await DialogService.OpenAsync<ConfirmAccountDeletionDialog>("Confirm Account Deletion", parameters);
-        if (data is not DeleteUserCommand command) return;
-        var result = await Mediator.Send(command);
+        if (data is not Result result) return;
         var message = result switch
         {
-            AccountNotFound => Message.Error("Identity Error", AccountNotFound.Message),
-            DeleteUserSuccess => Message.Success("Identity Success", DeleteUserSuccess.Message),
-            null => throw new InvalidOperationException(),
+            Error e => Message.Error("Identity Error", e.Description),
+            Result.UnitValue => Message.Success("Identity Success", "Account deleted successfully"),
+            null => throw new UnreachableException()
         };
-        var id = Store.Store(message);
-        NavManager.NavigateTo($"{IdentityRoutes.SignOut}?messageId={id}", forceLoad: true);
+        if (result is not Error { Code: GenericErrors.Codes.ConcurrencyError })
+        {
+            var id = Store.Store(message);  
+            NavManager.NavigateTo($"{IdentityRoutes.SignOut}?messageId={id}", forceLoad: true);
+            return;
+        }
+        NotificationService.Show(message);
+        await OnRefreshUserAsync();
     }
 }

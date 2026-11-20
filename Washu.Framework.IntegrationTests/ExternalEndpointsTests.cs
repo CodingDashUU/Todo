@@ -23,7 +23,7 @@ using System.Security.Claims;
 using System.Threading.RateLimiting;
 using Xunit;
 using Extensions;
-using Identity.Login;
+using Identity.Authentication;
 using Identity.Roles;
 using Identity.Users;
 using Microsoft.Extensions.Primitives;

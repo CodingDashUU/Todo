@@ -1,4 +1,4 @@
-namespace Washu.Framework.Identity.Login;
+namespace Washu.Framework.Identity.Authentication;
 
 public static class IdentityRoutes
 {

@@ -1,8 +1,5 @@
 @typeparam TModel
-@typeparam TValidator where TValidator : FluentValidation.IValidator
 <EditForm Model="Model" OnValidSubmit="HandleValidSubmit">
-    <FluentValidationValidator Validator="@Validator" />
-    
     <RadzenStack Gap="1rem">
         @ChildContent
         <RadzenButton ButtonStyle="SubmitButtonConfig.ButtonStyle" 
@@ -11,16 +8,21 @@
                       Icon="@SubmitButtonConfig.ButtonIcon"
                       ButtonType="ButtonType.Submit"
                       Variant="Variant.Outlined"/>
-        <ValidationSummaryCard />
+        <ValidationSummaryCard @ref="@_validationSummaryCard"/>
     </RadzenStack>
 </EditForm>
 
 @code {
-
+    private ValidationSummaryCard _validationSummaryCard = null!;
     [Parameter] public RenderFragment? ChildContent { get; set; }
     [Parameter, EditorRequired] public TModel Model { get; set; }
-    [Parameter, EditorRequired] public TValidator Validator { get; set; }
-    [Parameter, EditorRequired] public Action HandleValidSubmit { get; set; }
+    [Parameter, EditorRequired] public EventCallback<EditContext> HandleValidSubmit { get; set; }
     [Parameter] public SubmitButtonConfig  SubmitButtonConfig { get; set; } = new();
+    public void SetErrorMessages(params List<string> messages)
+    {
+        if (messages.Any())
+            _validationSummaryCard.SetMessages(messages);
+        StateHasChanged();
+    }
 
 }

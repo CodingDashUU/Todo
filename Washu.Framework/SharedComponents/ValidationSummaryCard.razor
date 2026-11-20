@@ -1,6 +1,4 @@
-@implements IDisposable
-
-@if (CurrentEditContext is not null && Messages.Any())
+@if (_messages.Any())
 {
     <RadzenCard Style="
     margin: 24px auto;
@@ -27,18 +25,18 @@
                 
                 <RadzenText TextStyle="TextStyle.Body1" 
                             Style="color: var(--rz-danger); font-weight: 600; margin: 0; line-height: 1.2;">
-                    @(Messages.Count == 1 ? "Please fix the following error:" : "Please fix the following errors:")
+                    @(_messages.Count == 1 ? "Please fix the following error:" : "Please fix the following errors:")
                 </RadzenText>
                 
-                @if (Messages.Count == 1)
+                @if (_messages.Count == 1)
                 {
                     <RadzenText Style="color: var(--rz-text-color, #ffffff); opacity: 0.9; margin: 0;">
-                        @Messages[0]
+                        @_messages[0]
                     </RadzenText>
                 }
                 else
                 {
-                    @foreach (var message in Messages)
+                    @foreach (var message in _messages)
                     {
                         <RadzenText Style="color: var(--rz-text-color, #ffffff); opacity: 0.9; margin: 0;">
                             → @message
@@ -55,28 +53,11 @@
 }
 
 @code {
-    [CascadingParameter] private EditContext? CurrentEditContext { get; set; }
+    private List<string> _messages = [];
 
-    private List<string> Messages => CurrentEditContext?.GetValidationMessages().Distinct().ToList() ?? [];
-
-    protected override void OnInitialized()
+    public void SetMessages(params List<string> messages)
     {
-        if (CurrentEditContext is not null)
-        {
-            CurrentEditContext.OnValidationStateChanged += HandleValidationStateChanged;
-        }
-    }
-
-    private void HandleValidationStateChanged(object? sender, ValidationStateChangedEventArgs e)
-    {
+        _messages = messages;
         StateHasChanged();
-    }
-
-    public void Dispose()
-    {
-        if (CurrentEditContext is not null)
-        {
-            CurrentEditContext.OnValidationStateChanged -= HandleValidationStateChanged;
-        }
     }
 }

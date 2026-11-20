@@ -6,7 +6,7 @@ using Extensions;
 using Fixtures;
 using FluentAssertions;
 using Identity;
-using Identity.Login;
+using Identity.Authentication;
 using Identity.Users;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;

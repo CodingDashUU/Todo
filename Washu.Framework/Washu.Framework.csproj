@@ -1,5 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
     <ItemGroup>
+        <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
         <PackageReference Include="GreatIdeas.Blazored.FluentValidation" />
         <PackageReference Include="Humanizer" />
         <PackageReference Include="Mediator.Abstractions" />
@@ -26,10 +27,5 @@
     <ItemGroup>
         <InternalsVisibleTo Include="Washu.Framework.UnitTests" />
         <InternalsVisibleTo Include="Washu.Framework.IntegrationTests" />
-    </ItemGroup>
-    <ItemGroup>
-      <Folder Include="Identity\Application\" />
-      <Folder Include="Identity\Constants\" />
-      <Folder Include="Identity\Domain\" />
     </ItemGroup>
 </Project>

@@ -8,35 +8,42 @@ using ZiggyCreatures.Caching.Fusion;
 public class RemoveCachedUserHandler(
     IFusionCache cache,
     ILogger<RemoveCachedUserHandler> logger
-    ) : INotificationHandler<UserDeleted>, 
-        INotificationHandler<UserUpdated>, 
-        INotificationHandler<UserSignedIn>,  
-        INotificationHandler<UserSignedOut>
+    ) : INotificationHandler<UserDeletedNotification>, 
+        INotificationHandler<UserUpdatedNotification>, 
+        INotificationHandler<UserNotFoundNotification>, 
+        INotificationHandler<UserSignedInNotification>,  
+        INotificationHandler<UserSignedOutNotification>
 {
-    public async ValueTask Handle(UserDeleted notification, CancellationToken cancellationToken)
+    public async ValueTask Handle(UserDeletedNotification notification, CancellationToken cancellationToken)
     {
         await cache.RemoveAsync($"user:{notification.UserId}", token: cancellationToken);
         logger.LogInformation("Removed {UserId} from cache", notification.UserId);
     }
 
-    public async ValueTask Handle(UserUpdated notification, CancellationToken cancellationToken)
+    public async ValueTask Handle(UserUpdatedNotification notification, CancellationToken cancellationToken)
     {
         await cache.RemoveAsync($"user:{notification.UserId}", token: cancellationToken);
         logger.LogInformation("Removed {UserId} from cache", notification.UserId);
     }
 
-    public async ValueTask Handle(UserSignedIn notification, CancellationToken cancellationToken)
+    public async ValueTask Handle(UserSignedInNotification notification, CancellationToken cancellationToken)
     {
         await cache.RemoveAsync($"user:{notification.UserId}", token: cancellationToken);
         logger.LogInformation("Removed {UserId} from cache", notification.UserId);
     }
 
-    public async ValueTask Handle(UserSignedOut notification, CancellationToken cancellationToken)
+    public async ValueTask Handle(UserSignedOutNotification notification, CancellationToken cancellationToken)
+    {
+        await cache.RemoveAsync($"user:{notification.UserId}", token: cancellationToken);
+        logger.LogInformation("Removed {UserId} from cache", notification.UserId);
+    }
+
+    public async ValueTask Handle(UserNotFoundNotification notification, CancellationToken cancellationToken)
     {
         await cache.RemoveAsync($"user:{notification.UserId}", token: cancellationToken);
         logger.LogInformation("Removed {UserId} from cache", notification.UserId);
     }
 }
 
-public readonly record struct UserSignedIn(Guid UserId) : INotification;
-public readonly record struct UserSignedOut(Guid UserId) : INotification;
+public readonly record struct UserSignedInNotification(Guid UserId) : INotification;
+public readonly record struct UserSignedOutNotification(Guid UserId) : INotification;

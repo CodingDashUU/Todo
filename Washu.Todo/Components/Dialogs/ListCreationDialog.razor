@@ -1,12 +1,10 @@
-﻿@using FluentValidation
-@using Washu.Framework.SharedComponents
-@using Washu.Todo.Application
-@using Washu.Todo.Domain
-@inject DialogService DialogService
+﻿@using Washu.Framework.SharedComponents
+@using Washu.Todo.TodoList
+@inherits FormDialog<ListCreationDialog.Model>
 <ApplicationForm
+    @ref="Form"
     Model="_model"
-    Validator="_validator"
-    HandleValidSubmit="CloseDialog">
+    HandleValidSubmit="_ => CloseDialog(new CreateListCommand(_model.ListName))">
     <RadzenFormField Text="List Name">
         <RadzenTextBox Name="@nameof(Model.ListName)" 
                        @bind-Value="_model.ListName"
@@ -15,21 +13,8 @@
 </ApplicationForm>
 @code {
     private readonly Model _model = new();
-    private readonly Validator _validator = new();
-    private void CloseDialog()
-    {
-        var command = new CreateListCommand(_model.ListName);
-        DialogService.Close(command);
-    }
-
-    private class Model
+    public class Model
     {
         public string ListName { get; set; } = string.Empty;
-    }
-    private class Validator : AbstractValidator<Model>
-    {
-        public Validator() =>
-            RuleFor(m => m.ListName)
-                .SetValidator(new ListNameValidator());
     }
 }

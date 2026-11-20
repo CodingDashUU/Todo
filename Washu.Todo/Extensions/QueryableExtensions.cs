@@ -4,19 +4,21 @@ using Radzen;
 namespace Washu.Todo.Extensions;
 
 using Components;
-using Domain;
 using Framework.Entities;
+using Microsoft.EntityFrameworkCore;
+using Tasks;
+using TodoList;
 
 public static class QueryableExtensions
 {
     extension(IQueryable<TodoList> query)
     {
-        public IQueryable<TodoList> ByTodoList(Guid listId) => query.Where(l => l.Id == listId);
+        public Task<TodoList?> ByTodoList(Guid listId, CancellationToken ctx = default) => query.Where(l => l.Id == listId).SingleOrDefaultAsync(ctx);
     }
     extension(IQueryable<TaskEntry> query)
     {
         public IQueryable<TaskEntry> ForTodoList(Guid listId) => query.Where(l => l.TodoListId == listId);
-        public IQueryable<TaskEntry> ByTask(Guid taskId) => query.Where(l => l.Id == taskId);
+        public Task<TaskEntry?> ByTask(Guid taskId, CancellationToken ctx = default) => query.Where(l => l.Id == taskId).SingleOrDefaultAsync(ctx);
     }
 
     extension<T>(IQueryable<T> query)

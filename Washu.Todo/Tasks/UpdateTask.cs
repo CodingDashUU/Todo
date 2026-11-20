@@ -1,57 +1,62 @@
-﻿namespace Washu.Todo.Application;
+﻿namespace Washu.Todo.Tasks;
 
-using Framework.Identity.Users;
+using FluentValidation;
+using Framework;
+using Framework.Identity;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using Persistence;
+using TodoList;
 using Washu.Framework.Extensions;
-using Washu.Framework.Identity.Presentation;
+using Washu.Framework.Identity.Users;
 using Washu.Framework.Notifications;
 using Washu.Todo.Extensions;
-using Washu.Todo.Persistence;
 
+[UniqueViolationMessage("Task with the given name already exists")]
 public sealed record UpdateTaskCommand(
-    Guid TaskId,
+    TaskEntry Task,
     string NewTaskName,
     DateTimeOffset NewGoalDate,
-    Guid ListId,
-    uint ListRowVersion) : ICommand<Message>;
+    TodoList List) : ICommand<Result>;
 public sealed class UpdateTaskHandler(
     IDbContextFactory<TodoDbContext> factory,
-    GetUserService getUserService
-    ) : ICommandHandler<UpdateTaskCommand, Message>
+    CurrentUser user
+    ) : ICommandHandler<UpdateTaskCommand, Result>
 {
-    public async ValueTask<Message> Handle(UpdateTaskCommand command, CancellationToken ctx = new())
+    public async ValueTask<Result> Handle(UpdateTaskCommand command, CancellationToken ctx = new())
     {
+        if (await user.GetUserIdAsync() is not { } userId) return UserErrors.UserIdNotFound;
         await using var dbContext = await factory.CreateDbContextAsync(ctx);
-        var list = await dbContext.TodoLists.ForUser(await getUserService.GetUserIdAsync()).ByTodoList(command.ListId).SingleOrDefaultAsync(ctx);
-        var task = await  dbContext.Tasks.ForTodoList(command.ListId).ByTask(command.TaskId).SingleOrDefaultAsync(ctx);
+        var list = await dbContext.TodoLists.ForUser(userId).ByTodoList(command.List.Id, ctx);
+        var task = await  dbContext.Tasks.ForTodoList(command.List.Id).ByTask(command.Task.Id, ctx);
         if (list is null)
-            return Message.Error("Toggle Task Error", "Todo list does not exist");
-        if (task is null) return Message.Error(title: "Toggle Task Error", details: "Task does not exist");
+            return TodoErrors.ListNotFound;
+        if (task is null) return TodoErrors.TaskNotFound;
         var taskNameChanged = command.NewTaskName != task.Name;
         var goalDateChanged = command.NewGoalDate != task.GoalDate;
         if (taskNameChanged) task.Name = command.NewTaskName;
         if (goalDateChanged) task.ChangeGoalDate(command.NewGoalDate);
         if (taskNameChanged || goalDateChanged)
-            dbContext.UpdateEntity(list, command.ListRowVersion);
-        else return Message.Info(
-                title: "Task Modification Info",
-                details: "Task has not been modified");
-        try
-        {
-            await dbContext.SaveChangesAsync(ctx);
-            return Message.Success(
-                    title: "Task Modification",
-                    details: "Successfully modified the task");
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            return Message.Error("Task Update Error", "Your todo list was already modified, please try again");
-        }
-        catch (DbUpdateException ex) when (ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation })
-        {
-            return Message.Error("Task Creation Error", "Task with the given task name already exists");
-        }
+            dbContext.UpdateEntity(list, command.List.RowVersion);
+        else return Result.Unit;
+        await dbContext.SaveChangesAsync(ctx);
+        return Result.Unit;
+    }
+}
+
+public class UpdateTaskValidator : AbstractValidator<UpdateTaskCommand>
+{
+    public UpdateTaskValidator()
+    {
+        RuleFor(m => m.NewTaskName)
+            .SetValidator(new TaskNameValidator())
+            .Unless(m => m.Task.Name == m.NewTaskName);
+        RuleFor(m => m.NewGoalDate)
+            .SetValidator(new GoalDateValidator())
+            .Unless(m => m.Task.GoalDate == m.NewGoalDate);
+        RuleFor(m => m)
+            .Must(m => m.Task.GoalDate != m.NewGoalDate || m.Task.Name != m.NewTaskName)
+            .WithMessage("You have not edited anything. Please edit one of the fields above");
     }
 }

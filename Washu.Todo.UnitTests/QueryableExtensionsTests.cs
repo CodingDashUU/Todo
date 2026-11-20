@@ -2,8 +2,9 @@ using Washu.Todo.Extensions;
 namespace Washu.Todo.UnitTests;
 
 using Components;
-using Domain;
 using FluentAssertions;
+using Tasks;
+using TodoList;
 
 public class QueryableExtensionsTests
 {

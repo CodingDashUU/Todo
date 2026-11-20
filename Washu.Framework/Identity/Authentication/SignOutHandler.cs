@@ -1,12 +1,11 @@
-namespace Washu.Framework.Identity.Login;
+namespace Washu.Framework.Identity.Authentication;
 
-using Blazor;
-using Extensions;
 using Mediator;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
+using Washu.Framework.Extensions;
 
 public sealed record SignOutCommand(HttpContext HttpContext) : ICommand;
 public class SignOutHandler(
@@ -20,7 +19,7 @@ public class SignOutHandler(
         var userId = context.User.UserId;
         if (!userId.HasValue)
             logger.LogWarning("There is no UserId claim for connection {ConnectionId}", context.Connection.Id);
-        await publisher.Publish(new UserSigningOut(context, false), cancellationToken);
+        await publisher.Publish(new UserSigningOutNotification(context, false), cancellationToken);
         await context.SignOutAsync(IdentityConstants.ApplicationScheme);
         if (!logger.IsEnabled(LogLevel.Information)) return Unit.Value;
         if (userId.HasValue)

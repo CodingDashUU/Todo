@@ -2,7 +2,7 @@
 @using global::Radzen.Blazor
 @using Mediator
 @using Washu.Framework.AspNetCore
-@using Washu.Framework.Identity.Login
+@using Washu.Framework.Identity.Authentication
 @using Washu.Framework.Notifications
 @using Washu.Framework.SharedComponents
 @using Washu.Framework.SharedComponents.Notifications
@@ -29,32 +29,35 @@
             [nameof(ChangeUsernameDialog.UserVersionId)] = User.RowVersion
         };
         var data = await DialogService.OpenAsync<ChangeUsernameDialog>("Change Username", parameters);
-        if (data is not ChangeUsernameCommand command) return;
-        var result = await Mediator.Send(command);
+        if (data is not Result result) return;
         switch (result)
         {
-            case AccountNotFound:
-            {
-                var id = Store.Store(Message.Error("Identity Error", AccountNotFound.Message));
-                NavManager.NavigateTo($"{IdentityRoutes.SignOut}?messageId={id}", forceLoad: true);
-                return;
-            }
-            case UserAlreadyModified:
-                NotificationService.Show(Message.Error("Identity Error", UserAlreadyModified.Message));
+                
+            case Result.UnitValue:
+                var message = Message.Success("Identity Success", "Successfully changed username");
+                NotificationService.Show(message);
                 await OnRefreshUserAsync();
                 return;
-        }
-
-        var message = result switch
-        {
-            UsernameTaken => Message.Error("Identity Error", UsernameTaken.Message),
-            ChangeUsernameSuccess => Message.Success("Identity Success", ChangeUsernameSuccess.Message),
-            _ => throw new ArgumentOutOfRangeException()
-        };
-        NotificationService.Show(message);
-        if (message.Type is MessageType.Success)
-        {
-            await OnRefreshUserAsync();
+            case Error err:
+            {
+                message = Message.Error("Change Username Error", err.Description);
+                switch (err.Code)
+                {
+                    case UserErrors.Codes.UserNotFound:
+                    {
+                        var id = Store.Store(message);
+                        NavManager.NavigateTo($"{IdentityRoutes.SignOut}?messageId={id}", forceLoad: true);
+                        return;
+                    }
+                    case GenericErrors.Codes.ConcurrencyError:
+                        await OnRefreshUserAsync();
+                        NotificationService.Show(message);
+                        return;
+                    default:
+                        NotificationService.Show(message);
+                        return;
+                }
+            }
         }
     }
                   

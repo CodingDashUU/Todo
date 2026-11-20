@@ -5,7 +5,7 @@
 @using Radzen.Blazor
 @using Washu.Framework.Blazor
 @using Washu.Framework.Extensions
-@using Washu.Framework.Identity.Login
+@using Washu.Framework.Identity.Authentication
 @using Washu.Framework.Identity.Presentation
 @using Washu.Framework.Identity.Users
 @inject UserTimeZoneProvider TimeZoneProvider
@@ -179,7 +179,7 @@
             Account Action
         </RadzenText>
         <!-- Danger Zone -->
-        <DeleteUserSection User="User" />
+        <DeleteUserSection User="User" OnRefreshUserAsync="RefreshUserAsync"/>
 
     </RadzenStack>
 </RadzenCard>
@@ -199,7 +199,7 @@
     
     private async Task RefreshUserAsync()
     {
-        User = await GetUserService.GetOrRedirectAsync(ApplicationRoutes.ManageAccount);
+        User = await GetUserService.GetOrRedirectAsync();
         await InvokeAsync(StateHasChanged);
     }
     

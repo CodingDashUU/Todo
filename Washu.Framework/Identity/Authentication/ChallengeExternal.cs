@@ -1,13 +1,13 @@
-namespace Washu.Framework.Identity.Login;
+namespace Washu.Framework.Identity.Authentication;
 
-using Extensions;
 using Mediator;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
-using Persistence;
+using Washu.Framework.Extensions;
+using Washu.Framework.Identity.Persistence;
 
 public sealed record ChallengeExternalCommand(string ReturnUrl, bool ShouldPersistCookie) : ICommand<ChallengeExternalResult>;
 
@@ -42,4 +42,4 @@ public sealed class ChallengeExternalHandler(
 
 public sealed record AlreadySignedIn(string ReturnUrl);
 public sealed record ShouldChallenge(AuthenticationProperties Properties);
-public readonly union ChallengeExternalResult(AlreadySignedIn, ShouldChallenge);
+public union ChallengeExternalResult(AlreadySignedIn, ShouldChallenge);

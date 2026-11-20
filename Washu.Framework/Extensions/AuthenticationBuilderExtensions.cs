@@ -4,7 +4,7 @@ namespace Washu.Framework.Extensions;
 
 using Blazor;
 using Identity;
-using Identity.Login;
+using Identity.Authentication;
 using Mediator;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -77,16 +77,13 @@ public static class AuthenticationBuilderExtensions
             options.ClientSecret = configuration.GetSection("ExternalProviders:Google:ClientSecret").Value!;
             options.CorrelationCookie.SameSite = SameSiteMode.Lax;
             options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
+            options.CorrelationCookie.MaxAge = TimeSpan.FromMinutes(30);
             options.SignInScheme = IdentityConstants.ExternalScheme;
-            options.Events.OnRemoteFailure = context =>
+            options.Events.OnRemoteFailure = async context =>
             {
                 using var scope = context.HttpContext.RequestServices.CreateScope();
-                var messageStore = scope.ServiceProvider.GetRequiredService<MessageStore>();
-                var id = messageStore.Store(Message.Error("External Identity Error",
-                    "There was a problem signing in your account, please try again"));
-                context.Response.Redirect($"{ApplicationRoutes.SignIn}?messageId={id}");
-                context.HandleResponse();
-                return Task.CompletedTask;
+                var publisher = scope.ServiceProvider.GetRequiredService<IPublisher>();
+                await publisher.Publish(new RemoteFailureNotification(context));
             };
         });
     }

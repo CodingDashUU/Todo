@@ -1,23 +1,28 @@
-namespace Washu.Todo.Application;
+namespace Washu.Todo.TodoList;
 
-using Components;
-using Domain;
+using Framework;
+using Framework.Identity.Users;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
+using Persistence;
 using Washu.Framework.Extensions;
+using Washu.Todo.Components;
 using Washu.Todo.Extensions;
-using Washu.Todo.Persistence;
 
-public sealed record GetListsQuery(Guid UserId, LoadDataConfig Config) : IQuery<GetListsResponse>;
-public class GetListsHandler(IDbContextFactory<TodoDbContext> factory) : IQueryHandler<GetListsQuery, GetListsResponse>
+public sealed record GetListsQuery(LoadDataConfig Config) : IQuery<Result<GetListsResponse>>;
+public class GetListsHandler(
+    IDbContextFactory<TodoDbContext> factory,
+    CurrentUser user
+    ) : IQueryHandler<GetListsQuery, Result<GetListsResponse>>
 {
-    public async ValueTask<GetListsResponse> Handle(GetListsQuery query, CancellationToken ctx = new())
+    public async ValueTask<Result<GetListsResponse>> Handle(GetListsQuery query, CancellationToken ctx = new())
     {
         var response = new GetListsResponse();
+        if (await user.GetUserIdAsync() is not { } userId) return UserErrors.UserIdNotFound;
         await using var context = await factory.CreateDbContextAsync(ctx);
         var dbQuery = await context.TodoLists
             .AsNoTracking()
-            .ForUser(query.UserId)
+            .ForUser(userId)
             .OrderByDescending(e => e.LastModifiedDate.HasValue)
             .ThenByDescending(e => e.LastModifiedDate)
             .ThenByDescending(e => e.CreationDate)

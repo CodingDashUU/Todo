@@ -19,5 +19,7 @@ public class ApplicationDbContext(DbContextOptions options)
     {
         modelBuilder.HasPostgresExtension("citext");
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+        if (Assembly.GetEntryAssembly() is {} assembly)
+            modelBuilder.ApplyConfigurationsFromAssembly(assembly);
     }
 }

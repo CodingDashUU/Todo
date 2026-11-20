@@ -1,12 +1,10 @@
 @using FluentValidation
 @using Washu.Framework.SharedComponents
-@using Washu.Todo.Application
-@using Washu.Todo.Domain
-@using TodoList = Washu.Todo.Domain.TodoList
+@using Washu.Todo.TodoList
+@using TodoList = Washu.Todo.TodoList.TodoList
 @inject DialogService DialogService
 <ApplicationForm
     Model="_model"
-    Validator="_validator"
     SubmitButtonConfig="ButtonConfig"
     HandleValidSubmit="CloseDialog">
     <RadzenFormField Text="New List Name">
@@ -17,7 +15,6 @@
 </ApplicationForm>
 @code {
     private readonly Model _model = new();
-    private Validator _validator = null!;
     private static readonly SubmitButtonConfig ButtonConfig = new()
     {
         ButtonText = "Update List",
@@ -28,26 +25,16 @@
     protected override void OnInitialized()
     {
         _model.NewListName = OldList.Name;
-        _validator = new Validator(OldList);
     }
 
     private void CloseDialog()
     {
-        var command = new UpdateListCommand(OldList.Id, OldList.RowVersion, _model.NewListName);
+        var command = new UpdateListCommand(OldList, _model.NewListName);
         DialogService.Close(command);
     }
 
     private class Model
     {
         public string NewListName { get; set; } = string.Empty;
-    }
-    private class Validator : AbstractValidator<Model>
-    {
-        public Validator(TodoList oldList) =>
-            RuleFor(m => m.NewListName)
-                .SetValidator(new ListNameValidator())
-                .Must(m => IsDifferent(oldList.Name, m)).WithMessage("New name must be different from the old name");
-        
-        private static bool IsDifferent(string oldName, string newName) => oldName != newName;
     }
 }

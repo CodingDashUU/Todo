@@ -1,7 +1,8 @@
 namespace Washu.Todo.UnitTests;
 
-using Domain;
 using FluentAssertions;
+using Tasks;
+using TodoList;
 
 public class TodoValidatorsTests
 {

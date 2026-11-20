@@ -1,4 +1,4 @@
-﻿namespace Washu.Todo.Domain;
+﻿namespace Washu.Todo.Tasks;
 
 /// <summary>
 /// The core model of the To-do app, contains all the properties and methods that will be stored in the database, or any type of data structure relating to a set of Tasks.

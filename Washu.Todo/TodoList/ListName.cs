@@ -1,4 +1,4 @@
-namespace Washu.Todo.Domain;
+namespace Washu.Todo.TodoList;
 
 using FluentValidation;
 using Washu.Framework.Constants;

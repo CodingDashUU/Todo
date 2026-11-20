@@ -1,17 +1,15 @@
-﻿@using FluentValidation
-@using Washu.Framework.Extensions
-@using Washu.Framework.Identity
+﻿@using Washu.Framework.Extensions
 @using Washu.Framework.Identity.Users
 @using Washu.Framework.SharedComponents
-@using Washu.Todo.Application
-@using Washu.Todo.Domain
+@using Washu.Todo.Tasks
+@using Washu.Todo.TodoList
 @inject UserTimeZoneProvider TimeZoneProvider
-@inject DialogService DialogService
+@inherits FormDialog<TaskUpdateDialog.Model>
 <ApplicationForm
+    @ref="Form"
     Model="_model"
-    Validator="_validator"
     SubmitButtonConfig="_submitButtonConfig"
-    HandleValidSubmit="CloseDialog"
+    HandleValidSubmit="_ => CloseDialog(new UpdateTaskCommand(OldEntry, _model.NewTaskName, _model.NewGoalDate, List))"
     >
     <RadzenFormField Text="New Task Name">
         <RadzenTextBox @bind-Value="_model.NewTaskName"/>
@@ -26,43 +24,20 @@
 </ApplicationForm>
 @code {
     private readonly Model _model = new();
-    private Validator _validator = null!;
     private readonly SubmitButtonConfig _submitButtonConfig = new()
     {
         ButtonText = "Update Task"
     };
     [Parameter, EditorRequired] public TaskEntry OldEntry { get; set; }
-    [Parameter, EditorRequired] public Guid ListId { get; set; }
-    [Parameter, EditorRequired] public uint ListVersionId { get; set; }
-   
+    [Parameter, EditorRequired] public TodoList List { get; set; }
     protected override void OnInitialized()
     {
         _model.NewGoalDate = OldEntry.GoalDate.ToTimeZone(TimeZoneProvider.TimeZoneInfo);
         _model.NewTaskName = OldEntry.Name;
-        _validator = new Validator(OldEntry);
     }
-    private void CloseDialog()
-    {
-        var command = new UpdateTaskCommand(OldEntry.Id, _model.NewTaskName, _model.NewGoalDate, ListId, ListVersionId);
-        DialogService.Close(command);
-    }
-
-    private class Model
+    public class Model
     {
         public string NewTaskName { get; set; } = string.Empty;
         public DateTimeOffset NewGoalDate { get; set; }
-    }
-    private class Validator : AbstractValidator<Model>
-    {
-        public Validator(TaskEntry oldEntry)
-        {
-            RuleFor(m => m.NewTaskName)
-                .SetValidator(new TaskNameValidator())
-                .Unless(m => oldEntry.Name == m.NewTaskName);
-            RuleFor(m => m.NewGoalDate)
-                .SetValidator(new GoalDateValidator())
-                .Unless(m => oldEntry.GoalDate == m.NewGoalDate);
-        }
-
     }
 }

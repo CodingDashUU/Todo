@@ -1,9 +1,8 @@
-namespace Washu.Todo.Persistence;
+namespace Washu.Todo.Tasks;
 
-using Domain;
-using Framework.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Washu.Framework.Extensions;
 
 public class TaskEntryConfiguration : IEntityTypeConfiguration<TaskEntry>
 {

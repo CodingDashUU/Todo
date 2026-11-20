@@ -2,13 +2,12 @@ using Washu.Todo.Persistence;
 
 namespace Washu.Todo.IntegrationTests;
 
-using Application;
-using Domain;
 using FluentAssertions;
 using Framework.Identity.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using TickerQ.Utilities.Base;
+using TodoList;
 using Xunit;
 
 [Collection(TodoPostgreSqlTestCollection.Name)]

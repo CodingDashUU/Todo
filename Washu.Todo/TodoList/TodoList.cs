@@ -1,7 +1,8 @@
-﻿namespace Washu.Todo.Domain;
+﻿namespace Washu.Todo.TodoList;
 
-using Framework.Identity.Users;
+using Tasks;
 using Washu.Framework.Entities;
+using Washu.Framework.Identity.Users;
 
 public class TodoList(Guid userId, string listName) : IOwnedByUser, IAuditableEntity, ISoftDeletableEntity, INamedEntity
 {

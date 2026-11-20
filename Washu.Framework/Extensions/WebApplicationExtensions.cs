@@ -1,8 +1,6 @@
 using FluentValidation;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Serilog;
 using Serilog.Events;
-using Serilog.Formatting.Json;
 using Washu.Framework.Identity.Persistence;
 
 namespace Washu.Framework.Extensions;
@@ -10,20 +8,17 @@ namespace Washu.Framework.Extensions;
 using AspNetCore;
 using Blazor;
 using Identity;
-using Identity.Login;
+using Identity.Authentication;
 using Identity.Roles;
 using Identity.Users;
 using Mediator;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+using System.Reflection;
 using TickerQ.DependencyInjection;
 
 public static class WebApplicationExtensions
@@ -53,9 +48,9 @@ public static class WebApplicationExtensions
             app.UseRateLimiter();
             app.UseAuthentication();
             app.UseAuthorization();
-            app.MapExternalEndpoints();
             app.MapWfHealthChecks();
-            app.MapSignOutEndpoints();
+            ExternalEndpoints.AddRoutes(app);
+            SignOutEndpoints.AddRoutes(app);
         }
 
         public void MapWfRazorComponents<TApp>()
@@ -95,28 +90,6 @@ public static class WebApplicationExtensions
                     await context.Response.WriteAsJsonAsync(json);
                 }
             }).RequirePermission(CorePermissions.CanCheckSystemHealth);
-        internal void MapSignOutEndpoints()
-        {
-            app.MapGet(IdentityRoutes.SignOut, async (HttpContext context, IMediator mediator, [FromQuery] string? messageId) =>
-                {
-                    await mediator.Send(new SignOutCommand(context));
-                    var redirectUrl = string.IsNullOrWhiteSpace(messageId)
-                        ? ApplicationRoutes.SignIn
-                        : $"{ApplicationRoutes.SignIn}?messageId={messageId}";
-                    return TypedResults.Redirect(redirectUrl);
-                })
-                .RequireRateLimiting(RateLimiterPolicy.StandardRateLimiter);
-            app.MapGet(IdentityRoutes.SignOutFromAllSessions, async (HttpContext context,  IMediator mediator,[FromQuery] string? messageId) =>
-                {
-                    await mediator.Send(new SignOutFromAllSessionsCommand(context));
-                    var targetUrl = string.IsNullOrWhiteSpace(messageId)
-                        ? ApplicationRoutes.SignIn
-                        : $"{ApplicationRoutes.SignIn}?messageId={messageId}";
-
-                    return TypedResults.Redirect(targetUrl);
-                })
-                .RequireRateLimiting(RateLimiterPolicy.StandardRateLimiter);
-        }
     }
 
     extension(WebApplication)
@@ -141,6 +114,9 @@ public static class WebApplicationExtensions
                 var options = new WfApplicationOptions();
                 configureOptions?.Invoke(options);
                 ValidatorOptions.Global.DefaultRuleLevelCascadeMode = CascadeMode.Stop;
+                var assemblies = new List<Assembly> { Assembly.GetExecutingAssembly() };
+                if (Assembly.GetEntryAssembly() is {} entryAssembly) assemblies.Add(entryAssembly);
+                builder.Services.AddValidatorsFromAssemblies(assemblies, filter: r => r.ValidatorType.IsPublic);
                 builder.Host.UseWfLogging();
                 builder.Services.AddHttpContextAccessor();
                 builder.Services.AddWfRateLimiting();
@@ -169,9 +145,11 @@ public static class WebApplicationExtensions
                 app.UseTickerQ();
                 app.MapWfRazorComponents<TApp>();
                 await app.SeedRolesAsync([.. InitialUserRoles.Roles]);
-                await app.SeedPermissionsAsync(
-                    new PermissionRequest(CorePermissions.CanCheckSystemHealth, InitialUserRoles.Admin), 
-                    new PermissionRequest(CorePermissions.CanCheckBackgroundJobDashboard, InitialUserRoles.Admin));
+                await using var serviceScope = app.Services.CreateAsyncScope();
+                var mediator = serviceScope.ServiceProvider.GetRequiredService<IMediator>();
+                await mediator.Send(new AddRolesCommand(InitialUserRoles.Roles));
+                await mediator.Send(new AddPermissionsCommand([new PermissionRequest(CorePermissions.CanCheckSystemHealth, InitialUserRoles.Admin), 
+                    new PermissionRequest(CorePermissions.CanCheckBackgroundJobDashboard, InitialUserRoles.Admin)]));
                 await app.RunAsync();
             }
             catch (Exception ex)

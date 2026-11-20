@@ -1,5 +1,7 @@
+@using System.Diagnostics
 @using Humanizer
 @using Mediator
+@using Washu.Framework
 @using Washu.Framework.Extensions
 @using Washu.Framework.Identity.Presentation
 @using Washu.Framework.Identity.Users
@@ -8,9 +10,9 @@
 @using Washu.Framework.SharedComponents
 @using Washu.Framework.SharedComponents.DataGrid
 @using Washu.Framework.SharedComponents.Notifications
-@using Washu.Todo.Application
-@using Washu.Todo.Domain
 @using Washu.Todo.Extensions
+@using Washu.Todo.Tasks
+@using Washu.Todo.TodoList
 @inject IMediator Sender
 @inject UserTimeZoneProvider TimeZoneProvider
 @inject GetUserService GetUserService
@@ -200,7 +202,6 @@
     private int _listsCount;
     private bool _isListsDataLoading;
     private Task? _initTask;
-    private Guid _userId;
     private bool IsNoListSelected => _selectedList.Id == TodoList.None.Id;
     private DataGridFilterHelpers<TaskEntry> FilterHelpers => new(_grid);
     private void ToggleEditing() => _isEditing = !_isEditing;
@@ -208,9 +209,9 @@
     private async Task OnToggleTaskAsync(TaskEntry entry)
     {
         var command = new ToggleTaskCommand(entry.Id, _selectedList.Id, _selectedList.RowVersion);
-        var message = await Sender.Send(command);
-        if (message.Type is not MessageType.Success)
-            NotificationService.Show(message, duration: RadzenNotificationConstants.ShortDuration);
+        var result = await Sender.Send(command);
+        if (result is Error err)
+            NotificationService.Show(Message.Error("Toggle Task Error", err.Description), duration: RadzenNotificationConstants.ShortDuration);
         
         await RefreshStateAsync(_selectedList.Id);
     }
@@ -228,12 +229,12 @@
             : TaskCompletionState.Completed;
     }
 
-    private static string DetermineCssVarColour(double percentage) => percentage switch
+    private static string DetermineCssVarColour(double percentage)
     {
-        > 0.0 and < 1.0 => "var(--rz-warning)",
-        >= 1.0 => "var(--rz-success)",
-        _ => "var(--rz-danger)"
-    };
+        var clamped = Math.Clamp(percentage, 0.0, 1.0);
+        var hue = (int)Math.Round(clamped * 120);
+        return $"hsl({hue}, 85%, 45%)";
+    }
 
     private static double ToRoundedPresentablePercentage(double percentage) => Math.Round(percentage * 100.0, 2);
     private async Task OnDeleteTaskAsync(TaskEntry entry)
@@ -245,29 +246,36 @@
         if (confirmData != true) return;
 
         var command = new DeleteTaskCommand(entry.Id, _selectedList.Id, _selectedList.RowVersion);
-        var message = await Sender.Send(command);
-        NotificationService.Show(message);
+        var result = await Sender.Send(command);
+        NotificationService.Show(result switch
+        {
+            Result.UnitValue => Message.Success("Delete Task", "Successfully deleted task"),
+            Error err => Message.Error("Delete Task Error", err.Description),  
+            null => throw new UnreachableException()
+        });
         
         await RefreshStateAsync(_selectedList.Id);
     }
 
     private async Task OnEditTaskAsync(TaskEntry entry)
     {
-        var parameters = new Dictionary<string, object?>(3)
+        var parameters = new Dictionary<string, object?>(2)
         {
             [nameof(TaskUpdateDialog.OldEntry)] = entry,
-            [nameof(TaskUpdateDialog.ListId)] = _selectedList.Id,
-            [nameof(TaskUpdateDialog.ListVersionId)] = _selectedList.RowVersion
+            [nameof(TaskUpdateDialog.List)] = _selectedList
         };
-        var result = await DialogService.OpenAsync<TaskUpdateDialog>("Update Task", parameters);
-        if (result is not UpdateTaskCommand command) return;
-
-        var message = await Sender.Send(command);
-        NotificationService.Show(message);
-
+        var data = await DialogService.OpenAsync<TaskUpdateDialog>("Update Task", parameters);
+        if (data is not Result result) return;
+        NotificationService.Show(result switch
+        {
+            Result.UnitValue => Message.Success("Update Task", "Successfully edited task"),
+            Error err => Message.Error("Update Task Error", err.Description),  
+            null => throw new UnreachableException()
+        });
+        
         await RefreshStateAsync(_selectedList.Id);
     }
-
+    
     private static readonly LoadDataArgs DefaultListsLoadDataArgs = new()
     {
         Skip = 0,
@@ -277,8 +285,7 @@
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
-        var info = await GetUserService.GetOrRedirectAsync(ApplicationRoutes.ManageAccount);
-        _userId = info.Id;
+        await GetUserService.GetOrRedirectAsync();
         _initTask = LoadListsAsync(DefaultListsLoadDataArgs);
     }
 
@@ -290,34 +297,49 @@
         if (!confirmData) return;
 
         var command = new DeleteListCommand(list.Id);
-        var message = await Sender.Send(command);
-        NotificationService.Show(message);
-
-        await RefreshStateAsync();
+        var result = await Sender.Send(command);
+        NotificationService.Show(result switch
+        {
+            Result.UnitValue => Message.Success("Delete List", "Successfully deleted list"),
+            Error err => Message.Error("Delete List Error", err.Description),  
+            null => throw new UnreachableException()
+        });
+        
+        await RefreshStateAsync(_selectedList.Id);
     }
 
     private async Task CreateListAsync()
     {
-        var result = await DialogService.OpenAsync<ListCreationDialog>("Create List");
-        if (result is not CreateListCommand command) return;
+        var data = await DialogService.OpenAsync<ListCreationDialog>("Create List");
+        if (data is not CreateListCommand command) return;
 
-        var message = await Sender.Send(command);
-        NotificationService.Show(message);
-
-        await RefreshStateAsync(); 
+        var result = await Sender.Send(command);
+        NotificationService.Show(result switch
+        {
+            Result.UnitValue => Message.Success("Create List", "Successfully created list"),
+            Error err => Message.Error("Create List Error", err.Description),  
+            null => throw new UnreachableException()
+        });
+        
+        await RefreshStateAsync(_selectedList.Id);
     }
 
     private async Task CreateTaskAsync(TodoList list)
     {
-        var parameters = new Dictionary<string, object?>(2)
+        var parameters = new Dictionary<string, object?>(1)
         {
-            [nameof(TaskCreationDialog.ListId)] = list.Id, 
-            [nameof(TaskCreationDialog.ListVersionId)] = list.RowVersion
+            [nameof(TaskCreationDialog.List)] = list
         };
-        var result = await DialogService.OpenAsync<TaskCreationDialog>("Create Task", parameters);
-        if (result is not CreateTaskCommand command) return;
+        var data = await DialogService.OpenAsync<TaskCreationDialog>("Create Task", parameters);
+        if (data is not CreateTaskCommand command) return;
 
-        var message = await Sender.Send(command);
+        var result = await Sender.Send(command);
+        var message = result switch
+        {
+            Error e => Message.Error("Create Task Error", e.Description),
+            Result.UnitValue => Message.Success("Create Task Success", "Successfully created task"),
+            null => throw new UnreachableException()
+        };
         NotificationService.Show(message);
 
         await RefreshStateAsync(list.Id);
@@ -339,10 +361,16 @@
         {
             [nameof(ListUpdateDialog.OldList)] = list
         };
-        var result = await DialogService.OpenAsync<ListUpdateDialog>("Update List", parameters);
-        if (result is not UpdateListCommand command) return;
+        var data = await DialogService.OpenAsync<ListUpdateDialog>("Update List", parameters);
+        if (data is not UpdateListCommand command) return;
 
-        var message = await Sender.Send(command);
+        var result = await Sender.Send(command);
+        var message = result switch
+        {
+            Error e => Message.Error("Update List Error", e.Description),
+            Result.UnitValue => Message.Success("Update List Success", "Successfully updated list"),
+            null => throw new UnreachableException()
+        };
         NotificationService.Show(message);
 
         await RefreshStateAsync(list.Id);
@@ -359,9 +387,16 @@
         try
         {
             _isListsDataLoading = true;
-            var response = await Sender.Send(new GetListsQuery(_userId, LoadDataConfig.FromRadzenArgs(args)));
-            _lists = response.Lists;
-            _listsCount = response.Count;
+            var result = await Sender.Send(new GetListsQuery(LoadDataConfig.FromRadzenArgs(args)));
+            if (result is GetListsResponse response)
+            {
+                _lists = response.Lists;
+                _listsCount = response.Count;
+            }
+            else if (result is Error { Code: UserErrors.Codes.UserIdNotFound })
+            {
+                await GetUserService.GetOrRedirectAsync();
+            }
         }
         catch (Exception)
         {

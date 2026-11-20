@@ -1,33 +1,31 @@
-namespace Washu.Todo.Application;
+namespace Washu.Todo.TodoList;
 
-using Framework.Identity.Users;
+using Framework;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
+using Persistence;
 using Washu.Framework.Extensions;
-using Washu.Framework.Identity.Presentation;
+using Washu.Framework.Identity.Users;
 using Washu.Framework.Notifications;
 using Washu.Todo.Extensions;
-using Washu.Todo.Persistence;
 
-public sealed record DeleteListCommand(Guid ListId) : ICommand<Message>;
+public sealed record DeleteListCommand(Guid ListId) : ICommand<Result>;
 
 public sealed class DeleteListHandler(
     IDbContextFactory<TodoDbContext> factory,
-    GetUserService getUserService
-    ) : ICommandHandler<DeleteListCommand, Message>
+    CurrentUser user
+    ) : ICommandHandler<DeleteListCommand, Result>
 {
-    public async ValueTask<Message> Handle(DeleteListCommand command, CancellationToken ctx = new())
+    public async ValueTask<Result> Handle(DeleteListCommand command, CancellationToken ctx = new())
     {
+        if (await user.GetUserIdAsync() is not { } userId) return UserErrors.UserIdNotFound;
         await using var dbContext = await factory.CreateDbContextAsync(ctx);
         var todoList = await dbContext.TodoLists
-            .ForUser(await getUserService.GetUserIdAsync())
-            .ByTodoList(command.ListId)
-            .FirstOrDefaultAsync(ctx);
-        if (todoList is null) return Message.Error("List Deletion Error", "List was not found");
+            .ForUser(userId)
+            .ByTodoList(command.ListId, ctx);
+        if (todoList is null) return TodoErrors.ListNotFound;
         todoList.SoftDelete();
-        var rowsChanged = await dbContext.SaveChangesAsync(ctx);
-        return rowsChanged != 1 
-            ? Message.Error("List Deletion Error", "List was not found") 
-            : Message.Success("List Deletion Success", "Successfully deleted list");
+        await dbContext.SaveChangesAsync(ctx);
+        return Result.Unit;
     }
 }

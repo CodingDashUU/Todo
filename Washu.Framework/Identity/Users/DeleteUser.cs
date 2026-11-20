@@ -1,20 +1,22 @@
 namespace Washu.Framework.Identity.Users;
 
+using Extensions;
+using FluentValidation;
 using Mediator;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Persistence;
 
-public sealed record DeleteUserCommand(Guid UserId) : ICommand<DeleteUserResult>;
+public sealed record DeleteUserCommand(Guid UserId, uint UserRowVersion, string Email) : ICommand<Result>;
 
-public readonly record struct UserDeleted(Guid UserId) : INotification;
+public readonly record struct UserDeletedNotification(Guid UserId) : INotification;
 
 public sealed class DeleteUserHandler(
     IDbContextFactory<ApplicationDbContext> factory, 
     IPublisher publisher,
-    ILogger<DeleteUserHandler> logger) : ICommandHandler<DeleteUserCommand, DeleteUserResult>
+    ILogger<DeleteUserHandler> logger) : ICommandHandler<DeleteUserCommand, Result>
 {
-    public async ValueTask<DeleteUserResult> Handle(DeleteUserCommand command, CancellationToken ctx = default)
+    public async ValueTask<Result> Handle(DeleteUserCommand command, CancellationToken ctx = default)
     {
         await using var dbContext = await factory.CreateDbContextAsync(ctx);
         var user = await dbContext.Users
@@ -22,21 +24,21 @@ public sealed class DeleteUserHandler(
             .FirstOrDefaultAsync(ctx);
         if (user is null)
         {
-            logger.LogError("User with id {UserId} could not be deleted because it was not found", command.UserId);
-            return new AccountNotFound();
+            logger.LogWarning("User with id {UserId} could not be deleted because it was not found", command.UserId);
+            return UserErrors.UserNotFound;
         }
+        if (user.Email != command.Email)
+            return Error.ValidationError("User.IncorrectEmail", "One or more validation errors",
+                ["The email provided was incorrect"]);
+        if (user.RowVersion != command.UserRowVersion)
+            return GenericErrors.ConcurrencyError;
         user.SoftDelete();
+        dbContext.UpdateRowVersion(user, command.UserRowVersion);
         await dbContext.SaveChangesAsync(ctx);
         if (logger.IsEnabled(LogLevel.Information))
             logger.LogInformation("User with id {UserId} deleted successfully", command.UserId);
-        await publisher.Publish(new UserDeleted(command.UserId), ctx);
-        return new DeleteUserSuccess();
+        await publisher.Publish(new UserDeletedNotification(command.UserId), ctx);
+        return Result.Unit;
     }
 }
-
-public readonly struct DeleteUserSuccess
-{
-    public const string Message = "Successfully deleted account";
-}
-public readonly union DeleteUserResult(DeleteUserSuccess, AccountNotFound);
 
