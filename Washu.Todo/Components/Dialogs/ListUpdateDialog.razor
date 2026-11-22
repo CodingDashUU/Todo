@@ -1,12 +1,12 @@
-@using FluentValidation
 @using Washu.Framework.SharedComponents
 @using Washu.Todo.TodoList
 @using TodoList = Washu.Todo.TodoList.TodoList
-@inject DialogService DialogService
+@inherits FormDialog<ListUpdateDialog.Model>
 <ApplicationForm
+    @ref="Form"
     Model="_model"
     SubmitButtonConfig="ButtonConfig"
-    HandleValidSubmit="CloseDialog">
+    HandleValidSubmit="_ => CloseDialog(new UpdateListCommand(OldList, _model.NewListName))">
     <RadzenFormField Text="New List Name">
         <RadzenTextBox Name="@nameof(Model.NewListName)" 
                        @bind-Value="_model.NewListName"
@@ -26,14 +26,7 @@
     {
         _model.NewListName = OldList.Name;
     }
-
-    private void CloseDialog()
-    {
-        var command = new UpdateListCommand(OldList, _model.NewListName);
-        DialogService.Close(command);
-    }
-
-    private class Model
+   public class Model
     {
         public string NewListName { get; set; } = string.Empty;
     }

@@ -12,6 +12,7 @@ using Framework;
 using Framework.Identity;
 using TodoList;
 
+[RequireValidUser]
 [UniqueViolationMessage("Task with the given name already exists")]
 public sealed record CreateTaskCommand(TodoList List, string TaskName, DateTimeOffset GoalDate) : ICommand<Result>;
 
@@ -22,13 +23,13 @@ public sealed class CreateTaskHandler(
 {
     public async ValueTask<Result> Handle(CreateTaskCommand command, CancellationToken ctx = new())
     {
-        if (await user.GetUserIdAsync() is not { } userId) return UserErrors.UserIdNotFound;
+        if ((await user.GetUserAsync()).UserId is not { } userId) return new UserIdNotFoundError();
         await using var dbContext = await dbContextFactory.CreateDbContextAsync(ctx);
         var list = await dbContext.TodoLists
             .ForUser(userId)
             .ByTodoList(command.List.Id, ctx);
         if (list is null)
-            return TodoErrors.ListNotFound;
+            return new NotFoundError(nameof(list));
         var count = await dbContext.Tasks.ForTodoList(command.List.Id).CountAsync(ctx);
         if (count >= 1000) 
             return TodoErrors.ListTooLong;

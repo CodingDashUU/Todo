@@ -1,9 +1,9 @@
-namespace Washu.Todo;
+namespace Washu.Framework.Identity.Users;
 
 using FluentValidation;
-using Framework;
 using Mediator;
-
+using Washu.Framework;
+using Microsoft.Extensions.DependencyInjection;
 public sealed class MessageValidatorBehaviour<TMessage, TResponse>(IServiceScopeFactory scopeFactory) : IPipelineBehavior<TMessage, TResponse>
     where TMessage : IMessage
 {
@@ -18,9 +18,9 @@ public sealed class MessageValidatorBehaviour<TMessage, TResponse>(IServiceScope
         if (validator is null) return await next(message, cancellationToken);
         var result = await validator.ValidateAsync(message, cancellationToken);
         if (result.IsValid) return await next(message, cancellationToken);
-        var validationError = Error.ValidationError("Generic.ValidationError","Validation Error/s", [.. result.Errors.Select(e => e.ErrorMessage)]);
-        if (ReflectionHelper.IsResult<TResponse>()) return ReflectionHelper.CreateErrorInstance<TResponse>(validationError);
-        if (!ReflectionHelper.IsGenericResult<TResponse>()) return await next(message, cancellationToken);
-        return ReflectionHelper.CreateGenericErrorInstance<TResponse>(validationError);
+        var validationError = new ValidationError([.. result.Errors.Select(e => e.ErrorMessage)]);
+        if (!ResultFactory.IsResult<TResponse>() && !ResultFactory.IsGenericResult<TResponse>())
+            return await next(message, cancellationToken);
+        return ResultFactory.Error<TResponse>(validationError);
     }
 }

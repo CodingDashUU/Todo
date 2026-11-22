@@ -9,6 +9,7 @@ using Washu.Framework.Identity.Users;
 using Washu.Framework.Notifications;
 using Washu.Todo.Extensions;
 
+[RequireValidUser]
 public sealed record DeleteTaskCommand(Guid TaskId, Guid ListId, uint ListRowVersion) : ICommand<Result>;
 
 public sealed class DeleteTaskHandler(
@@ -19,7 +20,7 @@ public sealed class DeleteTaskHandler(
     public async ValueTask<Result> Handle(DeleteTaskCommand command, CancellationToken ctx = new())
     {
         await using var dbContext = await factory.CreateDbContextAsync(ctx);
-        if (await user.GetUserIdAsync() is not { } userId) return UserErrors.UserIdNotFound;
+        if ((await user.GetUserAsync()).UserId is not { } userId) return new UserIdNotFoundError();
         var list = await dbContext.TodoLists
             .ForUser(userId)
             .ByTodoList(command.ListId, ctx);
@@ -27,8 +28,8 @@ public sealed class DeleteTaskHandler(
             .ForTodoList(command.ListId)
             .ByTask(command.TaskId, ctx);
         if (list is null)
-            return TodoErrors.ListNotFound;
-        if (task is null) return TodoErrors.TaskNotFound;
+            return new NotFoundError(nameof(list));
+        if (task is null) return new NotFoundError(nameof(task));
         dbContext.UpdateEntity(list, command.ListRowVersion);
         dbContext.Tasks.Remove(task);
         
@@ -36,4 +37,3 @@ public sealed class DeleteTaskHandler(
         return Result.Unit;
     }
 }
-

@@ -1,4 +1,3 @@
-using FluentValidation;
 using Washu.Framework.Extensions;
 using Washu.Framework.Identity;
 using Washu.Framework.Identity.Users;
@@ -15,8 +14,7 @@ await WebApplication.BuildAndRunApplicationAsync<TodoDbContext, App>(args, confi
     {
         builder.Services.AddMediator(opts =>
         {
-            opts.Assemblies = [typeof(ToggleTaskHandler).Assembly, typeof(DeleteUserHandler).Assembly];
-            opts.PipelineBehaviors = [typeof(DatabaseHandlerBehaviour<,>), typeof(MessageValidatorBehaviour<,>)];
+            opts.PipelineBehaviors = [typeof(UserValidatorBehaviour<,>), typeof(MessageValidatorBehaviour<,>), typeof(DatabaseHandlerBehaviour<,>)];
             opts.ServiceLifetime = ServiceLifetime.Scoped;
         });
     };

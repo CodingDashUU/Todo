@@ -8,30 +8,34 @@ using Npgsql;
 using Persistence;
 using Washu.Framework.Extensions;
 
+[RequireValidUser]
 [UniqueViolationMessage("This username is taken")]
 public sealed record ChangeUsernameCommand(Guid UserId, uint UserRowVersion, string OldName, string NewName) : ICommand<Result>;
 
 public sealed class ChangeUsernameHandler(
     IDbContextFactory<ApplicationDbContext> factory, 
     IPublisher publisher,
-    ILogger<ChangeUsernameHandler> logger) : ICommandHandler<ChangeUsernameCommand, Result>
+    ILogger<ChangeUsernameHandler> logger,
+    CurrentUser currentUser) : ICommandHandler<ChangeUsernameCommand, Result>
 {
     public async ValueTask<Result> Handle(ChangeUsernameCommand command, CancellationToken ct = default)
     {
+        if ((await currentUser.GetUserAsync()).UserId != command.UserId)
+            return new UserNotFoundError();
+
         await using var dbContext = await factory.CreateDbContextAsync(ct);
         var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == command.UserId, ct);
         if (user is null)
         {
             logger.LogWarning("User with id {UserId} not found", command.UserId);
             await publisher.Publish(new UserNotFoundNotification(command.UserId), ct);
-            return UserErrors.UserNotFound;
+            return new UserNotFoundError();
         }
 
         if (user.RowVersion != command.UserRowVersion)
-            return GenericErrors.ConcurrencyError;
-        if (dbContext.Users.Any(u => u.Username == command.NewName))
-            return Error.ValidationError("Generic.AlreadyExists", "One or more validation errors occured",
-                ["This username is taken"]);
+            return new ConcurrencyError();
+        if (await dbContext.Users.AnyAsync(u => u.Username == command.NewName && u.Id != user.Id, ct))
+            return new ValidationError(["This username is taken"]);
         dbContext.UpdateEntity(user, command.UserRowVersion);
         user.Username = command.NewName;
         await dbContext.SaveChangesAsync(ct);

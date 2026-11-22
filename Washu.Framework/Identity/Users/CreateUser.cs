@@ -32,7 +32,7 @@ public sealed class CreateUserHandler(
         if (role is null) 
         {
             logger.LogError("Role {Role} could not be found", InitialUserRoles.User);
-            return GenericErrors.ServerError;
+            return new InternalError();
         }
         
         if (!await dbContext.UserRoles

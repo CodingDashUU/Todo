@@ -51,11 +51,11 @@
         if (data is not Result result) return;
         var message = result switch
         {
-            Error e => Message.Error("Identity Error", e.Description),
-            Result.UnitValue => Message.Success("Identity Success", "Account deleted successfully"),
+            Error e => Message.Error("Identity Error", e.Message),
+            UnitValue => Message.Success("Identity Success", "Account deleted successfully"),
             null => throw new UnreachableException()
         };
-        if (result is not Error { Code: GenericErrors.Codes.ConcurrencyError })
+        if (result is not ConcurrencyError)
         {
             var id = Store.Store(message);  
             NavManager.NavigateTo($"{IdentityRoutes.SignOut}?messageId={id}", forceLoad: true);

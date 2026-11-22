@@ -9,6 +9,7 @@ using Washu.Framework.Extensions;
 using Washu.Todo.Components;
 using Washu.Todo.Extensions;
 
+[RequireValidUser]
 public sealed record GetListsQuery(LoadDataConfig Config) : IQuery<Result<GetListsResponse>>;
 public class GetListsHandler(
     IDbContextFactory<TodoDbContext> factory,
@@ -18,7 +19,7 @@ public class GetListsHandler(
     public async ValueTask<Result<GetListsResponse>> Handle(GetListsQuery query, CancellationToken ctx = new())
     {
         var response = new GetListsResponse();
-        if (await user.GetUserIdAsync() is not { } userId) return UserErrors.UserIdNotFound;
+        if ((await user.GetUserAsync()).UserId is not { } userId) return new UserIdNotFoundError();
         await using var context = await factory.CreateDbContextAsync(ctx);
         var dbQuery = await context.TodoLists
             .AsNoTracking()

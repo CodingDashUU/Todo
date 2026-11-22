@@ -9,7 +9,7 @@
     protected async Task CloseDialog<TCommand>(TCommand command) where TCommand : ICommand<Result>
     {
         var result = await Mediator.Send(command);
-        if (result is Error { Type: ValidationError vErr })
+        if (result is ValidationError vErr)
         {
             Form.SetErrorMessages(vErr.Errors);
             await InvokeAsync(StateHasChanged);

@@ -12,6 +12,7 @@ using Washu.Framework.Identity.Users;
 using Washu.Framework.Notifications;
 using Washu.Todo.Extensions;
 
+[RequireValidUser]
 [UniqueViolationMessage("Todo list with the given name already exists")]
 public sealed record UpdateListCommand(TodoList OldList, string NewListName) : ICommand<Result>;
 public sealed class UpdateListHandler(
@@ -21,15 +22,13 @@ public sealed class UpdateListHandler(
 {
     public async ValueTask<Result> Handle(UpdateListCommand command, CancellationToken ctx = new())
     {
-        if (await user.GetUserIdAsync() is not { } userId) return UserErrors.UserIdNotFound;
+        if ((await user.GetUserAsync()).UserId is not { } userId) return new UserIdNotFoundError();
         await using var dbContext = await factory.CreateDbContextAsync(ctx);
         var todoListQuery = dbContext.TodoLists
             .ForUser(userId);
         var list = await todoListQuery.ByTodoList(command.OldList.Id, ctx);
         if (list is null)
-            return TodoErrors.ListNotFound;
-        if (todoListQuery.Any(l => l.Name == command.NewListName && l.Id != command.OldList.Id))
-            return TodoErrors.ListAlreadyExists;
+            return new NotFoundError(nameof(list));
         dbContext.UpdateEntity(list, command.OldList.RowVersion);
         list.Name =  command.NewListName;
         await dbContext.SaveChangesAsync(ctx);

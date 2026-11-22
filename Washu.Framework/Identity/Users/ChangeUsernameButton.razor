@@ -9,7 +9,6 @@
 @inject DialogService DialogService
 @inject MessageStore Store
 @inject NavigationManager NavManager
-@inject IMediator Mediator
 @inject NotificationService NotificationService
 <RadzenButton Icon="@MaterialIcons.Edit"
               ButtonStyle="ButtonStyle.Primary"
@@ -33,31 +32,25 @@
         switch (result)
         {
                 
-            case Result.UnitValue:
+            case UnitValue:
                 var message = Message.Success("Identity Success", "Successfully changed username");
                 NotificationService.Show(message);
                 await OnRefreshUserAsync();
                 return;
+            case UserNotFoundError:
+                message = Message.Error("Identity Error", "Account not found");
+                var id = Store.Store(message);
+                NavManager.NavigateTo($"{IdentityRoutes.SignOut}?messageId={id}", forceLoad: true);
+                return;
+            case ConcurrencyError:
+                message = Message.Error("Identity Error", "Your account has been modified by another session. Please try again");
+                await OnRefreshUserAsync();
+                NotificationService.Show(message);
+                return;
             case Error err:
-            {
-                message = Message.Error("Change Username Error", err.Description);
-                switch (err.Code)
-                {
-                    case UserErrors.Codes.UserNotFound:
-                    {
-                        var id = Store.Store(message);
-                        NavManager.NavigateTo($"{IdentityRoutes.SignOut}?messageId={id}", forceLoad: true);
-                        return;
-                    }
-                    case GenericErrors.Codes.ConcurrencyError:
-                        await OnRefreshUserAsync();
-                        NotificationService.Show(message);
-                        return;
-                    default:
-                        NotificationService.Show(message);
-                        return;
-                }
-            }
+                message = Message.Error("Identity Error", err.Message);
+                NotificationService.Show(message);
+                return;
         }
     }
                   

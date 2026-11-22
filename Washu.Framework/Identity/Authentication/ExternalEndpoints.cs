@@ -63,7 +63,7 @@ public static class ExternalEndpoints
             var result = await mediator.Send(new CreateUserCommand(email, info.ProviderKey));
             return result switch
             {
-                Error e => RedirectError(Message.Error("Login Error", e.Description)),
+                Error e => RedirectError(Message.Error("Login Error", e.Message)),
                 ApplicationUser u => await SignInAndRedirect(u),
                 null => throw new UnreachableException()
             };

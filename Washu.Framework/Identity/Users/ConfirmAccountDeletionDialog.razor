@@ -37,7 +37,7 @@
     {
         var command = new DeleteUserCommand(UserId, UserRowVersion, _model.Email);
         var result = await Mediator.Send(command);
-        if (result is Error { Type: ValidationError vErr })
+        if (result is ValidationError vErr)
         {
             _form.SetErrorMessages(vErr.Errors);
             await InvokeAsync(StateHasChanged);

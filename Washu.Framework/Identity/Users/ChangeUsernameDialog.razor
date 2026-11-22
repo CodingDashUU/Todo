@@ -1,15 +1,11 @@
-@using FluentValidation
-@using Mediator
-@using Radzen
 @using Radzen.Blazor
 @using Washu.Framework.SharedComponents
-@inject DialogService DialogService
-@inject IMediator Mediator
+@inherits FormDialog<ChangeUsernameDialog.Model>
 <ApplicationForm
-    @ref="_form"
+    @ref="Form"
     Model="_model"
     SubmitButtonConfig="ChangeUsernameButtonConfig"
-    HandleValidSubmit="CloseDialog"
+    HandleValidSubmit="_ => CloseDialog(new ChangeUsernameCommand(UserId, UserVersionId, OldUsername, _model.Username))"
 >
     <RadzenFormField Text="New Username">
         <Start>
@@ -22,7 +18,6 @@
 </ApplicationForm>
 
 @code {
-    private ApplicationForm<Model> _form = null!;
     private readonly Model _model = new();
     [Parameter, EditorRequired] public string OldUsername { get; set; }
     [Parameter, EditorRequired] public Guid UserId { get; set; }
@@ -37,19 +32,7 @@
         base.OnInitialized();
         _model.Username = OldUsername;
     }
-
-    private async Task CloseDialog()
-    {
-        var command = new ChangeUsernameCommand(UserId, UserVersionId, OldUsername, _model.Username);
-        var result = await Mediator.Send(command);
-        if (result is Error { Type: ValidationError vErr })
-        {
-            _form.SetErrorMessages(vErr.Errors);
-            await InvokeAsync(StateHasChanged);
-        }
-        else DialogService.Close(result);
-    }
-    private class Model
+    public class Model
     {
         public string Username { get; set; } = string.Empty;
     }

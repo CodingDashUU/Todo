@@ -13,6 +13,7 @@ using Washu.Framework.Identity.Users;
 using Washu.Framework.Notifications;
 using Washu.Todo.Extensions;
 
+[RequireValidUser]
 [UniqueViolationMessage("Task with the given name already exists")]
 public sealed record UpdateTaskCommand(
     TaskEntry Task,
@@ -26,13 +27,13 @@ public sealed class UpdateTaskHandler(
 {
     public async ValueTask<Result> Handle(UpdateTaskCommand command, CancellationToken ctx = new())
     {
-        if (await user.GetUserIdAsync() is not { } userId) return UserErrors.UserIdNotFound;
+        if ((await user.GetUserAsync()).UserId is not { } userId) return new UserIdNotFoundError();
         await using var dbContext = await factory.CreateDbContextAsync(ctx);
         var list = await dbContext.TodoLists.ForUser(userId).ByTodoList(command.List.Id, ctx);
         var task = await  dbContext.Tasks.ForTodoList(command.List.Id).ByTask(command.Task.Id, ctx);
         if (list is null)
-            return TodoErrors.ListNotFound;
-        if (task is null) return TodoErrors.TaskNotFound;
+            return new NotFoundError(nameof(list));
+        if (task is null) return new NotFoundError(nameof(task));
         var taskNameChanged = command.NewTaskName != task.Name;
         var goalDateChanged = command.NewGoalDate != task.GoalDate;
         if (taskNameChanged) task.Name = command.NewTaskName;

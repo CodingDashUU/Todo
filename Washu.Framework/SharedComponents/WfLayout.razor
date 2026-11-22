@@ -3,7 +3,7 @@
 @using Washu.Framework.Identity.Users
 @using Washu.Framework.SharedComponents.Notifications
 @inject IMediator Mediator
-
+@inject CurrentUser User
 <QueryNotificationHandler />
 <RadzenLayout>
     <RadzenHeader>
@@ -85,11 +85,10 @@
     private bool _sidebarExpanded = true;
     private ErrorBoundary? _errorBoundary;
     private string _email = "";
-    [CascadingParameter] public required Task<AuthenticationState> Context { get; set; }
     protected override async Task OnInitializedAsync()
     {
-        var state = await Context;
-        if (state.User.UserId is not {} userGuid) return;
+        var principal = await User.GetUserAsync();
+        if (principal.UserId is not {} userGuid) return;
         _email = (await Mediator.Send(new FindUserByIdQuery(userGuid)))?.Email ?? "";
     }
     protected override void OnParametersSet()
