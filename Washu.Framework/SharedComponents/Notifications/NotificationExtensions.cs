@@ -12,7 +12,6 @@ public static class NotificationExtensions
             var severity = message.Type switch
             {
                 MessageType.Error => NotificationSeverity.Error,
-                MessageType.Info => NotificationSeverity.Info,
                 MessageType.Success => NotificationSeverity.Success,
                 _ => NotificationSeverity.Error
             };

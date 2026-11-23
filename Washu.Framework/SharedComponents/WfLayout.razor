@@ -2,7 +2,7 @@
 @using Washu.Framework.Extensions
 @using Washu.Framework.Identity.Users
 @using Washu.Framework.SharedComponents.Notifications
-@inject IMediator Mediator
+@inject ISender Sender
 @inject CurrentUser User
 <QueryNotificationHandler />
 <RadzenLayout>
@@ -89,7 +89,7 @@
     {
         var principal = await User.GetUserAsync();
         if (principal.UserId is not {} userGuid) return;
-        _email = (await Mediator.Send(new FindUserByIdQuery(userGuid)))?.Email ?? "";
+        _email = (await Sender.Send(new FindUserByIdQuery(userGuid)))?.Email ?? "";
     }
     protected override void OnParametersSet()
     {

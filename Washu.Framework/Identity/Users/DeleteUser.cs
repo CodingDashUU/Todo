@@ -8,21 +8,17 @@ using Microsoft.Extensions.Logging;
 using Persistence;
 
 [RequireValidUser]
-public sealed record DeleteUserCommand(Guid UserId, uint UserRowVersion, string Email) : ICommand<Result>;
+public sealed record DeleteUserCommand(Guid UserId, uint UserRowVersion, string Email) : ICarriesUserId, ICommand<Result>;
 
 public readonly record struct UserDeletedNotification(Guid UserId) : INotification;
 
 public sealed class DeleteUserHandler(
     IDbContextFactory<ApplicationDbContext> factory, 
     IPublisher publisher,
-    ILogger<DeleteUserHandler> logger,
-    CurrentUser currentUser) : ICommandHandler<DeleteUserCommand, Result>
+    ILogger<DeleteUserHandler> logger) : ICommandHandler<DeleteUserCommand, Result>
 {
     public async ValueTask<Result> Handle(DeleteUserCommand command, CancellationToken ctx = default)
     {
-        if ((await currentUser.GetUserAsync()).UserId != command.UserId)
-            return new UserNotFoundError();
-
         await using var dbContext = await factory.CreateDbContextAsync(ctx);
         var user = await dbContext.Users
             .Where(u => u.Id == command.UserId)

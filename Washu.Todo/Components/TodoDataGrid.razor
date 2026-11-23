@@ -14,12 +14,13 @@
 @using Washu.Todo.Extensions
 @using Washu.Todo.Tasks
 @using Washu.Todo.TodoList
-@inject IMediator Sender
+@inject ISender Sender
 @inject UserTimeZoneProvider TimeZoneProvider
 @inject GetUserService GetUserService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject NavigationManager NavManager
+
 <RadzenDataGrid @ref="_grid" 
                 @bind-Value="@_selectedTasks" 
                 TItem="TaskEntry"
@@ -204,14 +205,23 @@
     private int _listsCount;
     private bool _isListsDataLoading;
     private Task? _initTask;
+    private long _tasksLoadVersion;
     private bool IsNoListSelected => _selectedList.Id == TodoList.None.Id;
     private DataGridFilterHelpers<TaskEntry> FilterHelpers => new(_grid);
     private void ToggleEditing() => _isEditing = !_isEditing;
     private string ToTimeZoneAndString(DateTimeOffset date) => date.ToTimeZone(TimeZoneProvider.TimeZoneInfo).ToString(DataGridConstants.DateTimeFormat, CultureInfo.InvariantCulture);
+    private static bool IsSessionError(Error error) => error is UserNotFoundError or UserIdNotFoundError;
+    private void RedirectToSignIn() => NavManager.NavigateTo(ApplicationRoutes.SignIn, forceLoad: true);
+
     private async Task OnToggleTaskAsync(TaskEntry entry)
     {
         var command = new ToggleTaskCommand(entry.Id, _selectedList.Id, _selectedList.RowVersion);
         var result = await Sender.Send(command);
+        if (result is Error error && IsSessionError(error))
+        {
+            RedirectToSignIn();
+            return;
+        }
         if (result is Error err)
             NotificationService.Show(Message.Error("Toggle Task Error", err.Message), duration: RadzenNotificationConstants.ShortDuration);
         
@@ -228,9 +238,9 @@
 
         var command = new DeleteTaskCommand(entry.Id, _selectedList.Id, _selectedList.RowVersion);
         var result = await Sender.Send(command);
-        if (result is UserNotFoundError)
+        if (result is Error error && IsSessionError(error))
         {
-            NavManager.NavigateTo(ApplicationRoutes.SignIn, forceLoad: true);
+            RedirectToSignIn();
             return;
         }
         NotificationService.Show(result switch
@@ -252,9 +262,9 @@
         };
         var data = await DialogService.OpenAsync<TaskUpdateDialog>("Update Task", parameters);
         if (data is not Result result) return;
-        if (result is UserNotFoundError)
+        if (result is Error error && IsSessionError(error))
         {
-            NavManager.NavigateTo(ApplicationRoutes.SignIn, forceLoad: true);
+            RedirectToSignIn();
             return;
         }
         NotificationService.Show(result switch
@@ -289,9 +299,9 @@
 
         var command = new DeleteListCommand(list.Id);
         var result = await Sender.Send(command);
-        if (result is UserNotFoundError)
+        if (result is Error error && IsSessionError(error))
         {
-            NavManager.NavigateTo(ApplicationRoutes.SignIn, forceLoad: true);
+            RedirectToSignIn();
             return;
         }
         NotificationService.Show(result switch
@@ -308,9 +318,9 @@
     {
         var data = await DialogService.OpenAsync<ListCreationDialog>("Create List");
         if (data is not Result result) return;
-        if (result is UserNotFoundError)
+        if (result is Error error && IsSessionError(error))
         {
-            NavManager.NavigateTo(ApplicationRoutes.SignIn, forceLoad: true);
+            RedirectToSignIn();
             return;
         }
         NotificationService.Show(result switch
@@ -331,9 +341,9 @@
         };
         var data = await DialogService.OpenAsync<TaskCreationDialog>("Create Task", parameters);
         if (data is not Result result) return;
-        if (result is UserNotFoundError)
+        if (result is Error error && IsSessionError(error))
         {
-            NavManager.NavigateTo(ApplicationRoutes.SignIn, forceLoad: true);
+            RedirectToSignIn();
             return;
         }
         var message = result switch
@@ -349,10 +359,11 @@
     
     private async Task RefreshStateAsync(Guid? preferredListId = null)
     {
-        await LoadListsAsync(DefaultListsLoadDataArgs);
+        await _dropDownGrid.Reload();
         
         var listIdToSelect = preferredListId ?? _selectedList.Id;
         _selectedList = _lists.FirstOrDefault(l => l.Id == listIdToSelect) ?? _lists.FirstOrDefault() ?? TodoList.None;
+        _selectedTasks.Clear();
         
         await _grid.Reload();
     }
@@ -365,9 +376,9 @@
         };
         var data = await DialogService.OpenAsync<ListUpdateDialog>("Update List", parameters);
         if (data is not Result result) return;
-        if (result is UserNotFoundError)
+        if (result is Error error && IsSessionError(error))
         {
-            NavManager.NavigateTo(ApplicationRoutes.SignIn, forceLoad: true);
+            RedirectToSignIn();
             return;
         }
         var message = result switch
@@ -384,6 +395,7 @@
     void OnListSelected(TodoList newList)
     {
         _selectedList = newList;
+        _selectedTasks.Clear();
         _grid.FirstPage(forceReload: true);
     }
 
@@ -400,7 +412,12 @@
                     _listsCount = response.Count;
                     break;
                 case UserIdNotFoundError or UserNotFoundError:
-                    NavManager.NavigateTo(ApplicationRoutes.SignIn, forceLoad: true);
+                    RedirectToSignIn();
+                    break;
+                case Error error:
+                    _lists = [];
+                    _listsCount = 0;
+                    NotificationService.Show(Message.Error("Load Lists Error", error.Message));
                     break;
             }
         }
@@ -408,6 +425,7 @@
         {
             _lists = [];
             _listsCount = 0;
+            NotificationService.Show(Message.Error("Load Lists Error", "Unable to load your todo lists. Please try again."));
         }
         finally
         {
@@ -416,8 +434,9 @@
         }
     }
 
-    async Task LoadTasksAsync(LoadDataArgs args)
+    private async Task LoadTasksAsync(LoadDataArgs args)
     {
+        var loadVersion = ++_tasksLoadVersion;
         try
         {
             _isLoading = true;
@@ -432,16 +451,34 @@
             
             if (_selectedList.Id == TodoList.None.Id)
             {
+                if (loadVersion != _tasksLoadVersion) return;
                 _tasks = [];
                 _count = 0;
                 _completedTasks = 0;
                 return;
             }
 
-            var response = await Sender.Send(new GetTasksQuery(_selectedList.Id, LoadDataConfig.FromRadzenArgs(args)));
-            _tasks = response.Tasks;
-            _count = response.Count;
-            _completedTasks = response.CompletedTasks;
+            var selectedListId = _selectedList.Id;
+            var result = await Sender.Send(new GetTasksQuery(selectedListId, LoadDataConfig.FromRadzenArgs(args)));
+            if (loadVersion != _tasksLoadVersion || _selectedList.Id != selectedListId) return;
+
+            switch (result)
+            {
+                case Error error:
+                    if (IsSessionError(error)) RedirectToSignIn();
+                    else NotificationService.Show(Message.Error("Load Tasks Error", error.Message));
+                    _tasks = [];
+                    _count = 0;
+                    _completedTasks = 0;
+                    return;
+                case GetTasksResponse response:
+                    _tasks = response.Tasks;
+                    _count = response.Count;
+                    _completedTasks = response.CompletedTasks;
+                    break;
+                default:
+                    throw new UnreachableException();
+            }
 
             if (_tasks.IsNotEmpty && _selectedTasks.IsEmpty)
             {
@@ -450,13 +487,15 @@
         }
         catch (Exception)
         {
+            if (loadVersion != _tasksLoadVersion) return;
             _tasks = [];
             _count = 0;
             _completedTasks = 0;
+            NotificationService.Show(Message.Error("Load Tasks Error", "Unable to load your tasks. Please try again."));
         }
         finally
         {
-            _isLoading = false;
+            if (loadVersion == _tasksLoadVersion) _isLoading = false;
             await InvokeAsync(StateHasChanged); 
         }
     }

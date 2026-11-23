@@ -13,8 +13,8 @@ public static class EndpointConventionBuilderExtensions
     {
         public IEndpointConventionBuilder RequirePermission(string permission) => builder.AddEndpointFilter(async (context, next) =>
         {
-            var mediator = context.HttpContext.RequestServices.GetRequiredService<IMediator>();
-            if (!await mediator.Send(new HasPermissionQuery(permission)))
+            var sender = context.HttpContext.RequestServices.GetRequiredService<ISender>();
+            if (!await sender.Send(new HasPermissionQuery(permission)))
                 return TypedResults.Forbid();
             return await next(context);
         });

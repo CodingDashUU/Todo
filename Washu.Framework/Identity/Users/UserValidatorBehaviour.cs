@@ -7,7 +7,7 @@ using Washu.Framework.Extensions;
 
 public sealed class UserValidatorBehaviour<TMessage, TResponse>(
     CurrentUser currentUser,
-    IMediator mediator
+    ISender sender
     ) : IPipelineBehavior<TMessage, TResponse>
     where TMessage : IMessage
 {
@@ -20,10 +20,14 @@ public sealed class UserValidatorBehaviour<TMessage, TResponse>(
         if (message.GetType().GetCustomAttribute<RequireValidUserAttribute>() is null ||
             (!ResultFactory.IsResult<TResponse>() && !ResultFactory.IsGenericResult<TResponse>()))
             return await next(message, cancellationToken);
-
         var user = await currentUser.GetUserAsync();
+        
+        if (message is ICarriesUserId carriesUserId)
+            if (user.UserId != carriesUserId.UserId)
+                return ResultFactory.Error<TResponse>(new UserNotFoundError());
+        
         if (user is { UserId: { } userId, SecurityStamp: { } securityStamp } &&
-            await mediator.Send(new FindUserByIdQuery(userId), cancellationToken) is { } applicationUser &&
+            await sender.Send(new FindUserByIdQuery(userId), cancellationToken) is { } applicationUser &&
             applicationUser.SecurityStamp == securityStamp)
             return await next(message, cancellationToken);
 

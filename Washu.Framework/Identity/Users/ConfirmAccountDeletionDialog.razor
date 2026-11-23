@@ -4,7 +4,7 @@
 @using Radzen.Blazor
 @using Washu.Framework.SharedComponents
 @inject DialogService DialogService
-@inject IMediator Mediator
+@inject ISender Sender
 <ApplicationForm
     @ref="_form"
     Model="_model"
@@ -26,7 +26,7 @@
     private readonly Model _model = new();
     [Parameter, EditorRequired] public Guid UserId { get; set; }
     [Parameter, EditorRequired] public uint UserRowVersion { get; set; }
-    public SubmitButtonConfig DeleteAccountButtonConfig { get; set; } = new()
+    public SubmitButtonConfig DeleteAccountButtonConfig { get; init; } = new()
     {
         ButtonText = "Delete Account!",
         ButtonStyle = ButtonStyle.Danger,
@@ -36,10 +36,10 @@
     private async Task CloseDialog()
     {
         var command = new DeleteUserCommand(UserId, UserRowVersion, _model.Email);
-        var result = await Mediator.Send(command);
-        if (result is ValidationError vErr)
+        var result = await Sender.Send(command);
+        if (result is ValidationError err)
         {
-            _form.SetErrorMessages(vErr.Errors);
+            _form.SetErrorMessages(err.Errors);
             await InvokeAsync(StateHasChanged);
         }
         else DialogService.Close(result);

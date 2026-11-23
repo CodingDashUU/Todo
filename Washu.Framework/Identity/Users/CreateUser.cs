@@ -15,13 +15,13 @@ public sealed record CreateUserCommand(string Email, string GoogleSubject) : ICo
 public sealed class CreateUserHandler(
     IDbContextFactory<ApplicationDbContext> factory,
     ILogger<CreateUserHandler> logger,
-    IMediator mediator
+    ISender sender
     ) : ICommandHandler<CreateUserCommand, Result<ApplicationUser>>
 {
     public async ValueTask<Result<ApplicationUser>> Handle(CreateUserCommand command, CancellationToken cancellationToken)
     {
         await using var dbContext = await factory.CreateDbContextAsync(cancellationToken); 
-        var username = await mediator.Send(
+        var username = await sender.Send(
             new GenerateUniqueUsernameCommand(command.Email), cancellationToken);
         var user = new ApplicationUser(username, command.Email, command.GoogleSubject);
         dbContext.Users.Add(user);

@@ -29,26 +29,23 @@
         };
         var data = await DialogService.OpenAsync<ChangeUsernameDialog>("Change Username", parameters);
         if (data is not Result result) return;
+        var message = result switch
+        {
+            UnitValue => Message.Success("Identity Success", "Successfully changed username"),
+            Error e => Message.Error("Identity Error", e.Message)
+        };
         switch (result)
         {
                 
-            case UnitValue:
-                var message = Message.Success("Identity Success", "Successfully changed username");
+            case UnitValue or ConcurrencyError:
                 NotificationService.Show(message);
                 await OnRefreshUserAsync();
                 return;
             case UserNotFoundError:
-                message = Message.Error("Identity Error", "Account not found");
                 var id = Store.Store(message);
                 NavManager.NavigateTo($"{IdentityRoutes.SignOut}?messageId={id}", forceLoad: true);
                 return;
-            case ConcurrencyError:
-                message = Message.Error("Identity Error", "Your account has been modified by another session. Please try again");
-                await OnRefreshUserAsync();
-                NotificationService.Show(message);
-                return;
-            case Error err:
-                message = Message.Error("Identity Error", err.Message);
+            case Error:
                 NotificationService.Show(message);
                 return;
         }

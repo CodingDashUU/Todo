@@ -236,8 +236,8 @@ public static class ServiceCollectionExtensions
                     dashboard.SetBasePath("/tickerq");
                     dashboard.WithCustomAuth(async context =>
                     {
-                        var mediator = context.RequestServices.GetRequiredService<IMediator>();
-                        return await mediator.Send(new HasPermissionQuery(CorePermissions.CanCheckBackgroundJobDashboard));
+                        var sender = context.RequestServices.GetRequiredService<ISender>();
+                        return await sender.Send(new HasPermissionQuery(CorePermissions.CanCheckBackgroundJobDashboard));
                     });
                 });
             });

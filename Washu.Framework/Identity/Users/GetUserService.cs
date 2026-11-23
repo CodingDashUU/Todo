@@ -8,14 +8,14 @@ using Washu.Framework.Extensions;
 
 public sealed class GetUserService(
     CurrentUser currentUser,
-    IMediator mediator,
+    ISender sender,
     NavigationManager navManager)
 {
     public async Task<ApplicationUserInfo> GetOrRedirectAsync()
     {
         var principal = await currentUser.GetUserAsync();
         if (principal is { UserId: { } userId, SecurityStamp: { } securityStamp }
-            && await mediator.Send(new FindUserByIdQuery(userId)) is { } user
+            && await sender.Send(new FindUserByIdQuery(userId)) is { } user
             && user.SecurityStamp == securityStamp) return ApplicationUserInfo.FromUser(user);
         Redirect(ApplicationRoutes.Home);
         return new ApplicationUserInfo();

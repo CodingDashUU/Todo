@@ -12,18 +12,18 @@ public sealed class SignOutEndpoints
 {
     public static void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapGet(IdentityRoutes.SignOut, async (HttpContext context, IMediator mediator, [FromQuery] string? messageId) =>
+        app.MapGet(IdentityRoutes.SignOut, async (HttpContext context, ISender sender, [FromQuery] string? messageId) =>
             {
-                await mediator.Send(new SignOutCommand(context));
+                await sender.Send(new SignOutCommand(context));
                 var redirectUrl = string.IsNullOrWhiteSpace(messageId)
                     ? ApplicationRoutes.SignIn
                     : $"{ApplicationRoutes.SignIn}?messageId={messageId}";
                 return TypedResults.Redirect(redirectUrl);
             })
             .RequireRateLimiting(RateLimiterPolicy.StandardRateLimiter);
-        app.MapGet(IdentityRoutes.SignOutFromAllSessions, async (HttpContext context,  IMediator mediator,[FromQuery] string? messageId) =>
+        app.MapGet(IdentityRoutes.SignOutFromAllSessions, async (HttpContext context,  ISender sender,[FromQuery] string? messageId) =>
             {
-                await mediator.Send(new SignOutFromAllSessionsCommand(context));
+                await sender.Send(new SignOutFromAllSessionsCommand(context));
                 var targetUrl = string.IsNullOrWhiteSpace(messageId)
                     ? ApplicationRoutes.SignIn
                     : $"{ApplicationRoutes.SignIn}?messageId={messageId}";

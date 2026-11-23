@@ -1,5 +1,5 @@
 @using Mediator
-@inject IMediator Mediator
+@inject ISender Sender
 @inject DialogService DialogService
 @typeparam TModel
 
@@ -8,7 +8,7 @@
     protected ApplicationForm<TModel> Form { get; set; } = null!;
     protected async Task CloseDialog<TCommand>(TCommand command) where TCommand : ICommand<Result>
     {
-        var result = await Mediator.Send(command);
+        var result = await Sender.Send(command);
         if (result is ValidationError vErr)
         {
             Form.SetErrorMessages(vErr.Errors);

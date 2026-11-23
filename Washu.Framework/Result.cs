@@ -12,12 +12,6 @@ public union Result<T>(T, Error)
 
     /// <summary>Implicitly lifts an <see cref="Error"/> into <see cref="Result{T}"/>.</summary>
     public static implicit operator Result<T>(Error error) => new(error);
-
-    /// <summary>Returns <c>true</c> when the union holds the success case.</summary>
-    public bool IsOk    => this is T;
-
-    /// <summary>Returns <c>true</c> when the union holds the error case.</summary>
-    public bool IsError => this is Error;
 }
 
 public union Result(UnitValue, Error)
@@ -30,12 +24,6 @@ public union Result(UnitValue, Error)
 
     /// <summary>Implicitly lifts an <see cref="Error"/> into <see cref="Result"/>.</summary>
     public static implicit operator Result(Error error) => new(error);
-
-    /// <summary>Returns <c>true</c> when the union holds the success case.</summary>
-    public bool IsOk    => this is UnitValue;
-
-    /// <summary>Returns <c>true</c> when the union holds the error case.</summary>
-    public bool IsError => this is Error;
 }
 
 /// <summary>The unit type used as the success payload for void commands.</summary>
@@ -74,9 +62,5 @@ public sealed record NotFoundError(string DataName = "resource")
 /// </summary>
 public sealed record UserIdNotFoundError()
     : Error("Your session could not be verified. Please sign in again");
-
-/// <summary>An attempt to create a resource that already exists was made.</summary>
-public sealed record AlreadyExistsError(string? Detail = null)
-    : Error(Detail ?? "A resource with the given identifier already exists");
 
 public sealed record UserNotFoundError() : Error("Account could not be found");

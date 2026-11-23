@@ -23,8 +23,8 @@ internal sealed class AppAuthenticationStateProvider(
         if (principal.UserId is not {} userId 
             || principal.SecurityStamp is not { } securityStamp) return false;
         await using var scope = scopeFactory.CreateAsyncScope();
-        var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
-        var user = await mediator.Send(new FindUserByIdQuery(userId), cancellationToken);
+        var sender = scope.ServiceProvider.GetRequiredService<ISender>();
+        var user = await sender.Send(new FindUserByIdQuery(userId), cancellationToken);
         if (user is null) return false;
         return securityStamp == user.SecurityStamp;
     }

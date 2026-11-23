@@ -23,9 +23,9 @@ public static class ExternalEndpoints
         var group = app.MapGroup("")
             .RequireRateLimiting(RateLimiterPolicy.StandardRateLimiter);
         group.MapGet(IdentityRoutes.ChallengeGoogle,
-            async (IMediator mediator, [FromQuery] bool persistCookie, [FromQuery] string returnUrl = "/") =>
+            async (ISender sender, [FromQuery] bool persistCookie, [FromQuery] string returnUrl = "/") =>
             {
-                var result = await mediator.Send(new ChallengeExternalCommand(returnUrl, persistCookie));
+                var result = await sender.Send(new ChallengeExternalCommand(returnUrl, persistCookie));
                 return result switch
                 {
                     AlreadySignedIn(var safeReturnUrl) => Results.Redirect(QueryHelpers.SafeReturnUrl(safeReturnUrl)),
@@ -35,10 +35,10 @@ public static class ExternalEndpoints
                     null => throw new InvalidOperationException($"{nameof(ChallengeExternalResult)} should not be null")
                 };
             });
-        group.MapGet(IdentityRoutes.GoogleExternalCallback, async (IMediator mediator, MessageStore store,
+        group.MapGet(IdentityRoutes.GoogleExternalCallback, async (ISender sender, MessageStore store,
             [FromQuery] bool persistCookie, [FromQuery] string returnUrl) =>
         {
-            var info = await mediator.Send(new GetExternalLoginInfoQuery());
+            var info = await sender.Send(new GetExternalLoginInfoQuery());
             if (info is null)
             {
                 var errorUrl = QueryHelpers.AddQueryString(
@@ -53,14 +53,14 @@ public static class ExternalEndpoints
             var email = info.Principal.FindFirstValue(ClaimTypes.Email);
             if (email is null)
                 return RedirectError(Message.Error("Registration Error", "Email was not provided or not found"));
-            var existingUser = await mediator.Send(new FindUserByProviderKeyQuery(info.ProviderKey));
+            var existingUser = await sender.Send(new FindUserByProviderKeyQuery(info.ProviderKey));
             if (existingUser is not null)
             {
-                await mediator.Send(new SignInCommand(existingUser, persistCookie, info.LoginProvider));
+                await sender.Send(new SignInCommand(existingUser, persistCookie, info.LoginProvider));
                 return TypedResults.Redirect(QueryHelpers.SafeReturnUrl(returnUrl));
             }
 
-            var result = await mediator.Send(new CreateUserCommand(email, info.ProviderKey));
+            var result = await sender.Send(new CreateUserCommand(email, info.ProviderKey));
             return result switch
             {
                 Error e => RedirectError(Message.Error("Login Error", e.Message)),
@@ -70,7 +70,7 @@ public static class ExternalEndpoints
 
             async Task<RedirectHttpResult> SignInAndRedirect(ApplicationUser user)
             {
-                await mediator.Send(new SignInCommand(user, persistCookie));
+                await sender.Send(new SignInCommand(user, persistCookie));
                 return TypedResults.Redirect(QueryHelpers.SafeReturnUrl(returnUrl));
             }
 

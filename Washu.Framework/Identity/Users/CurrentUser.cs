@@ -6,7 +6,7 @@ using System.Security.Claims;
 
 /// <summary>
 /// Provides the current circuit's principal to handlers.
-/// The principal is loaded on demand because child components may issue mediator
+/// The principal is loaded on demand because child components may issue sender
 /// requests before an asynchronously initialized layout has finished rendering.
 /// </summary>
 public sealed class CurrentUser : IDisposable

@@ -28,14 +28,14 @@ public static class WebApplicationExtensions
         public async Task SeedRolesAsync(List<string> roles)
         {
             await using var serviceScope = app.Services.CreateAsyncScope();
-            var mediator = serviceScope.ServiceProvider.GetRequiredService<IMediator>();
-            await mediator.Send(new AddRolesCommand(roles));
+            var sender = serviceScope.ServiceProvider.GetRequiredService<ISender>();
+            await sender.Send(new AddRolesCommand(roles));
         }
         public async Task SeedPermissionsAsync(params List<PermissionRequest> perms)
         {
             await using var serviceScope = app.Services.CreateAsyncScope();
-            var mediator = serviceScope.ServiceProvider.GetRequiredService<IMediator>();
-            await mediator.Send(new AddPermissionsCommand(perms));
+            var sender = serviceScope.ServiceProvider.GetRequiredService<ISender>();
+            await sender.Send(new AddPermissionsCommand(perms));
         }
         public void UseWfPipeline()
         {
@@ -146,9 +146,9 @@ public static class WebApplicationExtensions
                 app.MapWfRazorComponents<TApp>();
                 await app.SeedRolesAsync([.. InitialUserRoles.Roles]);
                 await using var serviceScope = app.Services.CreateAsyncScope();
-                var mediator = serviceScope.ServiceProvider.GetRequiredService<IMediator>();
-                await mediator.Send(new AddRolesCommand(InitialUserRoles.Roles));
-                await mediator.Send(new AddPermissionsCommand([new PermissionRequest(CorePermissions.CanCheckSystemHealth, InitialUserRoles.Admin), 
+                var sender = serviceScope.ServiceProvider.GetRequiredService<ISender>();
+                await sender.Send(new AddRolesCommand(InitialUserRoles.Roles));
+                await sender.Send(new AddPermissionsCommand([new PermissionRequest(CorePermissions.CanCheckSystemHealth, InitialUserRoles.Admin), 
                     new PermissionRequest(CorePermissions.CanCheckBackgroundJobDashboard, InitialUserRoles.Admin)]));
                 await app.RunAsync();
             }

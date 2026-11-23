@@ -10,19 +10,15 @@ using Washu.Framework.Extensions;
 
 [RequireValidUser]
 [UniqueViolationMessage("This username is taken")]
-public sealed record ChangeUsernameCommand(Guid UserId, uint UserRowVersion, string OldName, string NewName) : ICommand<Result>;
+public sealed record ChangeUsernameCommand(Guid UserId, uint UserRowVersion, string OldName, string NewName) : ICarriesUserId, ICommand<Result>;
 
 public sealed class ChangeUsernameHandler(
     IDbContextFactory<ApplicationDbContext> factory, 
     IPublisher publisher,
-    ILogger<ChangeUsernameHandler> logger,
-    CurrentUser currentUser) : ICommandHandler<ChangeUsernameCommand, Result>
+    ILogger<ChangeUsernameHandler> logger) : ICommandHandler<ChangeUsernameCommand, Result>
 {
     public async ValueTask<Result> Handle(ChangeUsernameCommand command, CancellationToken ct = default)
     {
-        if ((await currentUser.GetUserAsync()).UserId != command.UserId)
-            return new UserNotFoundError();
-
         await using var dbContext = await factory.CreateDbContextAsync(ct);
         var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == command.UserId, ct);
         if (user is null)
