@@ -15,11 +15,11 @@ public static class EfCoreBuilderExtensions
     }
     extension<TEntity>(EntityTypeBuilder<TEntity> entity) where TEntity : class, ISoftDeletableEntity
     {
-        public void HasSoftDeleteQueryFilter() => entity.HasQueryFilter(e => !e.IsDeleted);
+        public void HasSoftDeleteQueryFilter() => entity.HasQueryFilter(e => e.DeletedAt == null);
     }
     extension<TEntity>(EntityTypeBuilder<TEntity> entity) where TEntity : class, IOwnedByUser
     {
-        public void HasUserSoftDeleteQueryFilter() => entity.HasQueryFilter(e => !e.User.IsDeleted);
+        public void HasUserSoftDeleteQueryFilter() => entity.HasQueryFilter(e => e.User.DeletedAt == null);
     }
     extension<TEntity>(TableBuilder<TEntity> entity) where TEntity : class
     {

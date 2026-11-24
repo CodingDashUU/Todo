@@ -14,7 +14,10 @@ public class DeleteTodoListJob(
         CancellationToken cancellationToken = new())
     {
         await using var dbContext = await dbFactory.CreateDbContextAsync(cancellationToken);
-        var rowsChanged = await dbContext.TodoLists.IgnoreQueryFilters().Where(u => u.IsDeleted).ExecuteDeleteAsync(cancellationToken);
+        var rowsChanged = await dbContext.TodoLists
+            .IgnoreQueryFilters()
+            .Where(u => DateTimeOffset.UtcNow - u.DeletedAt > TimeSpan.FromDays(30))
+            .ExecuteDeleteAsync(cancellationToken);
         logger.LogInformation("Todo Lists deleted: {TodoListsDeleted}", rowsChanged);
     }
 }

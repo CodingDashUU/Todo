@@ -9,7 +9,7 @@ using Washu.Todo.TodoList;
 
 await WebApplication.BuildAndRunApplicationAsync<TodoDbContext, App>(args, configureOptions: options =>
 {
-    options.CronJobs = [new CronJobRequest(nameof(DeleteTodoListJob), "0 3 * * SUN")];
+    options.CronJobs = [nameof(DeleteTodoListJob)];
     options.RegisterAdditionalServices = builder =>
     {
         builder.Services.AddMediator(opts =>

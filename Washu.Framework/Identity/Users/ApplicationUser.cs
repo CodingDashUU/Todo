@@ -20,13 +20,13 @@ public sealed class ApplicationUser(string userName, string email, string google
     public DateTimeOffset? LastModifiedDate { get; private set; }
     public DateTimeOffset? LastSignedInDate { get; private init; }
     public DateTimeOffset? LastSignedOutDate { get; private init; }
-    public bool IsDeleted { get; private set; }
-    
+    public DateTimeOffset? DeletedAt { get; private set; }
+
     public void SoftDelete()
     {
         Username = $"deleted~{Username}~{Random.Shared.Next(1000, 10000)}";
         Email = $"deleted~{Email}~{Random.Shared.Next(1000, 10000)}";
         GoogleSubject = $"deleted~{GoogleSubject}~{Random.Shared.Next(1000, 10000)}";
-        IsDeleted = true;
+        DeletedAt = DateTimeOffset.UtcNow;
     }
 }

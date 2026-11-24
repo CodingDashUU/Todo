@@ -22,11 +22,11 @@ public class TodoList(Guid userId, string listName) : IOwnedByUser, IAuditableEn
         Name = "None",
         Tasks = []
     };
-    public bool IsDeleted { get; private set; }
+    public DateTimeOffset? DeletedAt { get; private set; }
 
     public void SoftDelete()
     {
         Name = $"deleted~{Name}~{Random.Shared.Next(1000, 10000)}";
-        IsDeleted = true;
+        DeletedAt = DateTimeOffset.UtcNow;
     }
 }

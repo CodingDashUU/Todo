@@ -211,7 +211,7 @@ public static class ServiceCollectionExtensions
                 });
         }
 
-        public IServiceCollection AddWfTickerQ<TDbContext>(ConfigurationManager config, params List<CronJobRequest> cronJobs)
+        public IServiceCollection AddWfTickerQ<TDbContext>(ConfigurationManager config, params List<string> cronJobNames)
         where TDbContext : DbContext =>
             services.AddTickerQ(cronOpt =>
             {
@@ -222,8 +222,8 @@ public static class ServiceCollectionExtensions
                             : Assembly.GetCallingAssembly().GetName().Name);
                 cronOpt.SeedCronTickers(crons => 
                 {
-                    foreach (var job in cronJobs)
-                        crons.Add(job.JobFunction, job.CronExpression);
+                    foreach (var job in cronJobNames)
+                        crons.Add(job, config.GetSection($"CronExpressions:{job}").Value!);
                 });
                 cronOpt.AddOperationalStore(efOpt =>
                 {

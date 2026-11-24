@@ -12,7 +12,7 @@ using Xunit;
 public class PostgreSqlFixture<TDbContext>(params HashSet<IInterceptor> interceptors) : IAsyncLifetime
 where TDbContext : ApplicationDbContext
 {
-    private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder("postgres:18")
+    private readonly PostgreSqlContainer _dbContainer = new PostgreSqlBuilder("postgres:19-alpine")
         .WithDatabase("washu_framework_tests")
         .WithUsername("postgres")
         .WithPassword("postgres")

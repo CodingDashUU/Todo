@@ -136,11 +136,11 @@ public static class WebApplicationExtensions
                     .AddWfGoogle(builder.Configuration);
                 builder.Services.AddWfTickerQ<TDbContext>(
                     builder.Configuration,
-                    [new CronJobRequest(nameof(DeleteUserJob), "0 5 * * SUN"), ..options.CronJobs]
+                    [nameof(DeleteUserJob), ..options.CronJobs]
                     );
                 options.RegisterAdditionalServices?.Invoke(builder);
                 var app = builder.Build();
-                await app.MigrateAsync<TDbContext>();
+                //await app.MigrateAsync<TDbContext>();
                 app.UseWfPipeline();
                 app.UseTickerQ();
                 app.MapWfRazorComponents<TApp>();
@@ -165,6 +165,6 @@ public static class WebApplicationExtensions
 }
 public class WfApplicationOptions
 {
-    public List<CronJobRequest> CronJobs { get; set; } = [];
+    public List<string> CronJobs { get; set; } = [];
     public Action<WebApplicationBuilder>? RegisterAdditionalServices { get; set; }
 }

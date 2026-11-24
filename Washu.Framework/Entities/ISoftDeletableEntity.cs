@@ -2,6 +2,6 @@ namespace Washu.Framework.Entities;
 
 public interface ISoftDeletableEntity
 {
-    bool IsDeleted { get; }
+    DateTimeOffset? DeletedAt { get; }
     void SoftDelete();
 }
