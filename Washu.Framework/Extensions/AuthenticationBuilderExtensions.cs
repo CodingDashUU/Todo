@@ -73,8 +73,8 @@ public static class AuthenticationBuilderExtensions
         });
         public AuthenticationBuilder AddWfGoogle(ConfigurationManager configuration) => builder.AddGoogle(options =>
         {
-            options.ClientId = configuration.GetSection("ExternalProviders:Google:ClientId").Value!;
-            options.ClientSecret = configuration.GetSection("ExternalProviders:Google:ClientSecret").Value!;
+            options.ClientId = configuration.GetValue<string>("ExternalProviders:Google:ClientId") ?? throw new InvalidOperationException("Google client id not found in configuration");
+            options.ClientSecret = configuration.GetValue<string>("ExternalProviders:Google:ClientSecret") ?? throw new InvalidOperationException("Google client secret not found in configuration");
             options.CorrelationCookie.SameSite = SameSiteMode.Lax;
             options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
             options.CorrelationCookie.MaxAge = TimeSpan.FromMinutes(30);

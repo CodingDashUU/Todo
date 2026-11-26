@@ -2,6 +2,8 @@
     <ItemGroup>
         <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
         <PackageReference Include="Humanizer" />
+        <PackageReference Include="jcamp.FluentEmail.Core" />
+        <PackageReference Include="jcamp.FluentEmail.Smtp" />
         <PackageReference Include="Mediator.Abstractions" />
         <PackageReference Include="Microsoft.EntityFrameworkCore" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" />

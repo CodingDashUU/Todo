@@ -63,6 +63,7 @@ public static class ExternalEndpoints
             var result = await sender.Send(new CreateUserCommand(email, info.ProviderKey));
             return result switch
             {
+                ValidationError e => RedirectError(Message.Error("Login Error", e.Errors.First())),
                 Error e => RedirectError(Message.Error("Login Error", e.Message)),
                 ApplicationUser u => await SignInAndRedirect(u),
                 null => throw new UnreachableException()

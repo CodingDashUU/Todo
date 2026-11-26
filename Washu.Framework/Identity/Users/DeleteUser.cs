@@ -6,14 +6,17 @@ using Mediator;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Persistence;
+using TickerQ.Utilities;
+using TickerQ.Utilities.Entities;
+using TickerQ.Utilities.Interfaces.Managers;
 
 [RequireValidUser]
 public sealed record DeleteUserCommand(Guid UserId, uint UserRowVersion, string Email) : ICarriesUserId, ICommand<Result>;
 
-public readonly record struct UserDeletedNotification(Guid UserId) : INotification;
+public sealed record UserDeletedNotification(Guid UserId, string Email) : INotification;
 
 public sealed class DeleteUserHandler(
-    IDbContextFactory<ApplicationDbContext> factory, 
+    IDbContextFactory<ApplicationDbContext> factory,
     IPublisher publisher,
     ILogger<DeleteUserHandler> logger) : ICommandHandler<DeleteUserCommand, Result>
 {
@@ -28,6 +31,7 @@ public sealed class DeleteUserHandler(
             logger.LogWarning("User with id {UserId} could not be deleted because it was not found", command.UserId);
             return new UserIdNotFoundError();
         }
+        var oldEmail = user.Email;
         if (user.Email != command.Email)
             return new ValidationError(["The email provided was incorrect"]);
         if (user.RowVersion != command.UserRowVersion)
@@ -37,7 +41,7 @@ public sealed class DeleteUserHandler(
         await dbContext.SaveChangesAsync(ctx);
         if (logger.IsEnabled(LogLevel.Information))
             logger.LogInformation("User with id {UserId} deleted successfully", command.UserId);
-        await publisher.Publish(new UserDeletedNotification(command.UserId), ctx);
+        await publisher.Publish(new UserDeletedNotification(command.UserId, oldEmail), ctx);
         return Result.Unit;
     }
 }

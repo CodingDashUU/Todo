@@ -130,13 +130,13 @@
                         {
                             switch (state)
                             {
-                                case TaskCompletionState.Completed:
+                                case Completed:
                                     <RadzenIcon IconColor="var(--rz-success)" Icon="@MaterialIcons.CheckCircle"/>
                                     break;
-                                case TaskCompletionState.NotCompletedInTime or TaskCompletionState.Overdue:
+                                case NotCompletedInTime or Overdue:
                                     <RadzenIcon IconColor="var(--rz-danger)" Icon="@MaterialIcons.Cancel"/>
                                     break;
-                                default:
+                                case NotCompleted:
                                     <RadzenIcon IconColor="var(--rz-warning)" Icon="@MaterialIcons.QuestionBox"/>
                                     break;
                             }   
@@ -147,10 +147,10 @@
                             {
                                 switch (state)
                                 {
-                                    case TaskCompletionState.NotCompletedInTime:
+                                    case NotCompletedInTime:
                                         <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-danger)">Failed to complete in time (@((context.DateCompleted! - context.GoalDate).Value.Humanize()) late)</RadzenText>
                                         break;
-                                    case TaskCompletionState.Overdue:
+                                    case Overdue:
                                         <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-danger)">Overdue (@((now - context.GoalDate).Humanize()) late)</RadzenText>
                                         break;
                                 }

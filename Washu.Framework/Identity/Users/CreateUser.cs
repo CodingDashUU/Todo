@@ -10,7 +10,7 @@ using Notifications;
 using Npgsql;
 using Persistence;
 using Roles;
-
+[UniqueViolationMessage("User with this identity already exists")]
 public sealed record CreateUserCommand(string Email, string GoogleSubject) : ICommand<Result<ApplicationUser>>;
 public sealed class CreateUserHandler(
     IDbContextFactory<ApplicationDbContext> factory,

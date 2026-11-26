@@ -20,7 +20,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 using TickerQ.DependencyInjection;
-
 public static class WebApplicationExtensions
 {
     extension(WebApplication app)
@@ -135,14 +134,16 @@ public static class WebApplicationExtensions
                     .AddWfApplicationCookie()
                     .AddWfGoogle(builder.Configuration);
                 builder.Services.AddWfTickerQ<TDbContext>(
-                    builder.Configuration,
-                    [nameof(DeleteUserJob), ..options.CronJobs]
+                    builder,
+                    [new CronJobRequest(nameof(DeleteUserJob), "0 0 5 * * *" ,SkipAfter: TimeSpan.FromHours(23)), ..options.CronJobs]
                     );
+                builder.Services.MapTicker<DeleteUserJob>().WithMaxConcurrency(1);
                 options.RegisterAdditionalServices?.Invoke(builder);
                 var app = builder.Build();
                 //await app.MigrateAsync<TDbContext>();
                 app.UseWfPipeline();
                 app.UseTickerQ();
+                options.OnApplicationBuild?.Invoke(app);
                 app.MapWfRazorComponents<TApp>();
                 await app.SeedRolesAsync([.. InitialUserRoles.Roles]);
                 await using var serviceScope = app.Services.CreateAsyncScope();
@@ -165,6 +166,7 @@ public static class WebApplicationExtensions
 }
 public class WfApplicationOptions
 {
-    public List<string> CronJobs { get; set; } = [];
+    public List<CronJobRequest> CronJobs { get; set; } = [];
     public Action<WebApplicationBuilder>? RegisterAdditionalServices { get; set; }
+    public Action<WebApplication>? OnApplicationBuild { get; set; }
 }

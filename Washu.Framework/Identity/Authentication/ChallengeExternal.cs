@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using Washu.Framework.Extensions;
 using Washu.Framework.Identity.Persistence;
-
 public sealed record ChallengeExternalCommand(string ReturnUrl, bool ShouldPersistCookie) : ICommand<ChallengeExternalResult>;
 
 public sealed class ChallengeExternalHandler(

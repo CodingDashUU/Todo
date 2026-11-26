@@ -3,8 +3,12 @@ namespace Washu.Todo;
 using Components;
 using Tasks;
 
-public enum TaskCompletionState : byte { NotCompleted, Overdue, NotCompletedInTime, Completed }
+public readonly record struct NotCompleted;
+public readonly record struct Overdue;
+public readonly record struct NotCompletedInTime;
+public readonly record struct Completed;
 
+public union TaskCompletionState(NotCompleted, Overdue, NotCompletedInTime, Completed);
 public static class TaskEntryExtensions
 {
     extension(TaskEntry entry)
@@ -15,11 +19,11 @@ public static class TaskEntryExtensions
             var notCompleteInTime = completed && entry.DateCompleted > entry.GoalDate;
             var overdue = !completed && now > entry.GoalDate;
     
-            if (overdue) return TaskCompletionState.Overdue;
-            if (!completed) return TaskCompletionState.NotCompleted;
+            if (overdue) return new Overdue();
+            if (!completed) return new NotCompleted();
             return notCompleteInTime 
-                ? TaskCompletionState.NotCompletedInTime 
-                : TaskCompletionState.Completed;
+                ? new NotCompletedInTime()
+                : new Completed();
         }
     }
 }

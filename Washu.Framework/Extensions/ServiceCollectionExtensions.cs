@@ -35,6 +35,9 @@ using TickerQ.Dashboard.DependencyInjection;
 using TickerQ.DependencyInjection;
 using TickerQ.EntityFrameworkCore.Customizer;
 using TickerQ.EntityFrameworkCore.DependencyInjection;
+using TickerQ.Utilities.Enums;
+using TickerQ.Utilities.Interfaces;
+using TickerQ.Utilities.Models;
 using ZiggyCreatures.Caching.Fusion;
 
 public static class ServiceCollectionExtensions
@@ -211,11 +214,11 @@ public static class ServiceCollectionExtensions
                 });
         }
 
-        public IServiceCollection AddWfTickerQ<TDbContext>(ConfigurationManager config, params List<string> cronJobNames)
+        public IServiceCollection AddWfTickerQ<TDbContext>(WebApplicationBuilder builder, params List<CronJobRequest> cronJobNames)
         where TDbContext : DbContext =>
             services.AddTickerQ(cronOpt =>
             {
-                cronOpt.UseLicense(config.GetSection("TickerQ:LicensePath").Value!);
+                cronOpt.UseLicense(builder.Configuration.GetValue<string>("TickerQ:LicensePath"));
                     cronOpt.UseApplicationNamespace(
                         Assembly.GetEntryAssembly() is { } entryAssembly 
                             ? entryAssembly.GetName().Name
@@ -223,22 +226,34 @@ public static class ServiceCollectionExtensions
                 cronOpt.SeedCronTickers(crons => 
                 {
                     foreach (var job in cronJobNames)
-                        crons.Add(job, config.GetSection($"CronExpressions:{job}").Value!);
+                        crons.Add(cron =>                            
+                            cron.WithExpression(job.Expression)
+                            .WhenMissed(MissedExecutionPolicy.SkipAfter(job.SkipAfter))
+                            .CatchUp(CronCatchUpMode.RunLatest)
+                            .StartWith(job.JobName, config =>
+                            {
+                                config.Retries = 5;
+                                config.RetryIntervals = [5, 30, 60, 90, 120];
+                                config.TimeoutSeconds = 30;
+                            }));
                 });
                 cronOpt.AddOperationalStore(efOpt =>
                 {
                     efOpt.UseApplicationDbContext<TDbContext>(ConfigurationType.UseModelCustomizer);
                 });
-
+                cronOpt.EnableDetailedLogging();
                 cronOpt.AddDashboard(dashboard =>
                 {
                     dashboard.SetTitle("Job Monitor");
                     dashboard.SetBasePath("/tickerq");
-                    dashboard.WithCustomAuth(async context =>
-                    {
-                        var sender = context.RequestServices.GetRequiredService<ISender>();
-                        return await sender.Send(new HasPermissionQuery(CorePermissions.CanCheckBackgroundJobDashboard));
-                    });
+                    if (!builder.Environment.IsDevelopment())
+                        dashboard.WithCustomAuth(async context =>
+                        {
+                            var sender = context.RequestServices.GetRequiredService<ISender>();
+                            return await sender.Send(
+                                new HasPermissionQuery(CorePermissions.CanCheckBackgroundJobDashboard));
+                        });
+                    else dashboard.AllowAnonymousDashboard();
                 });
             });
     }
@@ -318,3 +333,5 @@ file sealed class DbContextFactoryAdapter<TBaseContext, TDerivedContext>(
     public async Task<TBaseContext> CreateDbContextAsync(CancellationToken cancellationToken = default) =>
         await _innerFactory.CreateDbContextAsync(cancellationToken);
 }
+
+public sealed record CronJobRequest(string JobName, string Expression, TimeSpan SkipAfter);

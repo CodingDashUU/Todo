@@ -9,7 +9,6 @@ public class DeleteTodoListJob(
     IDbContextFactory<TodoDbContext> dbFactory,
     ILogger<DeleteTodoListJob> logger) : ITickerFunction
 {
-    [TickerFunction(nameof(DeleteTodoListJob))]
     public async Task ExecuteAsync(TickerFunctionContext context,
         CancellationToken cancellationToken = new())
     {
